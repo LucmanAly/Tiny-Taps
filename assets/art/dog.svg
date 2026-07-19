@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="dg-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffedc0"/>
+      <stop offset="48%" stop-color="#f2bc6b"/>
+      <stop offset="100%" stop-color="#d08c42"/>
+    </radialGradient>
+    <radialGradient id="dg-head" cx="40%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#ffefc6"/>
+      <stop offset="52%" stop-color="#f3bf70"/>
+      <stop offset="100%" stop-color="#d69347"/>
+    </radialGradient>
+    <linearGradient id="dg-ear" x1="0.2" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#cf8f47"/>
+      <stop offset="100%" stop-color="#93571f"/>
+    </linearGradient>
+    <radialGradient id="dg-muzzle" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#fffaee"/>
+      <stop offset="100%" stop-color="#f1d49c"/>
+    </radialGradient>
+    <radialGradient id="dg-nose" cx="35%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#7d5945"/>
+      <stop offset="100%" stop-color="#38251a"/>
+    </radialGradient>
+    <filter id="dg-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M146 154 C168 150 180 132 172 112 C169 105 159 107 159 116 C160 130 150 140 136 143 Z" fill="url(#dg-ear)"/>
+  <path d="M160 118 C160 128 154 135 146 139" fill="none" stroke="#ffedc0" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="149" rx="54" ry="41" fill="url(#dg-body)"/>
+  <ellipse cx="122" cy="160" rx="30" ry="20" fill="#8a5a20" opacity="0.16" filter="url(#dg-soft)"/>
+  <!-- chest fluff -->
+  <ellipse cx="93" cy="152" rx="27" ry="30" fill="#ffe9c2" opacity="0.9"/>
+
+  <!-- front legs -->
+  <rect x="76" y="150" width="15" height="40" rx="7.5" fill="url(#dg-head)"/>
+  <rect x="109" y="150" width="15" height="40" rx="7.5" fill="url(#dg-head)"/>
+  <ellipse cx="83.5" cy="188" rx="10" ry="6.5" fill="#ffe9c2"/>
+  <ellipse cx="116.5" cy="188" rx="10" ry="6.5" fill="#ffe9c2"/>
+
+  <!-- head -->
+  <circle cx="100" cy="80" r="46" fill="url(#dg-head)"/>
+  <ellipse cx="124" cy="92" rx="14" ry="21" fill="#a06a2c" opacity="0.18" filter="url(#dg-soft)"/>
+  <ellipse cx="83" cy="56" rx="17" ry="9" fill="#ffffff" opacity="0.4" filter="url(#dg-soft)" transform="rotate(-18 83 56)"/>
+
+  <!-- top tuft -->
+  <path d="M92 37 Q95 26 103 28 Q99 32 101 36 Q106 30 111 34 Q105 36 105 41 Z" fill="#e8ab5c"/>
+
+  <!-- floppy ears -->
+  <path d="M63 48 C48 58 44 88 56 106 C63 115 76 112 78 99 C80 78 76 60 71 47 Z" fill="url(#dg-ear)"/>
+  <path d="M137 48 C152 58 156 88 144 106 C137 115 124 112 122 99 C120 78 124 60 129 47 Z" fill="url(#dg-ear)"/>
+  <path d="M60 60 C55 74 56 90 61 99" fill="none" stroke="#ffd79a" stroke-width="3.5" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- eyes -->
+  <circle cx="82" cy="76" r="7" fill="#38251a"/>
+  <circle cx="118" cy="76" r="7" fill="#38251a"/>
+  <circle cx="79.8" cy="73.6" r="2.6" fill="#ffffff"/>
+  <circle cx="115.8" cy="73.6" r="2.6" fill="#ffffff"/>
+  <circle cx="84.5" cy="79" r="1.2" fill="#ffffff" opacity="0.7"/>
+  <circle cx="120.5" cy="79" r="1.2" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="66" cy="94" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.55" filter="url(#dg-soft)"/>
+  <ellipse cx="134" cy="94" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.55" filter="url(#dg-soft)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="100" cy="103" rx="25" ry="19" fill="url(#dg-muzzle)"/>
+  <path d="M91.5 92.5 Q100 88 108.5 92.5 Q109 100 100 103.5 Q91 100 91.5 92.5 Z" fill="url(#dg-nose)"/>
+  <ellipse cx="95.5" cy="93.5" rx="3" ry="1.8" fill="#ffffff" opacity="0.5"/>
+  <path d="M100 103.5 L100 109" stroke="#7a4a2a" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M88 109 Q94 116 100 109 Q106 116 112 109" fill="none" stroke="#7a4a2a" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- tongue -->
+  <path d="M94 113 Q94 124 100 124 Q106 124 106 113 Q100 116 94 113 Z" fill="#ff8fa3"/>
+  <path d="M100 116 L100 122" stroke="#e56b84" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

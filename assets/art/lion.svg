@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="ln-mane" cx="45%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#f0a44e"/>
+      <stop offset="60%" stop-color="#d97c26"/>
+      <stop offset="100%" stop-color="#a85412"/>
+    </radialGradient>
+    <radialGradient id="ln-face" cx="42%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#ffe6ae"/>
+      <stop offset="52%" stop-color="#f7c369"/>
+      <stop offset="100%" stop-color="#d8963c"/>
+    </radialGradient>
+    <radialGradient id="ln-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffe2a6"/>
+      <stop offset="48%" stop-color="#f0bb60"/>
+      <stop offset="100%" stop-color="#c98836"/>
+    </radialGradient>
+    <radialGradient id="ln-muzzle" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#fffaf0"/>
+      <stop offset="100%" stop-color="#f4ddac"/>
+    </radialGradient>
+    <filter id="ln-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M146 160 C170 158 180 144 176 128 L168 132 C170 142 162 150 142 152 Z" fill="url(#ln-body)"/>
+  <ellipse cx="174" cy="126" rx="7.5" ry="9" fill="#a85412"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="156" rx="50" ry="35" fill="url(#ln-body)"/>
+  <ellipse cx="120" cy="164" rx="27" ry="17" fill="#8a5510" opacity="0.2" filter="url(#ln-soft)"/>
+  <ellipse cx="93" cy="158" rx="25" ry="24" fill="#ffe9bc" opacity="0.8"/>
+
+  <!-- front legs -->
+  <rect x="78" y="158" width="14" height="32" rx="7" fill="url(#ln-face)"/>
+  <rect x="108" y="158" width="14" height="32" rx="7" fill="url(#ln-face)"/>
+  <ellipse cx="85" cy="187" rx="9.5" ry="6" fill="#ffe9bc"/>
+  <ellipse cx="115" cy="187" rx="9.5" ry="6" fill="#ffe9bc"/>
+
+  <!-- mane: scalloped ring -->
+  <path d="M100 22
+    C110 20 118 26 118 34 C130 28 142 34 140 46 C152 44 160 54 154 64
+    C166 66 170 78 162 86 C172 92 172 104 162 110 C168 118 164 130 152 132
+    C154 142 144 150 134 146 C130 156 116 158 108 152 C104 158 96 158 92 152
+    C84 158 70 156 66 146 C56 150 46 142 48 132 C36 130 32 118 38 110
+    C28 104 28 92 38 86 C30 78 34 66 46 64 C40 54 48 44 60 46 C58 34 70 28 82 34
+    C82 26 90 20 100 22 Z" fill="url(#ln-mane)"/>
+  <!-- mane inner shading strokes -->
+  <g fill="none" stroke="#a85412" stroke-width="3" stroke-linecap="round" opacity="0.4">
+    <path d="M60 60 q-6 10 -2 20"/>
+    <path d="M140 60 q6 10 2 20"/>
+    <path d="M48 96 q-4 10 2 18"/>
+    <path d="M152 96 q4 10 -2 18"/>
+    <path d="M70 132 q2 8 10 10"/>
+    <path d="M130 132 q-2 8 -10 10"/>
+  </g>
+
+  <!-- ears -->
+  <circle cx="66" cy="46" r="12" fill="url(#ln-face)"/>
+  <circle cx="134" cy="46" r="12" fill="url(#ln-face)"/>
+  <circle cx="66" cy="47" r="6.5" fill="#e0a86a"/>
+  <circle cx="134" cy="47" r="6.5" fill="#e0a86a"/>
+
+  <!-- face -->
+  <circle cx="100" cy="88" r="42" fill="url(#ln-face)"/>
+  <ellipse cx="121" cy="100" rx="13" ry="19" fill="#a06818" opacity="0.18" filter="url(#ln-soft)"/>
+  <ellipse cx="85" cy="66" rx="15" ry="8" fill="#ffffff" opacity="0.4" filter="url(#ln-soft)" transform="rotate(-18 85 66)"/>
+
+  <!-- eyes -->
+  <circle cx="83" cy="84" r="6.8" fill="#38251a"/>
+  <circle cx="117" cy="84" r="6.8" fill="#38251a"/>
+  <circle cx="80.9" cy="81.7" r="2.5" fill="#ffffff"/>
+  <circle cx="114.9" cy="81.7" r="2.5" fill="#ffffff"/>
+  <circle cx="85.4" cy="87" r="1.2" fill="#ffffff" opacity="0.7"/>
+  <circle cx="119.4" cy="87" r="1.2" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="67" cy="98" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#ln-soft)"/>
+  <ellipse cx="133" cy="98" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#ln-soft)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="100" cy="106" rx="22" ry="16" fill="url(#ln-muzzle)"/>
+  <path d="M94 100 Q100 96.5 106 100 Q104 106 100 106.5 Q96 106 94 100 Z" fill="#8a5a3c"/>
+  <path d="M100 106.5 L100 111" stroke="#8a5a3c" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M90 111 Q95 117 100 111 Q105 117 110 111" fill="none" stroke="#8a5a3c" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- whisker dots -->
+  <g fill="#c9a06a">
+    <circle cx="88" cy="104" r="1.2"/><circle cx="84" cy="108" r="1.2"/>
+    <circle cx="112" cy="104" r="1.2"/><circle cx="116" cy="108" r="1.2"/>
+  </g>
+</svg>

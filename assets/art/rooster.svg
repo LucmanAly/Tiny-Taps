@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="rs-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffe0b0"/>
+      <stop offset="48%" stop-color="#e8a45a"/>
+      <stop offset="100%" stop-color="#b96f2a"/>
+    </radialGradient>
+    <radialGradient id="rs-head" cx="40%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#ffe8c2"/>
+      <stop offset="52%" stop-color="#eeae66"/>
+      <stop offset="100%" stop-color="#c0782f"/>
+    </radialGradient>
+    <linearGradient id="rs-comb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff7a6b"/>
+      <stop offset="100%" stop-color="#d63a3a"/>
+    </linearGradient>
+    <linearGradient id="rs-beak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffca5e"/>
+      <stop offset="100%" stop-color="#e8951f"/>
+    </linearGradient>
+    <linearGradient id="rs-tail1" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2e7d6b"/>
+      <stop offset="100%" stop-color="#5cc4a4"/>
+    </linearGradient>
+    <linearGradient id="rs-tail2" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1f5a74"/>
+      <stop offset="100%" stop-color="#4aa4c4"/>
+    </linearGradient>
+    <filter id="rs-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail feathers -->
+  <path d="M140 130 C170 118 184 92 178 66 C170 74 162 80 154 92 C160 74 158 60 150 50 C146 66 142 82 136 96 Z" fill="url(#rs-tail1)"/>
+  <path d="M144 132 C176 128 192 108 192 84 C182 92 174 96 164 104 C172 92 174 80 170 70 C162 86 154 104 142 116 Z" fill="url(#rs-tail2)"/>
+
+  <!-- legs -->
+  <rect x="82" y="164" width="9" height="26" rx="4.5" fill="#e8951f"/>
+  <rect x="111" y="164" width="9" height="26" rx="4.5" fill="#e8951f"/>
+  <path d="M78 188 L86.5 182 L95 188 M86.5 182 L86.5 190" fill="none" stroke="#e8951f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M107 188 L115.5 182 L124 188 M115.5 182 L115.5 190" fill="none" stroke="#e8951f" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="136" rx="50" ry="42" fill="url(#rs-body)"/>
+  <ellipse cx="120" cy="148" rx="27" ry="20" fill="#7a4611" opacity="0.22" filter="url(#rs-soft)"/>
+  <ellipse cx="90" cy="140" rx="25" ry="28" fill="#ffe0b8" opacity="0.75"/>
+
+  <!-- wing -->
+  <path d="M124 116 C146 114 156 130 148 146 C140 160 118 158 110 144 C104 132 110 118 124 116 Z" fill="#c98436"/>
+  <path d="M122 128 q14 2 18 14 M118 137 q11 2 15 10" fill="none" stroke="#9c5f1d" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- comb -->
+  <path d="M76 34 C74 22 84 16 90 24 C90 12 102 10 106 20 C112 10 124 14 120 26 C126 22 132 28 128 36 C118 30 88 30 76 34 Z" fill="url(#rs-comb)"/>
+
+  <!-- head -->
+  <circle cx="96" cy="62" r="36" fill="url(#rs-head)"/>
+  <ellipse cx="113" cy="72" rx="11" ry="16" fill="#7a4611" opacity="0.2" filter="url(#rs-soft)"/>
+  <ellipse cx="83" cy="44" rx="13" ry="7" fill="#ffffff" opacity="0.45" filter="url(#rs-soft)" transform="rotate(-18 83 44)"/>
+
+  <!-- eyes -->
+  <circle cx="82" cy="58" r="6.2" fill="#38251a"/>
+  <circle cx="110" cy="58" r="6.2" fill="#38251a"/>
+  <circle cx="80" cy="55.9" r="2.2" fill="#ffffff"/>
+  <circle cx="108" cy="55.9" r="2.2" fill="#ffffff"/>
+  <circle cx="84.2" cy="60.8" r="1" fill="#ffffff" opacity="0.7"/>
+  <circle cx="112.2" cy="60.8" r="1" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="70" cy="70" rx="7" ry="4.8" fill="#ff9d8a" opacity="0.55" filter="url(#rs-soft)"/>
+  <ellipse cx="122" cy="70" rx="7" ry="4.8" fill="#ff9d8a" opacity="0.55" filter="url(#rs-soft)"/>
+
+  <!-- beak + wattle -->
+  <path d="M88 70 L104 70 L96 82 Z" fill="url(#rs-beak)"/>
+  <path d="M96 82 C90 84 88 92 93 97 C98 101 105 97 104 90 C103 85 100 82 96 82 Z" fill="url(#rs-comb)"/>
+</svg>

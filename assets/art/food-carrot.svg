@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="cr-g" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#ffb35c"/>
+      <stop offset="55%" stop-color="#f97f1f"/>
+      <stop offset="100%" stop-color="#d15c0a"/>
+    </linearGradient>
+    <linearGradient id="cr-leaf" x1="0" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#4f9a2a"/>
+      <stop offset="100%" stop-color="#8fd44c"/>
+    </linearGradient>
+    <filter id="cr-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <g transform="rotate(35 100 100)">
+    <!-- leaves -->
+    <path d="M100 30 C92 16 76 12 64 20 C76 24 84 32 88 42 Z" fill="url(#cr-leaf)"/>
+    <path d="M100 30 C100 12 112 2 126 6 C118 14 114 26 112 38 Z" fill="url(#cr-leaf)"/>
+    <path d="M100 32 C108 20 124 18 134 28 C122 30 112 36 106 44 Z" fill="url(#cr-leaf)"/>
+    <!-- root -->
+    <path d="M84 40 C68 74 66 120 84 162 C90 174 102 174 106 162 C118 120 116 74 108 40 C100 34 92 34 84 40 Z" fill="url(#cr-g)"/>
+    <path d="M82 70 q12 4 24 0 M80 100 q14 5 28 0 M84 130 q10 4 20 0" fill="none" stroke="#c2520a" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="88" cy="60" rx="5" ry="20" fill="#ffffff" opacity="0.4" filter="url(#cr-soft)"/>
+  </g>
+</svg>

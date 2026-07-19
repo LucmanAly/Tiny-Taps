@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="el-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#dfe5f4"/>
+      <stop offset="48%" stop-color="#a8b2d1"/>
+      <stop offset="100%" stop-color="#76819f"/>
+    </radialGradient>
+    <radialGradient id="el-head" cx="40%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#e4e9f6"/>
+      <stop offset="52%" stop-color="#aeb8d6"/>
+      <stop offset="100%" stop-color="#7c87a6"/>
+    </radialGradient>
+    <radialGradient id="el-earin" cx="45%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#ffd0d4"/>
+      <stop offset="100%" stop-color="#e8a3ad"/>
+    </radialGradient>
+    <filter id="el-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M148 152 C162 148 168 138 166 126 L159 130 C160 138 154 144 142 146 Z" fill="url(#el-body)"/>
+  <ellipse cx="165" cy="125" rx="5" ry="6.5" fill="#5f6a85"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="152" rx="54" ry="38" fill="url(#el-body)"/>
+  <ellipse cx="122" cy="162" rx="30" ry="18" fill="#3f4a66" opacity="0.22" filter="url(#el-soft)"/>
+  <ellipse cx="92" cy="156" rx="27" ry="25" fill="#dfe5f4" opacity="0.7"/>
+
+  <!-- front legs -->
+  <rect x="74" y="154" width="17" height="36" rx="8.5" fill="url(#el-head)"/>
+  <rect x="109" y="154" width="17" height="36" rx="8.5" fill="url(#el-head)"/>
+  <path d="M76 184 q3 -3 4 0 q3 -3 5 0 q3 -3 4 0 l0 6 l-13 0 Z" fill="#d5dae8"/>
+  <path d="M111 184 q3 -3 4 0 q3 -3 5 0 q3 -3 4 0 l0 6 l-13 0 Z" fill="#d5dae8"/>
+
+  <!-- ears -->
+  <path d="M56 50 C30 42 14 62 22 84 C28 102 50 106 62 94 Z" fill="url(#el-head)"/>
+  <path d="M144 50 C170 42 186 62 178 84 C172 102 150 106 138 94 Z" fill="url(#el-head)"/>
+  <path d="M54 58 C38 54 28 66 34 80 C38 92 52 94 60 86 Z" fill="url(#el-earin)"/>
+  <path d="M146 58 C162 54 172 66 166 80 C162 92 148 94 140 86 Z" fill="url(#el-earin)"/>
+
+  <!-- head -->
+  <circle cx="100" cy="76" r="44" fill="url(#el-head)"/>
+  <ellipse cx="122" cy="88" rx="14" ry="20" fill="#3f4a66" opacity="0.2" filter="url(#el-soft)"/>
+  <ellipse cx="84" cy="52" rx="16" ry="8.5" fill="#ffffff" opacity="0.5" filter="url(#el-soft)" transform="rotate(-18 84 52)"/>
+
+  <!-- eyes -->
+  <circle cx="82" cy="72" r="6.6" fill="#38251a"/>
+  <circle cx="118" cy="72" r="6.6" fill="#38251a"/>
+  <circle cx="79.9" cy="69.7" r="2.4" fill="#ffffff"/>
+  <circle cx="115.9" cy="69.7" r="2.4" fill="#ffffff"/>
+  <circle cx="84.4" cy="75" r="1.1" fill="#ffffff" opacity="0.7"/>
+  <circle cx="120.4" cy="75" r="1.1" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="64" cy="86" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.5" filter="url(#el-soft)"/>
+  <ellipse cx="136" cy="86" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.5" filter="url(#el-soft)"/>
+
+  <!-- trunk -->
+  <path d="M92 88 C90 104 88 118 92 130 C96 142 110 142 114 132 C116 126 112 122 107 124 C104 125 102 124 102 118 C102 108 106 98 108 88 Z" fill="url(#el-head)"/>
+  <path d="M96 100 q6 2 10 0 M95 110 q6 2 10 0 M95 120 q6 2 10 0" fill="none" stroke="#7c87a6" stroke-width="2.4" stroke-linecap="round" opacity="0.6"/>
+  <!-- smile hints beside trunk -->
+  <path d="M80 96 q4 5 10 6" fill="none" stroke="#5f6a85" stroke-width="2.4" stroke-linecap="round" opacity="0.7"/>
+  <path d="M120 96 q-4 5 -10 6" fill="none" stroke="#5f6a85" stroke-width="2.4" stroke-linecap="round" opacity="0.7"/>
+</svg>

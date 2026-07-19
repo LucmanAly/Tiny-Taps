@@ -1,0 +1,344 @@
+/* ---------- shared option rows / cards ---------- */
+.prompt-area {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2vmin;
+  padding-top: max(2vmin, env(safe-area-inset-top));
+  min-height: 22vmin;
+}
+.options-row {
+  display: flex;
+  gap: 3vmin;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 2vmin;
+}
+.option-card {
+  width: 26vmin;
+  height: 26vmin;
+  min-width: 96px;
+  min-height: 96px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vmin;
+  transition: transform 0.12s ease-out;
+}
+.option-card:active { transform: scale(0.94); }
+.option-card img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+/* ---------- peekaboo ---------- */
+.peek-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.6vmin;
+  width: min(92vw, 130vh);
+  margin: auto;
+  padding-bottom: 3vmin;
+}
+@media (orientation: portrait) {
+  .peek-grid { grid-template-columns: repeat(2, 1fr); width: min(92vw, 60vh); }
+}
+.peek-tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--card);
+}
+.peek-tile img {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+}
+.peek-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.45s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.45s;
+}
+.peek-cover.off {
+  transform: scale(1.35) rotate(10deg);
+  opacity: 0;
+  pointer-events: none;
+}
+.peek-cover svg { width: 100%; height: 100%; }
+
+/* ---------- colors ---------- */
+.color-swatch {
+  width: 17vmin;
+  height: 17vmin;
+  min-width: 76px;
+  min-height: 76px;
+  border-radius: 50%;
+  box-shadow: var(--shadow), inset 0 -1.2vmin 0 rgba(0,0,0,0.12);
+}
+.balloon-row { flex: 1; align-items: flex-end; padding-bottom: 6vmin; }
+.balloon {
+  width: 24vmin;
+  min-width: 88px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  animation: balloon-bob 2.6s ease-in-out infinite;
+}
+.balloon:nth-child(2) { animation-delay: -0.9s; }
+.balloon:nth-child(3) { animation-delay: -1.8s; }
+@keyframes balloon-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.4vmin); }
+}
+.balloon svg { width: 100%; height: auto; }
+.balloon.popped { animation: balloon-pop 0.35s ease-out forwards; }
+@keyframes balloon-pop {
+  40% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ---------- animal sounds ---------- */
+.listen-btn {
+  width: 17vmin;
+  height: 17vmin;
+  min-width: 80px;
+  min-height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.listen-btn svg { width: 58%; height: 58%; }
+.listen-btn.playing { animation: pulse 0.7s ease-in-out infinite; }
+
+/* ---------- counting ---------- */
+.count-field {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  gap: 1.6vmin;
+  width: min(94vw, 900px);
+}
+.count-animal {
+  width: 15vmin;
+  min-width: 64px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s;
+}
+.count-animal.counted { transform: scale(1.25); filter: drop-shadow(0 0 1.4vmin rgba(255, 213, 74, 0.9)); }
+.number-row {
+  flex: none;
+  display: flex;
+  gap: 1.6vmin;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 2vmin max(2.4vmin, env(safe-area-inset-bottom));
+}
+.num-btn {
+  width: 11vmin;
+  height: 11vmin;
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: 50%;
+  font-size: 5.4vmin;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 5px 0 rgba(58,51,87,0.2);
+}
+.level-btn {
+  position: absolute;
+  top: max(1.5vmin, env(safe-area-inset-top));
+  right: max(1.5vmin, env(safe-area-inset-right));
+  width: 9vmin;
+  height: 9vmin;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  font-size: 2.6vmin;
+  font-weight: 700;
+  z-index: 500;
+}
+
+/* ---------- shapes ---------- */
+.shape-target {
+  width: 34vmin;
+  height: 34vmin;
+  min-width: 140px;
+  min-height: 140px;
+}
+.shape-target svg, .shape-opt svg { width: 100%; height: 100%; }
+.shape-opt {
+  width: 22vmin;
+  height: 22vmin;
+  min-width: 88px;
+  min-height: 88px;
+  background: var(--card);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  padding: 2.6vmin;
+  transition: transform 0.12s ease-out;
+}
+.shape-opt:active { transform: scale(0.94); }
+
+/* ---------- feed me ---------- */
+.feed-animal {
+  width: 44vmin;
+  min-width: 180px;
+  max-width: 60vw;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.feed-animal.munch { animation: munch 0.5s ease-in-out; }
+@keyframes munch {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.08) rotate(-2deg); }
+  60% { transform: scale(1.05) rotate(2deg); }
+}
+.food-tray {
+  flex: none;
+  display: flex;
+  gap: 4vmin;
+  justify-content: center;
+  align-items: center;
+  padding: 2vmin 2vmin max(3vmin, env(safe-area-inset-bottom));
+}
+.food-item {
+  width: 20vmin;
+  height: 20vmin;
+  min-width: 84px;
+  min-height: 84px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 1.6vmin;
+  cursor: grab;
+  position: relative;
+}
+.food-item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.food-item.dragging { box-shadow: 0 12px 30px rgba(58,51,87,0.3); }
+.food-item.eaten { animation: eaten 0.4s ease-in forwards; }
+@keyframes eaten {
+  to { transform: scale(0); opacity: 0; }
+}
+
+/* ---------- puzzle ---------- */
+.puzzle-board {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.4vmin;
+  padding: 1vmin;
+}
+.puzzle-slot {
+  width: 21vmin;
+  height: 21vmin;
+  min-width: 84px;
+  min-height: 84px;
+  border-radius: 22px;
+  border: 5px dashed rgba(58,51,87,0.25);
+  background: rgba(255,255,255,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.4vmin;
+}
+.puzzle-slot img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(1) opacity(0.3); }
+.puzzle-slot.filled { border-style: solid; border-color: var(--grass); background: #fff; }
+.puzzle-slot.filled img { filter: none; }
+.puzzle-tray {
+  display: flex;
+  gap: 3vmin;
+  justify-content: center;
+  padding: 2vmin 2vmin max(3vmin, env(safe-area-inset-bottom));
+  flex-wrap: wrap;
+}
+.puzzle-piece {
+  width: 18vmin;
+  height: 18vmin;
+  min-width: 74px;
+  min-height: 74px;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 1.4vmin;
+  cursor: grab;
+}
+.puzzle-piece img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+/* ---------- coloring ---------- */
+.color-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.color-pic {
+  width: min(64vmin, 78vw);
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2vmin;
+}
+.color-pic svg { width: 100%; height: auto; display: block; }
+.color-pic [data-region] { cursor: pointer; }
+.palette-row {
+  flex: none;
+  display: flex;
+  gap: 2vmin;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1.6vmin 2vmin max(2.6vmin, env(safe-area-inset-bottom));
+}
+.palette-dot {
+  width: 9.5vmin;
+  height: 9.5vmin;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  border: 5px solid #fff;
+  box-shadow: 0 4px 0 rgba(58,51,87,0.18);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.palette-dot.selected {
+  transform: scale(1.22);
+  border-color: var(--ink);
+}
+.done-btn {
+  width: 12vmin;
+  height: 12vmin;
+  min-width: 60px;
+  min-height: 60px;
+  border-radius: 50%;
+  background: var(--grass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.done-btn svg { width: 55%; height: 55%; }
+
+/* ---------- bubbles ---------- */
+.bubble-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}

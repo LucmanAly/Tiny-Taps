@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="fg-body" cx="40%" cy="25%" r="90%">
+      <stop offset="0%" stop-color="#dcf78e"/>
+      <stop offset="45%" stop-color="#8fd44c"/>
+      <stop offset="100%" stop-color="#4f9a2a"/>
+    </radialGradient>
+    <radialGradient id="fg-eye" cx="40%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#e6fa9f"/>
+      <stop offset="100%" stop-color="#6ab838"/>
+    </radialGradient>
+    <radialGradient id="fg-belly" cx="45%" cy="25%" r="85%">
+      <stop offset="0%" stop-color="#fdfbe8"/>
+      <stop offset="100%" stop-color="#e9e2a4"/>
+    </radialGradient>
+    <filter id="fg-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- back feet -->
+  <ellipse cx="42" cy="176" rx="22" ry="11" fill="#5ea832"/>
+  <ellipse cx="158" cy="176" rx="22" ry="11" fill="#5ea832"/>
+  <circle cx="26" cy="176" r="5.5" fill="#79c44a"/>
+  <circle cx="38" cy="180" r="5.5" fill="#79c44a"/>
+  <circle cx="52" cy="181" r="5.5" fill="#79c44a"/>
+  <circle cx="174" cy="176" r="5.5" fill="#79c44a"/>
+  <circle cx="162" cy="180" r="5.5" fill="#79c44a"/>
+  <circle cx="148" cy="181" r="5.5" fill="#79c44a"/>
+
+  <!-- body -->
+  <path d="M40 138 C40 90 66 64 100 64 C134 64 160 90 160 138 C160 166 132 184 100 184 C68 184 40 166 40 138 Z" fill="url(#fg-body)"/>
+  <ellipse cx="132" cy="140" rx="24" ry="34" fill="#2e6b18" opacity="0.18" filter="url(#fg-soft)"/>
+  <ellipse cx="76" cy="90" rx="20" ry="11" fill="#ffffff" opacity="0.4" filter="url(#fg-soft)" transform="rotate(-24 76 90)"/>
+
+  <!-- spots -->
+  <circle cx="64" cy="118" r="5" fill="#4f9a2a" opacity="0.5"/>
+  <circle cx="140" cy="108" r="4.4" fill="#4f9a2a" opacity="0.5"/>
+  <circle cx="126" cy="82" r="3.6" fill="#4f9a2a" opacity="0.45"/>
+
+  <!-- belly -->
+  <ellipse cx="100" cy="150" rx="40" ry="29" fill="url(#fg-belly)"/>
+  <path d="M70 142 Q100 136 130 142" fill="none" stroke="#d8cf8e" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+
+  <!-- eye bumps -->
+  <circle cx="66" cy="62" r="24" fill="url(#fg-eye)"/>
+  <circle cx="134" cy="62" r="24" fill="url(#fg-eye)"/>
+  <circle cx="66" cy="60" r="16.5" fill="#ffffff"/>
+  <circle cx="134" cy="60" r="16.5" fill="#ffffff"/>
+  <circle cx="67" cy="62" r="8.2" fill="#38251a"/>
+  <circle cx="133" cy="62" r="8.2" fill="#38251a"/>
+  <circle cx="64" cy="59" r="3" fill="#ffffff"/>
+  <circle cx="130" cy="59" r="3" fill="#ffffff"/>
+  <circle cx="70" cy="65.5" r="1.4" fill="#ffffff" opacity="0.7"/>
+  <circle cx="136" cy="65.5" r="1.4" fill="#ffffff" opacity="0.7"/>
+  <path d="M48 48 A24 24 0 0 1 66 38" fill="none" stroke="#e6fa9f" stroke-width="3.5" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- face -->
+  <ellipse cx="58" cy="102" rx="8.5" ry="6" fill="#ff9d8a" opacity="0.55" filter="url(#fg-soft)"/>
+  <ellipse cx="142" cy="102" rx="8.5" ry="6" fill="#ff9d8a" opacity="0.55" filter="url(#fg-soft)"/>
+  <circle cx="90" cy="88" r="2.6" fill="#2e6b18"/>
+  <circle cx="110" cy="88" r="2.6" fill="#2e6b18"/>
+  <path d="M62 100 Q100 126 138 100" fill="none" stroke="#2e6b18" stroke-width="4" stroke-linecap="round"/>
+  <path d="M62 100 Q58 98 56 94" fill="none" stroke="#2e6b18" stroke-width="4" stroke-linecap="round"/>
+  <path d="M138 100 Q142 98 144 94" fill="none" stroke="#2e6b18" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- front feet -->
+  <ellipse cx="82" cy="180" rx="15" ry="8" fill="#79c44a"/>
+  <ellipse cx="118" cy="180" rx="15" ry="8" fill="#79c44a"/>
+  <circle cx="72" cy="182" r="4.6" fill="#96d968"/>
+  <circle cx="82" cy="184" r="4.6" fill="#96d968"/>
+  <circle cx="92" cy="183" r="4.6" fill="#96d968"/>
+  <circle cx="108" cy="183" r="4.6" fill="#96d968"/>
+  <circle cx="118" cy="184" r="4.6" fill="#96d968"/>
+  <circle cx="128" cy="182" r="4.6" fill="#96d968"/>
+</svg>

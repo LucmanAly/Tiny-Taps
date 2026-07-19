@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bn-g" cx="40%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#fffdf4"/>
+      <stop offset="55%" stop-color="#f7ecd0"/>
+      <stop offset="100%" stop-color="#dcc691"/>
+    </radialGradient>
+    <filter id="bn-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <g transform="rotate(-25 100 100)">
+    <rect x="62" y="86" width="76" height="28" rx="14" fill="url(#bn-g)"/>
+    <circle cx="60" cy="86" r="20" fill="url(#bn-g)"/>
+    <circle cx="60" cy="114" r="20" fill="url(#bn-g)"/>
+    <circle cx="140" cy="86" r="20" fill="url(#bn-g)"/>
+    <circle cx="140" cy="114" r="20" fill="url(#bn-g)"/>
+    <ellipse cx="80" cy="92" rx="22" ry="5" fill="#ffffff" opacity="0.55" filter="url(#bn-soft)"/>
+    <ellipse cx="118" cy="112" rx="24" ry="6" fill="#b89b5e" opacity="0.3" filter="url(#bn-soft)"/>
+  </g>
+</svg>

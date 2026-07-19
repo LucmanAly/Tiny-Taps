@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="co-g" cx="40%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#fff3a0"/>
+      <stop offset="55%" stop-color="#ffd94e"/>
+      <stop offset="100%" stop-color="#e8a51a"/>
+    </radialGradient>
+    <linearGradient id="co-husk" x1="0" y1="1" x2="0.4" y2="0">
+      <stop offset="0%" stop-color="#3f8a20"/>
+      <stop offset="100%" stop-color="#8fd44c"/>
+    </linearGradient>
+    <filter id="co-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <g transform="rotate(20 100 100)">
+    <!-- cob -->
+    <path d="M100 28 C124 28 136 62 136 100 C136 140 122 172 100 172 C78 172 64 140 64 100 C64 62 76 28 100 28 Z" fill="url(#co-g)"/>
+    <!-- kernels -->
+    <g fill="#e8a51a" opacity="0.55">
+      <circle cx="86" cy="56" r="5"/><circle cx="102" cy="52" r="5"/><circle cx="116" cy="60" r="5"/>
+      <circle cx="80" cy="76" r="5"/><circle cx="96" cy="72" r="5"/><circle cx="112" cy="76" r="5"/><circle cx="124" cy="82" r="5"/>
+      <circle cx="76" cy="96" r="5"/><circle cx="92" cy="92" r="5"/><circle cx="108" cy="96" r="5"/><circle cx="122" cy="102" r="5"/>
+      <circle cx="78" cy="116" r="5"/><circle cx="94" cy="112" r="5"/><circle cx="110" cy="116" r="5"/>
+      <circle cx="84" cy="136" r="5"/><circle cx="100" cy="132" r="5"/><circle cx="114" cy="134" r="5"/>
+    </g>
+    <ellipse cx="86" cy="52" rx="10" ry="18" fill="#ffffff" opacity="0.35" filter="url(#co-soft)"/>
+    <!-- husk leaves -->
+    <path d="M70 90 C56 120 60 156 82 176 C70 150 70 116 78 92 Z" fill="url(#co-husk)"/>
+    <path d="M130 90 C144 120 140 156 118 176 C130 150 130 116 122 92 Z" fill="url(#co-husk)"/>
+    <path d="M78 150 C84 166 94 176 106 178 C92 182 76 172 72 156 Z" fill="url(#co-husk)"/>
+  </g>
+</svg>

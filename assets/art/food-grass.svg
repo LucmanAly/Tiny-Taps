@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="gr-g1" x1="0" y1="1" x2="0.3" y2="0">
+      <stop offset="0%" stop-color="#3f8a20"/>
+      <stop offset="100%" stop-color="#8fd44c"/>
+    </linearGradient>
+    <linearGradient id="gr-g2" x1="0" y1="1" x2="0.3" y2="0">
+      <stop offset="0%" stop-color="#4f9a2a"/>
+      <stop offset="100%" stop-color="#b4e878"/>
+    </linearGradient>
+    <radialGradient id="gr-mound" cx="45%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#8fd44c"/>
+      <stop offset="100%" stop-color="#4f9a2a"/>
+    </radialGradient>
+  </defs>
+  <!-- blades -->
+  <path d="M100 150 C96 110 92 80 78 52 C94 62 104 92 106 122 Z" fill="url(#gr-g1)"/>
+  <path d="M88 152 C80 120 68 96 48 82 C68 86 88 110 94 140 Z" fill="url(#gr-g2)"/>
+  <path d="M112 152 C120 118 134 94 154 80 C136 86 114 110 108 140 Z" fill="url(#gr-g2)"/>
+  <path d="M100 152 C102 114 110 84 128 62 C114 68 100 98 96 130 Z" fill="url(#gr-g1)"/>
+  <path d="M78 154 C70 132 56 118 38 112 C54 120 66 138 72 156 Z" fill="url(#gr-g1)"/>
+  <path d="M122 154 C130 132 144 118 162 112 C146 120 134 138 128 156 Z" fill="url(#gr-g1)"/>
+  <!-- mound -->
+  <ellipse cx="100" cy="158" rx="58" ry="24" fill="url(#gr-mound)"/>
+  <ellipse cx="82" cy="150" rx="20" ry="8" fill="#b4e878" opacity="0.6"/>
+  <!-- little flowers -->
+  <circle cx="66" cy="152" r="5" fill="#fff1a8"/>
+  <circle cx="66" cy="152" r="2.2" fill="#f0ac1e"/>
+  <circle cx="132" cy="158" r="5" fill="#ffd3e0"/>
+  <circle cx="132" cy="158" r="2.2" fill="#f088a8"/>
+</svg>

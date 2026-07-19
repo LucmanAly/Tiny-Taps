@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="cw-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f4efe6"/>
+      <stop offset="100%" stop-color="#d9d0c0"/>
+    </radialGradient>
+    <radialGradient id="cw-muzzle" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffd2da"/>
+      <stop offset="100%" stop-color="#ec9bae"/>
+    </radialGradient>
+    <linearGradient id="cw-horn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdf3d8"/>
+      <stop offset="100%" stop-color="#e0c98f"/>
+    </linearGradient>
+    <filter id="cw-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M148 150 C166 146 174 132 170 116 L162 120 C164 132 156 140 142 142 Z" fill="url(#cw-body)"/>
+  <ellipse cx="168" cy="115" rx="6" ry="8" fill="#4a4038"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="150" rx="54" ry="40" fill="url(#cw-body)"/>
+  <ellipse cx="122" cy="160" rx="30" ry="20" fill="#8a7a60" opacity="0.18" filter="url(#cw-soft)"/>
+  <!-- body patches -->
+  <path d="M62 132 C54 144 58 158 70 162 C82 166 92 156 88 144 C84 132 70 124 62 132 Z" fill="#4a4038"/>
+  <path d="M128 168 C124 178 132 186 142 183 C152 180 152 168 144 162 C136 158 130 160 128 168 Z" fill="#4a4038"/>
+
+  <!-- front legs -->
+  <rect x="78" y="152" width="14" height="38" rx="7" fill="url(#cw-body)"/>
+  <rect x="108" y="152" width="14" height="38" rx="7" fill="url(#cw-body)"/>
+  <path d="M78 182 a7 7 0 0 0 14 8 l0 -8 Z" fill="#4a4038"/>
+  <rect x="78" y="181" width="14" height="9" rx="4.5" fill="#4a4038"/>
+  <rect x="108" y="181" width="14" height="9" rx="4.5" fill="#4a4038"/>
+
+  <!-- horns -->
+  <path d="M66 32 C60 22 66 12 76 16 C72 22 74 28 78 33 Z" fill="url(#cw-horn)"/>
+  <path d="M134 32 C140 22 134 12 124 16 C128 22 126 28 122 33 Z" fill="url(#cw-horn)"/>
+
+  <!-- ears -->
+  <path d="M52 62 C38 54 26 60 28 70 C30 78 44 80 56 74 Z" fill="url(#cw-body)"/>
+  <path d="M148 62 C162 54 174 60 172 70 C170 78 156 80 144 74 Z" fill="url(#cw-body)"/>
+  <ellipse cx="40" cy="68" rx="8" ry="4.5" fill="#f0b4be" opacity="0.8"/>
+  <ellipse cx="160" cy="68" rx="8" ry="4.5" fill="#f0b4be" opacity="0.8"/>
+
+  <!-- head -->
+  <circle cx="100" cy="76" r="44" fill="url(#cw-body)"/>
+  <ellipse cx="122" cy="88" rx="14" ry="20" fill="#8a7a60" opacity="0.18" filter="url(#cw-soft)"/>
+  <ellipse cx="84" cy="52" rx="16" ry="8.5" fill="#ffffff" opacity="0.6" filter="url(#cw-soft)" transform="rotate(-18 84 52)"/>
+  <!-- eye patch -->
+  <path d="M108 48 C124 44 136 54 136 68 C136 80 126 86 116 84 C106 82 100 70 102 60 C103 54 105 50 108 48 Z" fill="#4a4038"/>
+
+  <!-- forelock -->
+  <path d="M88 36 Q92 26 100 28 Q97 32 99 36 Q104 29 111 32 Q106 35 106 40 Q96 44 88 36 Z" fill="#e8ddca"/>
+
+  <!-- eyes -->
+  <circle cx="83" cy="70" r="6.8" fill="#38251a"/>
+  <circle cx="119" cy="70" r="6.8" fill="#fffdf8"/>
+  <circle cx="119" cy="70" r="5.4" fill="#38251a"/>
+  <circle cx="80.9" cy="67.7" r="2.5" fill="#ffffff"/>
+  <circle cx="117.2" cy="68" r="2.2" fill="#ffffff"/>
+  <circle cx="86.4" cy="73" r="1.2" fill="#ffffff" opacity="0.7"/>
+  <circle cx="121.4" cy="72.6" r="1.1" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="64" cy="84" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.5" filter="url(#cw-soft)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="100" cy="99" rx="27" ry="17" fill="url(#cw-muzzle)"/>
+  <ellipse cx="91" cy="97" rx="4" ry="5.5" fill="#c76e84"/>
+  <ellipse cx="109" cy="97" rx="4" ry="5.5" fill="#c76e84"/>
+  <path d="M88 108 Q100 114 112 108" fill="none" stroke="#b25f76" stroke-width="2.4" stroke-linecap="round"/>
+  <ellipse cx="92" cy="92" rx="6" ry="3" fill="#ffffff" opacity="0.35"/>
+</svg>

@@ -1,0 +1,7 @@
+{
+  "name": "tiny-taps",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Toddler learning mini-games PWA"
+}

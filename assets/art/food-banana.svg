@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="ba-g" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#fff3a0"/>
+      <stop offset="55%" stop-color="#ffd94e"/>
+      <stop offset="100%" stop-color="#e8a51a"/>
+    </linearGradient>
+    <filter id="ba-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <g transform="rotate(-12 100 100)">
+    <path d="M48 70 C44 118 76 152 128 152 C146 152 158 144 160 132 C158 138 146 140 134 138 C94 132 66 104 62 70 C60 62 50 62 48 70 Z" fill="url(#ba-g)"/>
+    <path d="M46 66 C44 60 48 56 54 58 L62 64 L52 74 Z" fill="#8a6420"/>
+    <path d="M156 136 C162 136 166 140 164 146 L154 150 L148 142 Z" fill="#c2871a"/>
+    <path d="M62 82 C66 108 88 130 116 138" fill="none" stroke="#fff7c4" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+    <path d="M74 120 q14 12 32 16" fill="none" stroke="#c2871a" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+  </g>
+</svg>

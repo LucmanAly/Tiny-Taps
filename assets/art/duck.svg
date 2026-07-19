@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="dk-body" cx="40%" cy="26%" r="88%">
+      <stop offset="0%" stop-color="#fff7c4"/>
+      <stop offset="48%" stop-color="#ffd94e"/>
+      <stop offset="100%" stop-color="#eda517"/>
+    </radialGradient>
+    <radialGradient id="dk-head" cx="40%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#fff9cf"/>
+      <stop offset="52%" stop-color="#ffde5e"/>
+      <stop offset="100%" stop-color="#f0ac1e"/>
+    </radialGradient>
+    <linearGradient id="dk-bill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffb14a"/>
+      <stop offset="100%" stop-color="#e0761a"/>
+    </linearGradient>
+    <linearGradient id="dk-feet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffa53e"/>
+      <stop offset="100%" stop-color="#e0761a"/>
+    </linearGradient>
+    <filter id="dk-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- feet -->
+  <path d="M78 178 L70 192 L80 190 L84 194 L90 190 L96 193 L92 178 Z" fill="url(#dk-feet)"/>
+  <path d="M122 178 L114 192 L124 190 L128 194 L134 190 L140 193 L136 178 Z" fill="url(#dk-feet)"/>
+
+  <!-- tail flip -->
+  <path d="M148 140 C164 132 172 118 168 104 C158 112 150 118 142 128 Z" fill="url(#dk-body)"/>
+
+  <!-- body -->
+  <ellipse cx="102" cy="146" rx="52" ry="40" fill="url(#dk-body)"/>
+  <ellipse cx="124" cy="156" rx="28" ry="20" fill="#b57a10" opacity="0.2" filter="url(#dk-soft)"/>
+  <ellipse cx="90" cy="150" rx="26" ry="27" fill="#fff3b4" opacity="0.85"/>
+
+  <!-- wing -->
+  <path d="M126 130 C146 128 154 142 148 156 C142 168 122 168 114 156 C108 146 112 132 126 130 Z" fill="#f7c231"/>
+  <path d="M124 140 q12 2 16 12 M120 148 q10 2 14 9" fill="none" stroke="#dd9c14" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- head -->
+  <circle cx="88" cy="70" r="42" fill="url(#dk-head)"/>
+  <ellipse cx="108" cy="84" rx="13" ry="19" fill="#b57a10" opacity="0.18" filter="url(#dk-soft)"/>
+  <ellipse cx="72" cy="48" rx="15" ry="8" fill="#ffffff" opacity="0.5" filter="url(#dk-soft)" transform="rotate(-18 72 48)"/>
+
+  <!-- top tuft -->
+  <path d="M76 30 Q79 20 87 22 Q84 26 86 30 Q91 24 97 27 Q92 30 92 35 Q84 38 76 30 Z" fill="#f7c231"/>
+
+  <!-- eyes -->
+  <circle cx="74" cy="66" r="6.6" fill="#38251a"/>
+  <circle cx="104" cy="66" r="6.6" fill="#38251a"/>
+  <circle cx="71.9" cy="63.7" r="2.4" fill="#ffffff"/>
+  <circle cx="101.9" cy="63.7" r="2.4" fill="#ffffff"/>
+  <circle cx="76.4" cy="69" r="1.1" fill="#ffffff" opacity="0.7"/>
+  <circle cx="106.4" cy="69" r="1.1" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="60" cy="80" rx="7.5" ry="5" fill="#ffab93" opacity="0.6" filter="url(#dk-soft)"/>
+  <ellipse cx="116" cy="80" rx="7.5" ry="5" fill="#ffab93" opacity="0.6" filter="url(#dk-soft)"/>
+
+  <!-- bill -->
+  <path d="M66 84 C74 78 102 78 110 84 C112 90 104 97 88 97 C72 97 64 90 66 84 Z" fill="url(#dk-bill)"/>
+  <path d="M70 90 C80 94 96 94 106 90" fill="none" stroke="#c25c0e" stroke-width="2.2" stroke-linecap="round" opacity="0.7"/>
+  <ellipse cx="78" cy="83.5" rx="7" ry="2.6" fill="#ffffff" opacity="0.35"/>
+</svg>

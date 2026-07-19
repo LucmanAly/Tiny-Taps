@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="sh-wool" cx="40%" cy="26%" r="90%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f6f1e7"/>
+      <stop offset="100%" stop-color="#dcd2bf"/>
+    </radialGradient>
+    <radialGradient id="sh-face" cx="42%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#f4e0cb"/>
+      <stop offset="100%" stop-color="#cfa987"/>
+    </radialGradient>
+    <filter id="sh-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- legs -->
+  <rect x="72" y="158" width="12" height="34" rx="6" fill="#8a715c"/>
+  <rect x="116" y="158" width="12" height="34" rx="6" fill="#8a715c"/>
+  <rect x="72" y="184" width="12" height="8" rx="4" fill="#6b543f"/>
+  <rect x="116" y="184" width="12" height="8" rx="4" fill="#6b543f"/>
+
+  <!-- wool body: cloud of lumps -->
+  <g fill="url(#sh-wool)">
+    <circle cx="60" cy="140" r="26"/>
+    <circle cx="84" cy="124" r="28"/>
+    <circle cx="116" cy="124" r="28"/>
+    <circle cx="140" cy="140" r="26"/>
+    <circle cx="128" cy="160" r="26"/>
+    <circle cx="100" cy="166" r="28"/>
+    <circle cx="72" cy="160" r="26"/>
+    <ellipse cx="100" cy="145" rx="52" ry="34"/>
+  </g>
+  <ellipse cx="124" cy="158" rx="28" ry="20" fill="#a08c6a" opacity="0.16" filter="url(#sh-soft)"/>
+  <ellipse cx="76" cy="122" rx="18" ry="10" fill="#ffffff" opacity="0.7" filter="url(#sh-soft)" transform="rotate(-20 76 122)"/>
+
+  <!-- ears -->
+  <path d="M62 58 C46 52 34 60 38 70 C42 78 56 78 66 70 Z" fill="url(#sh-face)"/>
+  <path d="M138 58 C154 52 166 60 162 70 C158 78 144 78 134 70 Z" fill="url(#sh-face)"/>
+
+  <!-- face -->
+  <ellipse cx="100" cy="72" rx="36" ry="34" fill="url(#sh-face)"/>
+  <ellipse cx="118" cy="82" rx="11" ry="16" fill="#96684a" opacity="0.2" filter="url(#sh-soft)"/>
+  <ellipse cx="86" cy="54" rx="13" ry="7" fill="#ffffff" opacity="0.45" filter="url(#sh-soft)" transform="rotate(-16 86 54)"/>
+
+  <!-- wool cap -->
+  <g fill="url(#sh-wool)">
+    <circle cx="82" cy="42" r="14"/>
+    <circle cx="100" cy="36" r="15"/>
+    <circle cx="118" cy="42" r="14"/>
+    <circle cx="100" cy="44" r="16"/>
+  </g>
+
+  <!-- eyes -->
+  <circle cx="86" cy="72" r="6.4" fill="#38251a"/>
+  <circle cx="114" cy="72" r="6.4" fill="#38251a"/>
+  <circle cx="84" cy="69.8" r="2.3" fill="#ffffff"/>
+  <circle cx="112" cy="69.8" r="2.3" fill="#ffffff"/>
+  <circle cx="88.3" cy="74.8" r="1.1" fill="#ffffff" opacity="0.7"/>
+  <circle cx="116.3" cy="74.8" r="1.1" fill="#ffffff" opacity="0.7"/>
+
+  <!-- blush -->
+  <ellipse cx="72" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#sh-soft)"/>
+  <ellipse cx="128" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#sh-soft)"/>
+
+  <!-- nose + smile -->
+  <path d="M95 88 Q100 85 105 88 Q103 93 100 93.5 Q97 93 95 88 Z" fill="#a5765a"/>
+  <path d="M100 93.5 L100 98" stroke="#8a5f45" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M91 98 Q95.5 103 100 98 Q104.5 103 109 98" fill="none" stroke="#8a5f45" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
