@@ -46,7 +46,6 @@ function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt } = ctx;
   let alive = true;
   let revealed = 0;
-  let busy = false;
 
   const grid = document.createElement('div');
   grid.className = 'peek-grid';
@@ -66,23 +65,22 @@ function start(ctx) {
       tile.innerHTML = `<img src="${a.art}" alt=""><div class="peek-cover">${coverSvg(COVER_COLORS[i % COVER_COLORS.length])}</div>`;
       const cover = tile.querySelector('.peek-cover');
       tile.addEventListener('pointerdown', async () => {
-        if (!alive || busy || cover.classList.contains('off')) return;
-        busy = true;
+        if (!alive || cover.classList.contains('off')) return;
         cover.classList.add('off');
         revealed++;
+        const done = revealed === 6;
         const r = tile.getBoundingClientRect();
         celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 18 });
         speech.stop();
-        await audio.play('animal:' + a.id);
+        if (a.sound) await audio.play('animal:' + a.id);
         if (!alive) return;
         speech.speak(`A ${a.name}!`);
-        busy = false;
-        if (revealed === 6) {
+        if (done) {
           setTimeout(() => {
             if (!alive) return;
             celebrate.big();
             setTimeout(() => { if (alive) newRound(false); }, 2300);
-          }, 700);
+          }, 900);
         }
       });
       grid.appendChild(tile);

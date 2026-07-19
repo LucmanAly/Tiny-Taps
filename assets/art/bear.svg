@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="br-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#d9a878"/>
+      <stop offset="48%" stop-color="#a9713f"/>
+      <stop offset="100%" stop-color="#7d4c22"/>
+    </radialGradient>
+    <radialGradient id="br-head" cx="40%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#deb086"/>
+      <stop offset="52%" stop-color="#b07a46"/>
+      <stop offset="100%" stop-color="#835228"/>
+    </radialGradient>
+    <radialGradient id="br-muzzle" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#f5e0c2"/>
+      <stop offset="100%" stop-color="#dfba8c"/>
+    </radialGradient>
+    <filter id="br-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- body -->
+  <ellipse cx="100" cy="150" rx="54" ry="42" fill="url(#br-body)"/>
+  <ellipse cx="100" cy="156" rx="30" ry="26" fill="url(#br-muzzle)" opacity="0.95"/>
+  <ellipse cx="122" cy="162" rx="26" ry="17" fill="#5c3512" opacity="0.16" filter="url(#br-soft)"/>
+
+  <!-- arms -->
+  <ellipse cx="52" cy="142" rx="15" ry="24" fill="url(#br-head)" transform="rotate(18 52 142)"/>
+  <ellipse cx="148" cy="142" rx="15" ry="24" fill="url(#br-head)" transform="rotate(-18 148 142)"/>
+
+  <!-- feet -->
+  <ellipse cx="74" cy="186" rx="15" ry="10" fill="url(#br-head)"/>
+  <ellipse cx="126" cy="186" rx="15" ry="10" fill="url(#br-head)"/>
+  <ellipse cx="74" cy="187" rx="8" ry="5" fill="#f5e0c2"/>
+  <ellipse cx="126" cy="187" rx="8" ry="5" fill="#f5e0c2"/>
+
+  <!-- ears -->
+  <circle cx="62" cy="36" r="17" fill="url(#br-head)"/>
+  <circle cx="138" cy="36" r="17" fill="url(#br-head)"/>
+  <circle cx="62" cy="38" r="8.5" fill="url(#br-muzzle)"/>
+  <circle cx="138" cy="38" r="8.5" fill="url(#br-muzzle)"/>
+
+  <!-- head -->
+  <circle cx="100" cy="76" r="46" fill="url(#br-head)"/>
+  <ellipse cx="122" cy="90" rx="14" ry="20" fill="#5c3512" opacity="0.16" filter="url(#br-soft)"/>
+  <ellipse cx="84" cy="52" rx="16" ry="8.5" fill="#ffffff" opacity="0.35" filter="url(#br-soft)" transform="rotate(-18 84 52)"/>
+
+  <!-- eyes -->
+  <circle cx="83" cy="72" r="6.6" fill="#38251a"/>
+  <circle cx="117" cy="72" r="6.6" fill="#38251a"/>
+  <circle cx="80.9" cy="69.7" r="2.5" fill="#ffffff"/>
+  <circle cx="114.9" cy="69.7" r="2.5" fill="#ffffff"/>
+
+  <!-- blush -->
+  <ellipse cx="66" cy="88" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.5" filter="url(#br-soft)"/>
+  <ellipse cx="134" cy="88" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.5" filter="url(#br-soft)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="100" cy="94" rx="22" ry="16" fill="url(#br-muzzle)"/>
+  <ellipse cx="100" cy="88" rx="8.5" ry="6.5" fill="#4a2e16"/>
+  <path d="M100 94 L100 100" stroke="#5c3a1c" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M91 100 Q95.5 106 100 100 Q104.5 106 109 100" fill="none" stroke="#5c3a1c" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

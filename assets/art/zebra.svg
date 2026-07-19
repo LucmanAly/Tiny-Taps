@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="ze-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f0eff2"/>
+      <stop offset="100%" stop-color="#cbc8d4"/>
+    </radialGradient>
+    <radialGradient id="ze-muzzle" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#e8e6ee"/>
+      <stop offset="100%" stop-color="#b8b4c4"/>
+    </radialGradient>
+    <filter id="ze-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- ears -->
+  <path d="M64 44 L56 14 L86 30 Z" fill="url(#ze-body)"/>
+  <path d="M136 44 L144 14 L114 30 Z" fill="url(#ze-body)"/>
+  <path d="M66 38 L62 22 L80 32 Z" fill="#e8a8b0"/>
+  <path d="M134 38 L138 22 L120 32 Z" fill="#e8a8b0"/>
+
+  <!-- mane -->
+  <path d="M78 26 Q100 10 122 26 L118 40 Q100 26 82 40 Z" fill="#2e2a38"/>
+  <path d="M86 22 L88 34 M100 16 L100 30 M114 22 L112 34" stroke="#2e2a38" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="154" rx="52" ry="38" fill="url(#ze-body)"/>
+  <ellipse cx="122" cy="162" rx="24" ry="16" fill="#5a5468" opacity="0.14" filter="url(#ze-soft)"/>
+  <!-- body stripes -->
+  <path d="M66 128 q-6 14 -2 28" fill="none" stroke="#2e2a38" stroke-width="8" stroke-linecap="round"/>
+  <path d="M136 128 q6 14 2 28" fill="none" stroke="#2e2a38" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100 176 q0 -8 0 -14" fill="none" stroke="#2e2a38" stroke-width="8" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- legs -->
+  <rect x="76" y="160" width="14" height="32" rx="7" fill="url(#ze-body)"/>
+  <rect x="110" y="160" width="14" height="32" rx="7" fill="url(#ze-body)"/>
+  <path d="M76 186 h14 M110 186 h14" stroke="#2e2a38" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- head -->
+  <circle cx="100" cy="72" r="42" fill="url(#ze-body)"/>
+  <!-- head stripes -->
+  <path d="M84 36 q2 8 0 14 M100 33 q0 9 0 16 M116 36 q-2 8 0 14" fill="none" stroke="#2e2a38" stroke-width="6" stroke-linecap="round"/>
+  <path d="M62 66 q8 2 12 8 M138 66 q-8 2 -12 8" fill="none" stroke="#2e2a38" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+  <ellipse cx="84" cy="50" rx="14" ry="7" fill="#ffffff" opacity="0.6" filter="url(#ze-soft)" transform="rotate(-18 84 50)"/>
+
+  <!-- eyes -->
+  <circle cx="84" cy="70" r="6.4" fill="#38251a"/>
+  <circle cx="116" cy="70" r="6.4" fill="#38251a"/>
+  <circle cx="81.9" cy="67.7" r="2.4" fill="#ffffff"/>
+  <circle cx="113.9" cy="67.7" r="2.4" fill="#ffffff"/>
+
+  <!-- blush -->
+  <ellipse cx="66" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#ze-soft)"/>
+  <ellipse cx="134" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#ze-soft)"/>
+
+  <!-- muzzle -->
+  <ellipse cx="100" cy="94" rx="22" ry="15" fill="url(#ze-muzzle)"/>
+  <ellipse cx="92" cy="92" rx="3" ry="4" fill="#2e2a38"/>
+  <ellipse cx="108" cy="92" rx="3" ry="4" fill="#2e2a38"/>
+  <path d="M91 101 Q100 107 109 101" fill="none" stroke="#2e2a38" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="di-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#b8e8a0"/>
+      <stop offset="50%" stop-color="#6fc45f"/>
+      <stop offset="100%" stop-color="#3f8f36"/>
+    </radialGradient>
+    <radialGradient id="di-belly" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#f2ffd8"/>
+      <stop offset="100%" stop-color="#cfeaa0"/>
+    </radialGradient>
+    <filter id="di-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M132 150 C162 152 184 140 188 122 C178 130 162 132 150 128 Z" fill="url(#di-body)"/>
+
+  <!-- back plates -->
+  <path d="M52 74 L60 56 L70 72 Z" fill="#3f8f36"/>
+  <path d="M40 100 L28 88 L44 84 Z" fill="#3f8f36"/>
+  <path d="M74 58 L86 44 L92 62 Z" fill="#3f8f36"/>
+
+  <!-- neck + head -->
+  <path d="M58 148 C46 120 46 88 60 70 C70 56 92 56 100 70 C108 84 100 98 92 112 C86 124 84 138 86 150 Z" fill="url(#di-body)"/>
+  <circle cx="80" cy="74" r="30" fill="url(#di-body)"/>
+  <ellipse cx="66" cy="58" rx="12" ry="6.5" fill="#ffffff" opacity="0.4" filter="url(#di-soft)" transform="rotate(-20 66 58)"/>
+
+  <!-- body -->
+  <ellipse cx="112" cy="152" rx="52" ry="36" fill="url(#di-body)"/>
+  <ellipse cx="132" cy="160" rx="24" ry="15" fill="#2a6624" opacity="0.18" filter="url(#di-soft)"/>
+  <ellipse cx="102" cy="156" rx="26" ry="22" fill="url(#di-belly)"/>
+
+  <!-- legs -->
+  <rect x="84" y="164" width="16" height="26" rx="8" fill="url(#di-body)"/>
+  <rect x="126" y="164" width="16" height="26" rx="8" fill="url(#di-body)"/>
+  <ellipse cx="92" cy="188" rx="11" ry="6" fill="#cfeaa0"/>
+  <ellipse cx="134" cy="188" rx="11" ry="6" fill="#cfeaa0"/>
+
+  <!-- spots -->
+  <circle cx="128" cy="138" r="6" fill="#3f8f36" opacity="0.55"/>
+  <circle cx="144" cy="150" r="4.5" fill="#3f8f36" opacity="0.5"/>
+  <circle cx="96" cy="98" r="4" fill="#3f8f36" opacity="0.5"/>
+
+  <!-- face -->
+  <circle cx="72" cy="72" r="5.8" fill="#38251a"/>
+  <circle cx="70" cy="70" r="2.2" fill="#ffffff"/>
+  <ellipse cx="62" cy="86" rx="7" ry="5" fill="#ff9d8a" opacity="0.55" filter="url(#di-soft)"/>
+  <path d="M56 76 Q60 84 68 84" fill="none" stroke="#2a5a24" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="58" cy="70" r="2.2" fill="#2a5a24" opacity="0.7"/>
+</svg>

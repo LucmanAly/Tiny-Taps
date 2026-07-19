@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="fi-body" cx="38%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffc98a"/>
+      <stop offset="50%" stop-color="#ff8c3d"/>
+      <stop offset="100%" stop-color="#e05a16"/>
+    </radialGradient>
+    <radialGradient id="fi-fin" cx="40%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffe0b8"/>
+      <stop offset="100%" stop-color="#ff9c50"/>
+    </radialGradient>
+    <filter id="fi-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- bubbles -->
+  <circle cx="34" cy="54" r="7" fill="none" stroke="#a8d8f0" stroke-width="4"/>
+  <circle cx="24" cy="34" r="4.5" fill="none" stroke="#a8d8f0" stroke-width="3.4"/>
+  <circle cx="44" cy="26" r="3" fill="none" stroke="#a8d8f0" stroke-width="3"/>
+
+  <!-- tail -->
+  <path d="M148 100 L188 66 C182 80 182 88 188 100 C182 112 182 120 188 134 Z" fill="url(#fi-fin)"/>
+
+  <!-- fins -->
+  <path d="M84 62 C92 40 118 36 134 48 C120 54 110 64 106 76 Z" fill="url(#fi-fin)"/>
+  <path d="M92 138 C104 132 118 134 124 146 C112 154 98 154 88 146 Z" fill="url(#fi-fin)"/>
+
+  <!-- body -->
+  <ellipse cx="94" cy="102" rx="62" ry="42" fill="url(#fi-body)"/>
+  <ellipse cx="76" cy="82" rx="20" ry="10" fill="#ffffff" opacity="0.4" filter="url(#fi-soft)" transform="rotate(-14 76 82)"/>
+  <path d="M118 68 C132 78 136 96 130 112" fill="none" stroke="#c04a10" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+  <path d="M104 64 C116 76 120 96 114 116" fill="none" stroke="#c04a10" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- side fin -->
+  <path d="M96 104 C108 98 122 102 126 112 C116 120 102 120 94 112 Z" fill="url(#fi-fin)"/>
+
+  <!-- face -->
+  <circle cx="56" cy="92" r="8.5" fill="#ffffff"/>
+  <circle cx="57.5" cy="93" r="5" fill="#38251a"/>
+  <circle cx="55.5" cy="91" r="1.9" fill="#ffffff"/>
+  <ellipse cx="52" cy="112" rx="7" ry="5" fill="#ff9d8a" opacity="0.6" filter="url(#fi-soft)"/>
+  <path d="M40 108 q7 7 15 3" fill="none" stroke="#a83c0a" stroke-width="3.4" stroke-linecap="round"/>
+</svg>

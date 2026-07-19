@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="tu-shell" cx="42%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#b0e0a0"/>
+      <stop offset="50%" stop-color="#6faf58"/>
+      <stop offset="100%" stop-color="#417a30"/>
+    </radialGradient>
+    <radialGradient id="tu-skin" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#d8eda0"/>
+      <stop offset="50%" stop-color="#a8cc68"/>
+      <stop offset="100%" stop-color="#7a9c40"/>
+    </radialGradient>
+    <filter id="tu-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- legs -->
+  <ellipse cx="52" cy="164" rx="16" ry="12" fill="url(#tu-skin)" transform="rotate(20 52 164)"/>
+  <ellipse cx="148" cy="164" rx="16" ry="12" fill="url(#tu-skin)" transform="rotate(-20 148 164)"/>
+  <!-- tail -->
+  <path d="M152 148 q16 2 20 12 q-12 2 -22 -4 Z" fill="url(#tu-skin)"/>
+
+  <!-- head -->
+  <circle cx="52" cy="96" r="26" fill="url(#tu-skin)"/>
+  <ellipse cx="44" cy="82" rx="10" ry="5.5" fill="#ffffff" opacity="0.45" filter="url(#tu-soft)" transform="rotate(-20 44 82)"/>
+  <circle cx="44" cy="92" r="5.6" fill="#38251a"/>
+  <circle cx="58" cy="92" r="5.6" fill="#38251a"/>
+  <circle cx="42.2" cy="90" r="2.1" fill="#ffffff"/>
+  <circle cx="56.2" cy="90" r="2.1" fill="#ffffff"/>
+  <ellipse cx="36" cy="104" rx="6" ry="4.5" fill="#ff9d8a" opacity="0.55" filter="url(#tu-soft)"/>
+  <path d="M42 104 Q50 111 60 106" fill="none" stroke="#4a6a20" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- shell -->
+  <path d="M60 160 C56 116 80 88 112 88 C146 88 168 116 164 160 Z" fill="url(#tu-shell)"/>
+  <path d="M52 160 C52 150 62 144 76 144 L148 144 C162 144 172 150 172 160 C172 168 164 172 152 172 L72 172 C60 172 52 168 52 160 Z" fill="#c9a25e"/>
+  <path d="M60 152 L164 152" stroke="#a8823e" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- shell pattern -->
+  <path d="M112 96 L96 116 L112 136 L128 116 Z" fill="#417a30" opacity="0.5"/>
+  <path d="M84 108 L76 128 L92 140" fill="none" stroke="#417a30" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <path d="M140 108 L148 128 L132 140" fill="none" stroke="#417a30" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <ellipse cx="92" cy="102" rx="14" ry="7" fill="#ffffff" opacity="0.3" filter="url(#tu-soft)" transform="rotate(-16 92 102)"/>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bf-wingT" cx="40%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#c9a2f5"/>
+      <stop offset="60%" stop-color="#9b5fe0"/>
+      <stop offset="100%" stop-color="#6f35b0"/>
+    </radialGradient>
+    <radialGradient id="bf-wingB" cx="40%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffb8d0"/>
+      <stop offset="60%" stop-color="#ff7eb0"/>
+      <stop offset="100%" stop-color="#e5548a"/>
+    </radialGradient>
+    <filter id="bf-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- wings top -->
+  <path d="M96 96 C70 56 40 34 24 44 C8 54 18 92 52 108 C68 116 88 112 96 96 Z" fill="url(#bf-wingT)"/>
+  <path d="M104 96 C130 56 160 34 176 44 C192 54 182 92 148 108 C132 116 112 112 104 96 Z" fill="url(#bf-wingT)"/>
+  <!-- wings bottom -->
+  <path d="M96 108 C76 118 52 138 52 158 C52 176 74 180 88 164 C98 152 102 128 96 108 Z" fill="url(#bf-wingB)"/>
+  <path d="M104 108 C124 118 148 138 148 158 C148 176 126 180 112 164 C102 152 98 128 104 108 Z" fill="url(#bf-wingB)"/>
+
+  <!-- wing spots -->
+  <circle cx="52" cy="70" r="10" fill="#fff0a8" opacity="0.9"/>
+  <circle cx="148" cy="70" r="10" fill="#fff0a8" opacity="0.9"/>
+  <circle cx="74" cy="146" r="7" fill="#ffffff" opacity="0.75"/>
+  <circle cx="126" cy="146" r="7" fill="#ffffff" opacity="0.75"/>
+  <ellipse cx="56" cy="52" rx="12" ry="6" fill="#ffffff" opacity="0.35" filter="url(#bf-soft)" transform="rotate(-24 56 52)"/>
+  <ellipse cx="144" cy="52" rx="12" ry="6" fill="#ffffff" opacity="0.35" filter="url(#bf-soft)" transform="rotate(24 144 52)"/>
+
+  <!-- antennae -->
+  <path d="M94 58 Q88 40 76 32" fill="none" stroke="#4a3a5c" stroke-width="4" stroke-linecap="round"/>
+  <path d="M106 58 Q112 40 124 32" fill="none" stroke="#4a3a5c" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="74" cy="30" r="5.5" fill="#4a3a5c"/>
+  <circle cx="126" cy="30" r="5.5" fill="#4a3a5c"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="118" rx="15" ry="52" fill="#5c4a72"/>
+  <ellipse cx="95" cy="90" rx="5" ry="18" fill="#8a76a8" opacity="0.8"/>
+  <circle cx="100" cy="70" r="19" fill="#5c4a72"/>
+
+  <!-- face -->
+  <circle cx="93" cy="67" r="4.6" fill="#ffffff"/>
+  <circle cx="107" cy="67" r="4.6" fill="#ffffff"/>
+  <circle cx="94" cy="68" r="2.6" fill="#38251a"/>
+  <circle cx="108" cy="68" r="2.6" fill="#38251a"/>
+  <path d="M94 77 Q100 82 106 77" fill="none" stroke="#ffd7e6" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

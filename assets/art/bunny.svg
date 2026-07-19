@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bn-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#f0ebf2"/>
+      <stop offset="100%" stop-color="#cfc4d6"/>
+    </radialGradient>
+    <linearGradient id="bn-earin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffc4c9"/>
+      <stop offset="100%" stop-color="#f095a4"/>
+    </linearGradient>
+    <filter id="bn-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- ears -->
+  <ellipse cx="76" cy="38" rx="14" ry="34" fill="url(#bn-body)" transform="rotate(-10 76 38)"/>
+  <ellipse cx="124" cy="38" rx="14" ry="34" fill="url(#bn-body)" transform="rotate(10 124 38)"/>
+  <ellipse cx="76" cy="40" rx="7" ry="24" fill="url(#bn-earin)" transform="rotate(-10 76 40)"/>
+  <ellipse cx="124" cy="40" rx="7" ry="24" fill="url(#bn-earin)" transform="rotate(10 124 40)"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="152" rx="48" ry="38" fill="url(#bn-body)"/>
+  <ellipse cx="120" cy="160" rx="24" ry="16" fill="#8a7a96" opacity="0.15" filter="url(#bn-soft)"/>
+  <ellipse cx="96" cy="156" rx="24" ry="24" fill="#ffffff" opacity="0.9"/>
+
+  <!-- feet -->
+  <ellipse cx="72" cy="186" rx="16" ry="9" fill="url(#bn-body)"/>
+  <ellipse cx="128" cy="186" rx="16" ry="9" fill="url(#bn-body)"/>
+  <ellipse cx="72" cy="187" rx="9" ry="5" fill="#ffd9dd" opacity="0.8"/>
+  <ellipse cx="128" cy="187" rx="9" ry="5" fill="#ffd9dd" opacity="0.8"/>
+
+  <!-- head -->
+  <circle cx="100" cy="90" r="42" fill="url(#bn-body)"/>
+  <ellipse cx="120" cy="102" rx="13" ry="18" fill="#8a7a96" opacity="0.14" filter="url(#bn-soft)"/>
+  <ellipse cx="85" cy="68" rx="15" ry="8" fill="#ffffff" opacity="0.6" filter="url(#bn-soft)" transform="rotate(-18 85 68)"/>
+
+  <!-- eyes -->
+  <circle cx="84" cy="86" r="6.4" fill="#38251a"/>
+  <circle cx="116" cy="86" r="6.4" fill="#38251a"/>
+  <circle cx="81.9" cy="83.7" r="2.4" fill="#ffffff"/>
+  <circle cx="113.9" cy="83.7" r="2.4" fill="#ffffff"/>
+
+  <!-- blush -->
+  <ellipse cx="68" cy="100" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.55" filter="url(#bn-soft)"/>
+  <ellipse cx="132" cy="100" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.55" filter="url(#bn-soft)"/>
+
+  <!-- nose + mouth + teeth -->
+  <path d="M95 101 Q100 98 105 101 Q103 106 100 106.5 Q97 106 95 101 Z" fill="#f0868f"/>
+  <path d="M100 106.5 L100 111" stroke="#8a6a70" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M91 111 Q95.5 116.5 100 111 Q104.5 116.5 109 111" fill="none" stroke="#8a6a70" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="94" y="112" width="6" height="8" rx="2" fill="#ffffff" stroke="#d8ccd8" stroke-width="1"/>
+  <rect x="100" y="112" width="6" height="8" rx="2" fill="#ffffff" stroke="#d8ccd8" stroke-width="1"/>
+
+  <!-- whiskers -->
+  <path d="M76 102 Q62 99 52 95" fill="none" stroke="#d8ccd8" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M76 108 Q62 108 51 106" fill="none" stroke="#d8ccd8" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M124 102 Q138 99 148 95" fill="none" stroke="#d8ccd8" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M124 108 Q138 108 149 106" fill="none" stroke="#d8ccd8" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

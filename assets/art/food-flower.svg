@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="ff-petal" cx="42%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffd0e2"/>
+      <stop offset="60%" stop-color="#ff8cba"/>
+      <stop offset="100%" stop-color="#e5548a"/>
+    </radialGradient>
+    <radialGradient id="ff-mid" cx="42%" cy="32%" r="85%">
+      <stop offset="0%" stop-color="#fff0a8"/>
+      <stop offset="100%" stop-color="#f0a416"/>
+    </radialGradient>
+    <filter id="ff-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- stem -->
+  <path d="M100 108 C98 132 102 156 100 184" fill="none" stroke="#4d9a44" stroke-width="9" stroke-linecap="round"/>
+  <!-- leaves -->
+  <path d="M100 142 C84 132 66 134 58 146 C70 156 90 156 100 148 Z" fill="#6fc45f"/>
+  <path d="M100 160 C116 150 134 152 142 164 C130 174 110 174 100 166 Z" fill="#5aad4a"/>
+
+  <!-- petals -->
+  <g>
+    <ellipse cx="100" cy="34" rx="20" ry="28" fill="url(#ff-petal)"/>
+    <ellipse cx="141" cy="52" rx="20" ry="28" fill="url(#ff-petal)" transform="rotate(65 141 52)"/>
+    <ellipse cx="128" cy="96" rx="20" ry="28" fill="url(#ff-petal)" transform="rotate(140 128 96)"/>
+    <ellipse cx="72" cy="96" rx="20" ry="28" fill="url(#ff-petal)" transform="rotate(-140 72 96)"/>
+    <ellipse cx="59" cy="52" rx="20" ry="28" fill="url(#ff-petal)" transform="rotate(-65 59 52)"/>
+  </g>
+
+  <!-- center -->
+  <circle cx="100" cy="66" r="22" fill="url(#ff-mid)"/>
+  <ellipse cx="93" cy="58" rx="8" ry="5" fill="#ffffff" opacity="0.5" filter="url(#ff-soft)" transform="rotate(-20 93 58)"/>
+  <circle cx="93" cy="64" r="2.4" fill="#c9820a" opacity="0.7"/>
+  <circle cx="104" cy="60" r="2.4" fill="#c9820a" opacity="0.7"/>
+  <circle cx="100" cy="72" r="2.4" fill="#c9820a" opacity="0.7"/>
+  <circle cx="108" cy="70" r="2.4" fill="#c9820a" opacity="0.7"/>
+</svg>

@@ -91,6 +91,14 @@ function start(ctx) {
       field.appendChild(img);
     }
 
+    // Only one animal on screen: let it make its sound. With several visible
+    // we stay quiet so the child can count in peace.
+    if (n === 1 && a.sound) {
+      audio.load('animal:' + a.id, a.sound).then(() => {
+        if (alive && !busy) audio.play('animal:' + a.id);
+      });
+    }
+
     numbers.innerHTML = '';
     for (let i = 1; i <= max; i++) {
       const b = document.createElement('button');

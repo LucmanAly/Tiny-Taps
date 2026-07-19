@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="fc-outer" cx="42%" cy="28%" r="90%">
+      <stop offset="0%" stop-color="#c8f0a0"/>
+      <stop offset="55%" stop-color="#8fd05e"/>
+      <stop offset="100%" stop-color="#57a038"/>
+    </radialGradient>
+    <radialGradient id="fc-inner" cx="45%" cy="32%" r="85%">
+      <stop offset="0%" stop-color="#f0ffd0"/>
+      <stop offset="100%" stop-color="#c0e890"/>
+    </radialGradient>
+    <filter id="fc-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- outer ruffled leaves -->
+  <path d="M100 40
+           C74 34 52 48 46 68 C28 70 20 92 32 108 C22 124 32 146 52 150
+           C56 168 80 178 100 170 C120 178 144 168 148 150 C168 146 178 124 168 108
+           C180 92 172 70 154 68 C148 48 126 34 100 40 Z" fill="url(#fc-outer)"/>
+
+  <!-- ruffle shadows -->
+  <path d="M52 70 Q64 60 80 62 M120 62 Q136 60 148 70 M40 106 Q50 98 62 100 M138 100 Q150 98 160 106"
+        fill="none" stroke="#3f7a28" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- inner heart -->
+  <ellipse cx="100" cy="118" rx="52" ry="44" fill="url(#fc-inner)"/>
+  <!-- inner leaf veins -->
+  <path d="M100 76 C100 100 100 130 100 158" fill="none" stroke="#a0c870" stroke-width="5" stroke-linecap="round"/>
+  <path d="M100 100 C86 108 76 122 72 138 M100 100 C114 108 124 122 128 138"
+        fill="none" stroke="#a0c870" stroke-width="4.4" stroke-linecap="round"/>
+  <path d="M100 122 C90 130 84 140 82 150 M100 122 C110 130 116 140 118 150"
+        fill="none" stroke="#b8d888" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- shine -->
+  <ellipse cx="76" cy="92" rx="14" ry="8" fill="#ffffff" opacity="0.5" filter="url(#fc-soft)" transform="rotate(-18 76 92)"/>
+</svg>

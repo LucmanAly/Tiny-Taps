@@ -11,13 +11,16 @@ nothing to buy, works offline once loaded:
 4. **Shapes** — tap the shape that fits the dashed outline
 5. **Counting** — count the animals, tap the number (levels: to 5 or to 10 — press-and-hold the corner button to switch)
 6. **Puzzle Fit** — drag each animal onto its outlined spot
-7. **Feed Me** — drag the right food to the hungry animal ("More!" until it's full)
-8. **Coloring** — coloring-book pages with a fat-dot palette
+7. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
+8. **Coloring** — big hand-sketched coloring pages with a fat-dot palette
 9. **Bubbles** — pure free play; pop the bubbles
 
+The animal library spans 23 friends — from cat and cow to dinosaur, shark,
+giraffe and zebra. Twelve of them come with authentic recorded sounds; when a
+game shows a single animal, it says hello with its real voice.
+
 Everything is spoken aloud (device text-to-speech) — no reading needed.
-A press-and-hold parent gate guards the home button so little fingers can't
-exit mid-game by accident.
+The Home button responds to a normal tap.
 
 ## Running it
 
