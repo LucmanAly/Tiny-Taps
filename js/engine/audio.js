@@ -30,6 +30,15 @@ export function unlock() {
   src.start(0);
 }
 
+// decodeAudioData with a callback-form fallback (older iOS Safari rejects
+// the promise form).
+function decode(data) {
+  return new Promise((resolve, reject) => {
+    const p = ctx.decodeAudioData(data, resolve, reject);
+    if (p && p.then) p.then(resolve, reject);
+  });
+}
+
 export async function load(name, url) {
   ensureCtx();
   if (buffers.has(name)) return buffers.get(name);
@@ -39,19 +48,24 @@ export async function load(name, url) {
       if (!r.ok) throw new Error(`audio ${url}: HTTP ${r.status}`);
       return r.arrayBuffer();
     })
-    .then(data => ctx.decodeAudioData(data))
+    .then(data => decode(data))
     .then(buf => { buffers.set(name, buf); pending.delete(name); return buf; })
     .catch(err => { pending.delete(name); console.warn(err); return null; });
   pending.set(name, p);
   return p;
 }
 
-// Plays a loaded buffer. Stops any other recording already playing so animal
-// sounds never talk over each other. Returns a promise resolving when done.
-export function play(name, { volume = 1, rate = 1 } = {}) {
+// Plays a loaded (or still-loading) buffer. Stops any other recording already
+// playing so animal sounds never talk over each other. Always resolves — even
+// if the context is suspended or onended never fires — so games can't hang.
+export async function play(name, { volume = 1, rate = 1 } = {}) {
   ensureCtx();
-  const buf = buffers.get(name);
-  if (!buf) return Promise.resolve();
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch (e) { /* stay silent, don't block */ }
+  }
+  let buf = buffers.get(name);
+  if (!buf && pending.has(name)) buf = await pending.get(name);
+  if (!buf) return;
   stopPlayback();
   const src = ctx.createBufferSource();
   src.buffer = buf;
@@ -60,8 +74,16 @@ export function play(name, { volume = 1, rate = 1 } = {}) {
   g.gain.value = volume;
   src.connect(g).connect(master);
   currentSource = src;
-  return new Promise(resolve => {
-    src.onended = () => { if (currentSource === src) currentSource = null; resolve(); };
+  await new Promise(resolve => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (currentSource === src) currentSource = null;
+      resolve();
+    };
+    src.onended = finish;
+    setTimeout(finish, (buf.duration / rate) * 1000 + 400);
     src.start(0);
   });
 }

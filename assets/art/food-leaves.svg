@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="fl-leaf1" cx="40%" cy="28%" r="90%">
+      <stop offset="0%" stop-color="#b8e8a0"/>
+      <stop offset="55%" stop-color="#6fc45f"/>
+      <stop offset="100%" stop-color="#3f8f36"/>
+    </radialGradient>
+    <radialGradient id="fl-leaf2" cx="40%" cy="28%" r="90%">
+      <stop offset="0%" stop-color="#d0f0a8"/>
+      <stop offset="55%" stop-color="#8fd070"/>
+      <stop offset="100%" stop-color="#579a40"/>
+    </radialGradient>
+    <filter id="fl-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- branch -->
+  <path d="M40 168 C70 140 110 96 164 40" fill="none" stroke="#8a6a3c" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- leaves -->
+  <path d="M74 134 C48 132 30 114 32 92 C56 92 74 108 78 128 Z" fill="url(#fl-leaf1)"/>
+  <path d="M76 130 C60 122 48 108 44 96" fill="none" stroke="#2e6e28" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+
+  <path d="M96 110 C96 82 112 60 136 58 C140 82 126 104 104 112 Z" fill="url(#fl-leaf2)"/>
+  <path d="M100 108 C104 90 114 74 128 66" fill="none" stroke="#3f7a30" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+
+  <path d="M120 88 C146 90 166 76 170 52 C146 48 124 62 116 82 Z" fill="url(#fl-leaf1)"/>
+  <path d="M122 84 C138 78 152 68 160 58" fill="none" stroke="#2e6e28" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+
+  <path d="M56 158 C36 164 22 158 16 142 C32 132 52 136 62 150 Z" fill="url(#fl-leaf2)"/>
+  <ellipse cx="52" cy="112" rx="8" ry="4.5" fill="#ffffff" opacity="0.35" filter="url(#fl-soft)" transform="rotate(-30 52 112)"/>
+  <ellipse cx="116" cy="78" rx="8" ry="4.5" fill="#ffffff" opacity="0.4" filter="url(#fl-soft)" transform="rotate(-40 116 78)"/>
+</svg>

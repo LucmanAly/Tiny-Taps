@@ -1,8 +1,9 @@
 // Feed Me: drag the right food to the hungry animal. Wrong food gently
-// bounces back. While still hungry the app says "More!".
+// bounces back; the right food is eaten once with a happy reaction, then the
+// next animal comes along.
 
-import { animal, food, DIET } from '../data/animals.js';
-import { shuffle, pickN, randInt, cycler } from '../engine/rand.js';
+import { animal, food, DIET, FOODS } from '../data/animals.js';
+import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 
 const PAIR_IDS = Object.keys(DIET);
@@ -27,7 +28,7 @@ function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt } = ctx;
   let alive = true;
   let current = null;
-  let hunger = 0;
+  let fed = false;
   const nextPair = cycler(PAIR_IDS);
 
   const arena = document.createElement('div');
@@ -48,8 +49,7 @@ function start(ctx) {
   function fillTray() {
     tray.innerHTML = '';
     const correct = food(DIET[current.id]);
-    const options = shuffle([correct, ...pickN(
-      Object.values(DIET).filter(f => f !== correct.id).map(food), 2)]);
+    const options = shuffle([correct, ...pickN(FOODS.filter(f => f.id !== correct.id), 2)]);
     options.forEach(f => {
       const item = document.createElement('div');
       item.className = 'food-item pop-in';
@@ -58,27 +58,22 @@ function start(ctx) {
       makeDraggable(item, {
         getTargets: () => [{ el: animalImg, data: 'animal' }],
         onDrop: hit => {
-          if (!alive || !hit) return 'reject';
+          if (!alive || fed || !hit) return 'reject';
           if (f === correct) {
+            fed = true;
             item.classList.add('eaten');
             audio.chomp();
             animalImg.classList.remove('munch');
             void animalImg.offsetWidth;
             animalImg.classList.add('munch');
-            hunger--;
             setTimeout(() => {
               if (!alive) return;
-              if (hunger > 0) {
-                speech.speak('More!');
-                audio.play('animal:' + current.id);
-                fillTray();
-              } else {
-                const r = animalImg.getBoundingClientRect();
-                celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
-                speech.speak(`Yum yum! The ${current.name} is all full!`);
-                celebrate.big({ praise: false });
-                setTimeout(newRound, 2400);
-              }
+              const r = animalImg.getBoundingClientRect();
+              celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
+              speech.speak(`Yum yum! The ${current.name} loves it!`);
+              if (current.sound) audio.play('animal:' + current.id);
+              celebrate.big({ praise: false });
+              setTimeout(newRound, 2200);
             }, 550);
             return 'accept';
           }
@@ -92,15 +87,17 @@ function start(ctx) {
 
   function newRound() {
     if (!alive) return;
+    fed = false;
     current = animal(nextPair());
-    hunger = randInt(2, 3);
     animalImg.src = current.art;
     animalImg.classList.remove('munch', 'pop-in');
     void animalImg.offsetWidth;
     animalImg.classList.add('pop-in');
-    audio.load('animal:' + current.id, current.sound).then(() => {
-      if (alive && current) audio.play('animal:' + current.id);
-    });
+    if (current.sound) {
+      audio.load('animal:' + current.id, current.sound).then(() => {
+        if (alive && current) audio.play('animal:' + current.id);
+      });
+    }
     fillTray();
     say();
   }

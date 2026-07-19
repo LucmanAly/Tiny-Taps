@@ -173,35 +173,12 @@ const HOME_ICON = `
 
 function makeHomeButton(parent) {
   const btn = el('button', 'home-btn', parent);
-  btn.innerHTML = `${HOME_ICON}<div class="hold-ring"></div>`;
-  const ring = btn.querySelector('.hold-ring');
-  let holdTimer = null;
-  let raf = null;
-
-  function cancelHold() {
-    clearTimeout(holdTimer);
-    cancelAnimationFrame(raf);
-    holdTimer = null;
-    ring.style.background = 'none';
-  }
-
+  btn.innerHTML = HOME_ICON;
   btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    const t0 = performance.now();
-    const HOLD = 2000;
-    const step = now => {
-      const p = Math.min(1, (now - t0) / HOLD);
-      ring.style.background = `conic-gradient(#7ed67e ${p * 360}deg, transparent 0deg)`;
-      ring.style.mask = 'radial-gradient(circle, transparent 58%, black 60%)';
-      ring.style.webkitMask = 'radial-gradient(circle, transparent 58%, black 60%)';
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    holdTimer = setTimeout(() => { cancelHold(); audio.chime(); showMenu(); }, HOLD);
+    audio.chime();
+    showMenu();
   });
-  btn.addEventListener('pointerup', cancelHold);
-  btn.addEventListener('pointercancel', cancelHold);
-  btn.addEventListener('pointerleave', cancelHold);
   return btn;
 }
 
@@ -240,6 +217,11 @@ async function keepAwake() {
   } catch (e) { /* fine without it */ }
 }
 document.addEventListener('pointerdown', keepAwake, { once: true });
+
+// Phones (iOS especially) suspend the AudioContext after interruptions —
+// phone calls, backgrounding, silent-switch flips. Re-unlock on every tap so
+// animal sounds always come back.
+document.addEventListener('pointerdown', () => audio.unlock(), true);
 
 // Block double-tap zoom / gesture zoom inside the app.
 document.addEventListener('gesturestart', e => e.preventDefault());

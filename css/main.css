@@ -88,8 +88,14 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 .splash h1 {
   font-size: 9vmin;
   color: #fff;
-  text-shadow: 0 4px 0 rgba(58,51,87,0.25);
   letter-spacing: 0.03em;
+  /* Thick ink outline + drop shadow so the title reads on any background. */
+  text-shadow:
+    -2px -2px 0 var(--ink), 2px -2px 0 var(--ink),
+    -2px 2px 0 var(--ink), 2px 2px 0 var(--ink),
+    0 3px 0 var(--ink), 0 6px 12px rgba(58,51,87,0.4);
+  paint-order: stroke fill;
+  -webkit-text-stroke: 1px var(--ink);
 }
 .splash .start-hint {
   width: 16vmin;
@@ -105,8 +111,11 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 .menu { padding: 3vmin; }
 .menu-title {
   font-size: 6vmin;
-  color: #fff;
-  text-shadow: 0 3px 0 rgba(58,51,87,0.25);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.8vmin 4vmin 1vmin;
+  border-radius: 100px;
+  box-shadow: 0 4px 0 rgba(58, 51, 87, 0.12);
   margin: 1vmin 0 2vmin;
   flex: none;
 }
@@ -215,11 +224,7 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   overflow: hidden;
 }
 .home-btn svg { width: 62%; height: 62%; }
-.home-btn .hold-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-}
+.home-btn:active { transform: scale(0.9); }
 .game-stage {
   position: absolute;
   inset: 0;

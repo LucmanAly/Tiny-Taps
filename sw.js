@@ -1,6 +1,6 @@
 // Service worker: precache everything so the app works fully offline after
 // the first visit. Bump VERSION on any deploy to refresh caches.
-const VERSION = 'tiny-taps-v1';
+const VERSION = 'tiny-taps-v2';
 
 const ASSETS = [
   '.',
@@ -29,8 +29,14 @@ const ASSETS = [
   'assets/art/duck.svg', 'assets/art/sheep.svg', 'assets/art/horse.svg',
   'assets/art/rooster.svg', 'assets/art/pig.svg', 'assets/art/lion.svg',
   'assets/art/elephant.svg', 'assets/art/frog.svg', 'assets/art/owl.svg',
+  'assets/art/bear.svg', 'assets/art/bee.svg', 'assets/art/bunny.svg',
+  'assets/art/butterfly.svg', 'assets/art/dinosaur.svg', 'assets/art/fish.svg',
+  'assets/art/giraffe.svg', 'assets/art/monkey.svg', 'assets/art/shark.svg',
+  'assets/art/turtle.svg', 'assets/art/zebra.svg',
   'assets/art/food-bone.svg', 'assets/art/food-fish.svg', 'assets/art/food-carrot.svg',
   'assets/art/food-grass.svg', 'assets/art/food-banana.svg', 'assets/art/food-corn.svg',
+  'assets/art/food-honey.svg', 'assets/art/food-flower.svg', 'assets/art/food-leaves.svg',
+  'assets/art/food-lettuce.svg',
   'assets/audio/dog.mp3', 'assets/audio/cat.mp3', 'assets/audio/cow.mp3',
   'assets/audio/duck.mp3', 'assets/audio/sheep.mp3', 'assets/audio/horse.mp3',
   'assets/audio/rooster.mp3', 'assets/audio/pig.mp3', 'assets/audio/lion.mp3',

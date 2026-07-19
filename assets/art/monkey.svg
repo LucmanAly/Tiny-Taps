@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="mo-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#c9986a"/>
+      <stop offset="48%" stop-color="#96662f"/>
+      <stop offset="100%" stop-color="#6b451c"/>
+    </radialGradient>
+    <radialGradient id="mo-face" cx="45%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#f7e0c0"/>
+      <stop offset="100%" stop-color="#e0b98a"/>
+    </radialGradient>
+    <filter id="mo-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- tail -->
+  <path d="M148 160 C176 158 186 138 176 122 C170 112 158 116 162 126 C166 138 158 148 142 148 Z" fill="url(#mo-body)"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="152" rx="46" ry="38" fill="url(#mo-body)"/>
+  <ellipse cx="100" cy="158" rx="26" ry="24" fill="url(#mo-face)"/>
+  <ellipse cx="118" cy="162" rx="20" ry="14" fill="#4a2e10" opacity="0.16" filter="url(#mo-soft)"/>
+
+  <!-- arms -->
+  <ellipse cx="54" cy="146" rx="13" ry="24" fill="url(#mo-body)" transform="rotate(20 54 146)"/>
+  <ellipse cx="146" cy="146" rx="13" ry="24" fill="url(#mo-body)" transform="rotate(-20 146 146)"/>
+
+  <!-- feet -->
+  <ellipse cx="74" cy="186" rx="14" ry="9" fill="url(#mo-body)"/>
+  <ellipse cx="126" cy="186" rx="14" ry="9" fill="url(#mo-body)"/>
+
+  <!-- ears -->
+  <circle cx="56" cy="72" r="15" fill="url(#mo-body)"/>
+  <circle cx="144" cy="72" r="15" fill="url(#mo-body)"/>
+  <circle cx="56" cy="72" r="8" fill="url(#mo-face)"/>
+  <circle cx="144" cy="72" r="8" fill="url(#mo-face)"/>
+
+  <!-- head -->
+  <circle cx="100" cy="74" r="42" fill="url(#mo-body)"/>
+  <ellipse cx="84" cy="50" rx="15" ry="8" fill="#ffffff" opacity="0.3" filter="url(#mo-soft)" transform="rotate(-18 84 50)"/>
+  <!-- face patch -->
+  <path d="M70 66 C70 48 130 48 130 66 C138 88 124 106 100 106 C76 106 62 88 70 66 Z" fill="url(#mo-face)"/>
+
+  <!-- eyes -->
+  <circle cx="84" cy="70" r="6.4" fill="#38251a"/>
+  <circle cx="116" cy="70" r="6.4" fill="#38251a"/>
+  <circle cx="81.9" cy="67.7" r="2.4" fill="#ffffff"/>
+  <circle cx="113.9" cy="67.7" r="2.4" fill="#ffffff"/>
+
+  <!-- blush -->
+  <ellipse cx="70" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.55" filter="url(#mo-soft)"/>
+  <ellipse cx="130" cy="84" rx="7.5" ry="5" fill="#ff9d8a" opacity="0.55" filter="url(#mo-soft)"/>
+
+  <!-- nose + smile -->
+  <ellipse cx="94" cy="88" rx="2.6" ry="3.4" fill="#6b451c"/>
+  <ellipse cx="106" cy="88" rx="2.6" ry="3.4" fill="#6b451c"/>
+  <path d="M88 96 Q100 106 112 96" fill="none" stroke="#6b451c" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- tuft -->
+  <path d="M94 34 q6 -10 12 0 q-4 -4 -6 -2 q-2 -2 -6 2" fill="#6b451c"/>
+</svg>

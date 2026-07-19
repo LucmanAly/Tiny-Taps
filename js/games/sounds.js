@@ -1,6 +1,6 @@
 // Animal Sounds: hear a real recording, tap the animal that makes it.
 
-import { ANIMALS, preloadSounds } from '../data/animals.js';
+import { SOUND_ANIMALS, preloadSounds } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
 
 const EAR_ICON = `
@@ -28,7 +28,7 @@ function start(ctx) {
   let alive = true;
   let target = null;
   let busy = false;
-  const nextAnimal = cycler(ANIMALS);
+  const nextAnimal = cycler(SOUND_ANIMALS);
 
   preloadSounds(audio);
 
@@ -58,7 +58,7 @@ function start(ctx) {
     if (!alive) return;
     busy = false;
     target = nextAnimal();
-    const options = shuffle([target, ...pickN(ANIMALS.filter(a => a !== target), 2)]);
+    const options = shuffle([target, ...pickN(SOUND_ANIMALS.filter(a => a !== target), 2)]);
     row.innerHTML = '';
     options.forEach(a => {
       const card = document.createElement('button');

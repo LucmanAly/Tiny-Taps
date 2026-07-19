@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="be-body" cx="42%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#ffe9a0"/>
+      <stop offset="50%" stop-color="#ffcf3d"/>
+      <stop offset="100%" stop-color="#e8a416"/>
+    </radialGradient>
+    <radialGradient id="be-wing" cx="45%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#bfe6ff" stop-opacity="0.75"/>
+    </radialGradient>
+    <filter id="be-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- wings -->
+  <ellipse cx="66" cy="52" rx="30" ry="20" fill="url(#be-wing)" stroke="#a8d4f0" stroke-width="2" transform="rotate(-28 66 52)"/>
+  <ellipse cx="134" cy="52" rx="30" ry="20" fill="url(#be-wing)" stroke="#a8d4f0" stroke-width="2" transform="rotate(28 134 52)"/>
+
+  <!-- antennae -->
+  <path d="M84 62 Q78 44 66 38" fill="none" stroke="#5c4a1c" stroke-width="4" stroke-linecap="round"/>
+  <path d="M116 62 Q122 44 134 38" fill="none" stroke="#5c4a1c" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="64" cy="36" r="6" fill="#5c4a1c"/>
+  <circle cx="136" cy="36" r="6" fill="#5c4a1c"/>
+
+  <!-- stinger -->
+  <path d="M100 186 L92 170 L108 170 Z" fill="#5c4a1c"/>
+
+  <!-- body -->
+  <ellipse cx="100" cy="118" rx="54" ry="62" fill="url(#be-body)"/>
+  <!-- stripes -->
+  <path d="M48 130 Q100 148 152 130 L152 140 Q100 160 48 140 Z" fill="#5c4a1c" opacity="0.9"/>
+  <path d="M52 152 Q100 170 148 152 Q142 172 100 178 Q58 172 52 152 Z" fill="#5c4a1c" opacity="0.9"/>
+  <ellipse cx="80" cy="76" rx="18" ry="10" fill="#ffffff" opacity="0.4" filter="url(#be-soft)" transform="rotate(-16 80 76)"/>
+
+  <!-- eyes -->
+  <circle cx="82" cy="98" r="7" fill="#38251a"/>
+  <circle cx="118" cy="98" r="7" fill="#38251a"/>
+  <circle cx="79.7" cy="95.5" r="2.6" fill="#ffffff"/>
+  <circle cx="115.7" cy="95.5" r="2.6" fill="#ffffff"/>
+
+  <!-- blush -->
+  <ellipse cx="66" cy="112" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.6" filter="url(#be-soft)"/>
+  <ellipse cx="134" cy="112" rx="8" ry="5.5" fill="#ff9d8a" opacity="0.6" filter="url(#be-soft)"/>
+
+  <!-- smile -->
+  <path d="M90 112 Q100 122 110 112" fill="none" stroke="#5c4a1c" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

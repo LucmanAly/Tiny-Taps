@@ -289,11 +289,13 @@
   width: 100%;
 }
 .color-pic {
-  width: min(64vmin, 78vw);
+  /* Mobile-first: fill nearly the whole width of a phone, capped by the
+     vertical room left over from the palette row. */
+  width: min(94vw, 66vh, 700px);
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 2vmin;
+  padding: 1.2vmin;
 }
 .color-pic svg { width: 100%; height: auto; display: block; }
 .color-pic [data-region] { cursor: pointer; }
