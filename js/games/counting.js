@@ -95,9 +95,7 @@ function start(ctx) {
             if (!alive) return;
             bigNum.classList.add('total');
             const upcoming = pick(ANIMALS);
-            speech.speak(S.countTotal(WORDS[n], animalName, n > 1)).then(() => {
-              if (alive) celebrate.big({ nextAnimalId: upcoming.id });
-            });
+            celebrate.big({ nextAnimalId: upcoming.id });
             setTimeout(() => newRound(false, upcoming), 1000);
           }, 450);
         }
@@ -112,15 +110,13 @@ function start(ctx) {
         if (alive && counted === 0) audio.play('animal:' + a.id, { maxDuration: 2.2 });
       });
     }
-
-    speech.speak(S.countIntro(animalName), { interrupt: false });
     };
     if (first) build();
     else fadeSwap(field, build);
   }
 
   setReprompt(() => {
-    if (animalName) speech.speak(S.countReprompt(animalName));
+    if (animalName) speech.speak(S.countReprompt);
   });
   newRound(true);
   return () => { alive = false; };

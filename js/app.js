@@ -77,28 +77,30 @@ function el(tag, className, parent) {
 const LOGO_SVG = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="sun-g" cx="40%" cy="35%" r="75%">
+    <radialGradient id="star-g" cx="40%" cy="32%" r="75%">
       <stop offset="0%" stop-color="#fff3b0"/>
       <stop offset="55%" stop-color="#ffd54a"/>
       <stop offset="100%" stop-color="#ffb627"/>
     </radialGradient>
+    <linearGradient id="rb-1" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ff9fce"/><stop offset="100%" stop-color="#ffb8d9"/></linearGradient>
+    <linearGradient id="rb-2" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ffcf6f"/><stop offset="100%" stop-color="#ffe08a"/></linearGradient>
+    <linearGradient id="rb-3" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#8ad4f0"/><stop offset="100%" stop-color="#aee2f7"/></linearGradient>
   </defs>
-  <g>
-    ${Array.from({ length: 12 }, (_, i) => {
-      const a = (i / 12) * Math.PI * 2;
-      const x1 = 50 + Math.cos(a) * 38, y1 = 50 + Math.sin(a) * 38;
-      const x2 = 50 + Math.cos(a) * 47, y2 = 50 + Math.sin(a) * 47;
-      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ffca3a" stroke-width="5" stroke-linecap="round"/>`;
-    }).join('')}
-    <circle cx="50" cy="50" r="32" fill="url(#sun-g)"/>
-    <circle cx="40" cy="46" r="3.4" fill="#3a3357"/>
-    <circle cx="60" cy="46" r="3.4" fill="#3a3357"/>
-    <circle cx="41.2" cy="44.8" r="1.1" fill="#fff"/>
-    <circle cx="61.2" cy="44.8" r="1.1" fill="#fff"/>
-    <path d="M40 57 Q50 66 60 57" fill="none" stroke="#3a3357" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="33" cy="54" r="4.5" fill="#ffb0a0" opacity="0.7"/>
-    <circle cx="67" cy="54" r="4.5" fill="#ffb0a0" opacity="0.7"/>
-  </g>
+  <path d="M6 92 A44 44 0 0 1 94 92" fill="none" stroke="url(#rb-1)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M16 92 A34 34 0 0 1 84 92" fill="none" stroke="url(#rb-2)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M26 92 A24 24 0 0 1 74 92" fill="none" stroke="url(#rb-3)" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="18" cy="24" r="3.6" fill="#fff" opacity="0.9"/>
+  <circle cx="84" cy="30" r="2.6" fill="#fff" opacity="0.85"/>
+  <circle cx="80" cy="14" r="2" fill="#fff" opacity="0.8"/>
+  <path d="M50 8 L58.5 34 L86 34 L64 50 L72.5 76 L50 60 L27.5 76 L36 50 L14 34 L41.5 34 Z"
+        fill="url(#star-g)" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="42" cy="46" r="3.2" fill="#3a3357"/>
+  <circle cx="58" cy="46" r="3.2" fill="#3a3357"/>
+  <circle cx="43.1" cy="44.9" r="1.05" fill="#fff"/>
+  <circle cx="59.1" cy="44.9" r="1.05" fill="#fff"/>
+  <path d="M43 55 Q50 61.5 57 55" fill="none" stroke="#3a3357" stroke-width="2.8" stroke-linecap="round"/>
+  <circle cx="35" cy="52" r="4" fill="#ffb0a0" opacity="0.75"/>
+  <circle cx="65" cy="52" r="4" fill="#ffb0a0" opacity="0.75"/>
 </svg>`;
 
 const HAND_SVG = `
@@ -135,7 +137,7 @@ function showMenu() {
   for (const game of games) {
     if (hidden.has(game.id)) continue;
     const card = el('button', 'menu-card', grid);
-    card.style.background = ACCENTS[game.id] || '#ffffff';
+    card.style.backgroundColor = ACCENTS[game.id] || '#ffffff';
     card.innerHTML = `<div class="card-icon">${game.icon}</div><div class="card-label">${game.title}</div>`;
     addTap(card, () => {
       audio.pop();
@@ -235,6 +237,9 @@ function showSettings() {
     <label class="set-row">Voice speed
       <input type="range" id="set-rate" min="0.7" max="1.3" step="0.05" value="${speech.getUserRate()}">
     </label>
+    <label class="set-row">Voice
+      <select id="set-voice"></select>
+    </label>
     <h3>Your voice</h3>
     <p>Record yourself — the app will use your voice instead of the robot one
     for these moments.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
@@ -254,6 +259,23 @@ function showSettings() {
   panel.querySelector('#set-rate').addEventListener('change', e => {
     speech.setUserRate(Number(e.target.value));
     speech.speak('Hello! This is how I talk now!');
+  });
+
+  // Voice picker: which installed voice sounds least robotic varies a lot by
+  // device, so let the parent audition and choose rather than guessing.
+  const voiceSelect = panel.querySelector('#set-voice');
+  function fillVoices() {
+    const voices = speech.listVoices();
+    if (!voices.length) return;
+    const current = speech.getVoiceName();
+    voiceSelect.innerHTML = voices.map(v =>
+      `<option value="${v.name}"${v.name === current ? ' selected' : ''}>${v.name}</option>`).join('');
+  }
+  fillVoices();
+  if (window.speechSynthesis) window.speechSynthesis.addEventListener('voiceschanged', fillVoices, { once: true });
+  voiceSelect.addEventListener('change', e => {
+    speech.setVoiceOverride(e.target.value);
+    speech.speak('Hello! This is how I sound now!');
   });
 
   const recRows = panel.querySelector('#rec-rows');
@@ -286,9 +308,14 @@ function showSettings() {
           if (buf) {
             await recordings.save(item.key, blob);
             speech.setRecordedCategory(item.key, 'rec:' + item.key);
-            status.textContent = 'Saved!';
+            status.textContent = 'Saved! Playing it back…';
+            // Immediate audible proof it actually works on this device —
+            // if this can't be heard, the recording won't work in games
+            // either, and the parent finds out right now instead of later.
+            await audio.play('rec:' + item.key);
+            if (status.isConnected) status.textContent = 'Saved!';
           } else {
-            status.textContent = 'Recording failed — try again';
+            status.textContent = 'Recording failed — try again (make sure your mic isn’t muted)';
           }
         };
         rec.start();
@@ -353,6 +380,36 @@ function makeHomeButton(parent) {
   return btn;
 }
 
+const SOUND_ON_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="#3a3357"/>
+  <path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="#3a3357" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="#3a3357" stroke-width="2.2" stroke-linecap="round" opacity="0.6"/>
+</svg>`;
+const SOUND_OFF_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="#3a3357"/>
+  <path d="M16 9l5 6M21 9l-5 6" stroke="#c0392b" stroke-width="2.4" stroke-linecap="round"/>
+</svg>`;
+
+// Per-game mute toggle — a parent can silence just the game in progress
+// without leaving it to open Parent Settings. Always resets to unmuted for
+// the next game so it never accidentally leaves the whole app silent.
+function makeMuteButton(parent) {
+  const btn = el('button', 'mute-btn', parent);
+  const render = () => { btn.innerHTML = audio.isMuted() ? SOUND_OFF_ICON : SOUND_ON_ICON; };
+  render();
+  btn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    const next = !audio.isMuted();
+    if (next) speech.stop();
+    audio.setMuted(next);
+    if (!next) audio.chime();
+    render();
+  });
+  return btn;
+}
+
 let lastStart = 0;
 
 function startGame(game) {
@@ -361,10 +418,12 @@ function startGame(game) {
   if (now - lastStart < 600) return;
   lastStart = now;
 
+  audio.setMuted(false);
   clearScreen();
   const s = el('div', 'screen game-screen', screenEl);
   const stage = el('div', 'game-stage', s);
   makeHomeButton(s);
+  makeMuteButton(s);
 
   // Say the game's name first; games queue their intro behind it
   // (their first speak uses interrupt: false).

@@ -89,7 +89,7 @@ function start(ctx) {
       });
       grid.appendChild(tile);
     });
-    speech.speak(first ? S.peekabooIntro : S.peekabooMore, { interrupt: false });
+    if (first) speech.speak(S.peekabooIntro, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(grid, build);

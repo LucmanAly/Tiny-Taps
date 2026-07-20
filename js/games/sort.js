@@ -2,7 +2,7 @@
 // jungle. Categorization, the biggest untouched cognitive skill in the app.
 
 import { ANIMALS, preloadSounds } from '../data/animals.js';
-import { cycler } from '../engine/rand.js';
+import { cycler, pickN } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
@@ -74,14 +74,6 @@ function start(ctx) {
 
   const bins = document.createElement('div');
   bins.className = 'sort-bins';
-  const binEls = BINS.map(b => {
-    const el = document.createElement('div');
-    el.className = 'sort-bin';
-    el.innerHTML = `${b.svg}<div class="sort-bin-label">${b.label}</div>`;
-    bins.appendChild(el);
-    return el;
-  });
-
   const tray = document.createElement('div');
   tray.className = 'sort-tray';
 
@@ -93,6 +85,22 @@ function start(ctx) {
       if (!alive) return;
       placed = false;
       current = preset || nextAnimal();
+
+      // Two bins per round (one always the correct home, one a random
+      // distractor from the other two) — three environments total to keep
+      // learning it, without crowding every round with all three at once.
+      const correctBin = BINS.find(b => b.habitat === current.habitat);
+      const distractor = pickN(BINS.filter(b => b !== correctBin), 1)[0];
+      const roundBins = Math.random() < 0.5 ? [correctBin, distractor] : [distractor, correctBin];
+      bins.innerHTML = '';
+      const binEls = roundBins.map(b => {
+        const el = document.createElement('div');
+        el.className = 'sort-bin pop-in';
+        el.innerHTML = `${b.svg}<div class="sort-bin-label">${b.label}</div>`;
+        bins.appendChild(el);
+        return el;
+      });
+
       tray.innerHTML = '';
       const item = document.createElement('div');
       item.className = 'sort-item pop-in';
@@ -102,27 +110,26 @@ function start(ctx) {
       if (current.sound) preloadSounds(audio, [current.id]);
 
       makeDraggable(item, {
-        getTargets: () => BINS.map((b, i) => ({ el: binEls[i], data: b.habitat })),
+        getTargets: () => roundBins.map((b, i) => ({ el: binEls[i], data: b.habitat })),
         onDrop: hit => {
           if (!alive || placed || !hit) return 'reject';
           if (hit === current.habitat) {
             placed = true;
             audio.chime();
-            const target = binEls[BINS.findIndex(b => b.habitat === hit)];
+            const target = binEls[roundBins.findIndex(b => b.habitat === hit)];
             const r = target.getBoundingClientRect();
             celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 24 });
-            speech.speak(S.sortYes(current.name)).then(async () => {
-              if (!alive) return;
+            (async () => {
               if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
               if (!alive) return;
               const upcoming = nextAnimal();
               celebrate.big({ nextAnimalId: upcoming.id });
               setTimeout(() => newRound(false, upcoming), 900);
-            });
+            })();
             return 'accept';
           }
           audio.boing();
-          speech.speak(S.sortNo).then(() => { if (alive) speech.encourage(); });
+          speech.encourage();
           return 'reject';
         },
       });

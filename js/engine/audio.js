@@ -4,6 +4,9 @@
 
 let ctx = null;
 let master = null;
+let muteGain = null; // separate node so a per-game mute toggle never has to
+                      // know or restore the user's actual volume setting
+let muted = false;
 const buffers = new Map();
 const pending = new Map();
 let currentSource = null;
@@ -16,9 +19,23 @@ function ensureCtx() {
     ctx = new AC();
     master = ctx.createGain();
     master.gain.value = 0.9;
-    master.connect(ctx.destination);
+    muteGain = ctx.createGain();
+    muteGain.gain.value = muted ? 0 : 1;
+    master.connect(muteGain);
+    muteGain.connect(ctx.destination);
   }
   return ctx;
+}
+
+// Per-game mute toggle (independent of the persisted volume setting in
+// Parent Settings) — silences all WebAudio playback until unmuted.
+export function setMuted(b) {
+  muted = !!b;
+  if (muteGain) muteGain.gain.value = muted ? 0 : 1;
+}
+
+export function isMuted() {
+  return muted;
 }
 
 export function unlock() {
@@ -129,15 +146,22 @@ export async function play(name, { volume = 1, rate = 1, maxDuration = null } = 
   await currentFinish;
 }
 
-// Decode an in-memory blob (e.g. a parent voice recording) into a named buffer.
+// Decode an in-memory blob (e.g. a parent voice recording) into a named
+// buffer. Retries the decode once — some browsers intermittently fail
+// decodeAudioData on the first attempt right after a MediaRecorder stop.
 export async function loadBlob(name, blob) {
   ensureCtx();
-  try {
-    const data = await blob.arrayBuffer();
-    const buf = await decode(data);
-    buffers.set(name, buf);
-    return buf;
-  } catch (e) { console.warn('loadBlob', name, e); return null; }
+  if (!blob || blob.size < 200) { console.warn('loadBlob', name, 'empty/near-empty blob:', blob && blob.size); return null; }
+  const data = await blob.arrayBuffer();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const buf = await decode(data);
+      buffers.set(name, buf);
+      return buf;
+    } catch (e) {
+      if (attempt === 1) { console.warn('loadBlob', name, e); return null; }
+    }
+  }
 }
 
 export function hasBuffer(name) {

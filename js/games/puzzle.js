@@ -84,7 +84,6 @@ function start(ctx) {
         },
       });
     });
-    speech.speak(S.puzzleIntro, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(stage, build);

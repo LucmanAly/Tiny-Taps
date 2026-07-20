@@ -26,8 +26,7 @@ function nextPath() {
   return pick(PATHS);
 }
 
-const TOL = 34;              // generous hit tolerance, in path viewBox units
-const MAX_ADVANCE_FRAC = 0.18; // forward search window per pointer move, as a fraction of the path
+const TOL = 34; // generous hit tolerance, in path viewBox units
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -96,13 +95,21 @@ function start(ctx) {
   function tryAdvance(clientX, clientY) {
     if (!pathIndex) return;
     const local = toLocal(clientX, clientY);
-    const maxAdvance = Math.max(6, Math.floor(pathIndex.pts.length * MAX_ADVANCE_FRAC));
-    const upper = Math.min(pathIndex.pts.length - 1, progress + maxAdvance);
-    let best = -1, bestDist = Infinity;
+    // Once real tracing has begun (progress > 0) scan all the way to the
+    // path's end and take the farthest point still within tolerance, so a
+    // fast swipe with few pointermove events (a straight line is usually
+    // traced in one quick motion, unlike a curve) can still catch up in a
+    // single step. But the very first contact has to land near the actual
+    // start — a small fixed window there — so a stray tap near the far end
+    // can't shortcut the whole trace without ever touching the beginning.
+    const upper = progress > 0
+      ? pathIndex.pts.length - 1
+      : Math.min(pathIndex.pts.length - 1, Math.max(6, Math.floor(pathIndex.pts.length * 0.18)));
+    let best = -1;
     for (let i = progress; i <= upper; i++) {
       const pt = pathIndex.pts[i];
       const dist = Math.hypot(pt.x - local.x, pt.y - local.y);
-      if (dist <= TOL && dist < bestDist) { bestDist = dist; best = i; }
+      if (dist <= TOL) best = i;
     }
     if (best > progress) {
       const crossedTenth = Math.floor(best / 10) > Math.floor(progress / 10);
@@ -123,8 +130,6 @@ function start(ctx) {
     const r = svg.getBoundingClientRect();
     const screen = ctm ? screenPt.matrixTransform(ctm) : { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     celebrate.burst(screen.x, screen.y, { count: 30 });
-    await speech.speak(S.traceDone);
-    if (!alive) return;
     celebrate.big({ quick: false });
     setTimeout(() => newRound(false), 1000);
   }
