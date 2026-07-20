@@ -337,12 +337,13 @@ function start(ctx) {
   const done = document.createElement('button');
   done.className = 'big-btn done-btn';
   done.innerHTML = CHECK_ICON;
-  done.addEventListener('pointerdown', () => {
+  done.addEventListener('pointerdown', async () => {
     if (!alive || !touched) return;
     const svg = pic.querySelector('svg');
     if (svg) savePicture(svg.outerHTML);
+    await speech.speak(TXT.colorDone);
+    if (!alive) return;
     celebrate.big();
-    speech.speak(TXT.colorDone);
     setTimeout(() => newPage(false), 2600);
   });
   bar.appendChild(done);

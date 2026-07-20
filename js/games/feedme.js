@@ -68,19 +68,21 @@ function start(ctx) {
             animalImg.classList.remove('munch');
             void animalImg.offsetWidth;
             animalImg.classList.add('munch');
-            setTimeout(() => {
+            setTimeout(async () => {
               if (!alive) return;
               const r = animalImg.getBoundingClientRect();
               celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
-              speech.speak(S.feedYum(current.name));
-              if (current.sound) audio.play('animal:' + current.id);
-              celebrate.big({ praise: false });
+              await speech.speak(S.feedYum(current.name));
+              if (!alive) return;
+              if (current.sound) await audio.play('animal:' + current.id);
+              if (!alive) return;
+              celebrate.big();
               setTimeout(() => newRound(false), 2200);
             }, 550);
             return 'accept';
           }
           audio.boing();
-          speech.speak(S.feedNo(current.name));
+          speech.speak(S.feedNo(current.name)).then(() => { if (alive) speech.encourage(); });
           return 'reject';
         },
       });
