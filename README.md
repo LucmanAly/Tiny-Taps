@@ -2,7 +2,7 @@
 
 A game for my kids.
 
-Nine toddler-friendly mini-games in one small web app — no ads, no links,
+Eighteen toddler-friendly mini-games in one small web app — no ads, no links,
 nothing to buy, works offline once loaded:
 
 1. **Peekaboo** — tap tiles to reveal animals and hear their real sounds; every tap is a win
@@ -17,6 +17,12 @@ nothing to buy, works offline once loaded:
 10. **Music** — a rainbow xylophone; pure free play
 11. **Bubbles** — pure free play; pop the bubbles
 12. **Stickers** — big wins award animal stickers into a collection book
+13. **Shadow Match** — tap the animal that matches the silhouette
+14. **Big or Small** — tap the big (or little) version of the animal
+15. **Patterns** — a color sequence marches by; tap what comes next
+16. **Sort It** — drag each animal to its home, the farm or the water
+17. **Wash the Animal** — rub the mud off with a finger until it shines
+18. **Trace It** — drag a finger along a glowing path to paint it in
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Twelve of them come with authentic recorded sounds; when a
@@ -27,8 +33,8 @@ The Home button responds to a normal tap.
 
 ## Parent settings
 
-Press-and-hold the gear button (bottom-left of the menu) to open parent
-settings: volume, voice speed, showing/hiding games on the menu, and —
+Tap the gear button (bottom-left of the menu) to open parent settings:
+volume, voice speed, showing/hiding games on the menu, the app version, and —
 best of all — **recording your own voice** for praise and encouragement.
 Recordings are stored on-device only.
 
@@ -53,3 +59,15 @@ Animal sounds are authentic recordings from Wikimedia Commons under
 CC0/public-domain/CC BY-SA licenses — see [assets/CREDITS.md](assets/CREDITS.md)
 for every file's source, author, and license. Artwork is original SVG made for
 this app. UI sounds are synthesized in-app with WebAudio.
+
+## Changelog
+
+The current version is shown in Parent Settings.
+
+- **v2.0** — six new games: Shadow Match, Big or Small, Patterns, Sort It,
+  Wash the Animal, Trace It. Fixed recorded praise/encouragement not playing
+  on task completion in several games. Added a shared quiz-game engine
+  (`js/engine/roundgame.js`) for the tap-the-right-answer games.
+- **v1** — initial 12-game release: Peekaboo, Animal Sounds, Colors, Shapes,
+  Counting, Puzzle Fit, Feed Me, Coloring, Matching, Music, Bubbles, Stickers.
+  Parent settings, recorded voice, coloring gallery, offline support.

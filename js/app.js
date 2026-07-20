@@ -4,6 +4,7 @@ import * as celebrate from './engine/celebrate.js';
 import * as recordings from './engine/recordings.js';
 import { games } from './games/index.js';
 import { S } from './data/strings.js';
+import { VERSION } from './data/version.js';
 
 const screenEl = document.getElementById('screen');
 let currentCleanup = null;
@@ -30,6 +31,8 @@ const ACCENTS = {
   peekaboo: '#f1e6ff', sounds: '#dff5f3', colors: '#ffe7e1', shapes: '#e4efff',
   counting: '#fff1d6', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
+  shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',
+  wash: '#dcf0fa', trace: '#fff4d6',
 };
 
 /* ---------------- idle re-prompt ----------------
@@ -237,7 +240,8 @@ function showSettings() {
     <div id="rec-rows"></div>
     <h3>Games on the menu</h3>
     <div class="set-games" id="set-games"></div>
-    <button class="big-btn credits-close">Close</button>`;
+    <button class="big-btn credits-close">Close</button>
+    <div class="settings-version">Tiny Taps v${VERSION}</div>`;
 
   panel.querySelector('#set-vol').addEventListener('input', e => {
     const v = Number(e.target.value);

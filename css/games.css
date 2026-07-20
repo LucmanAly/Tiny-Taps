@@ -581,3 +581,194 @@
   padding: 1.4vmin 5vmin;
   font-size: max(2.6vmin, 17px);
 }
+
+/* ---------- shadow match ---------- */
+.shadow-prompt { min-height: 30vmin; }
+.shadow-target {
+  width: 32vmin;
+  height: 32vmin;
+  min-width: 130px;
+  min-height: 130px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.6vmin;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shadow-target img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0);
+  transition: filter 0.5s ease-out;
+}
+.shadow-target.revealed img { filter: none; }
+
+/* ---------- big or small ---------- */
+.bigsmall-prompt { min-height: 16vmin; }
+.bigsmall-label {
+  font-size: 7vmin;
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.6vmin 5vmin;
+  border-radius: 100px;
+  box-shadow: 0 4px 0 rgba(58, 51, 87, 0.12);
+  letter-spacing: 0.04em;
+}
+.bigsmall-row {
+  flex: 1;
+  align-items: flex-end;
+  gap: 6vmin;
+  padding-bottom: 6vmin;
+}
+.bigsmall-opt {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.bigsmall-opt img { display: block; pointer-events: none; }
+.bigsmall-opt.bigsmall-big { width: 34vmin; min-width: 140px; }
+.bigsmall-opt.bigsmall-small { width: 12vmin; min-width: 56px; }
+.bigsmall-opt.bigsmall-big img,
+.bigsmall-opt.bigsmall-small img { width: 100%; height: auto; }
+
+/* ---------- pattern parade ---------- */
+.pattern-prompt { min-height: 20vmin; align-items: center; }
+.pattern-row {
+  display: flex;
+  align-items: center;
+  gap: 2.4vmin;
+}
+.pattern-dot {
+  width: 12vmin;
+  height: 12vmin;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 4px 0 rgba(58, 51, 87, 0.15);
+}
+.pattern-dot.pattern-blank {
+  background: none !important;
+  border: 5px dashed rgba(58, 51, 87, 0.35);
+  box-shadow: none;
+  position: relative;
+}
+.pattern-dot.pattern-blank::after {
+  content: '?';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6vmin;
+  font-weight: 700;
+  color: rgba(58, 51, 87, 0.4);
+}
+.pattern-opt {
+  width: 20vmin;
+  height: 20vmin;
+  min-width: 88px;
+  min-height: 88px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  padding: 3vmin;
+  transition: transform 0.12s ease-out;
+}
+.pattern-opt:active { transform: scale(0.94); }
+.pattern-opt .pattern-dot { width: 100%; height: 100%; box-shadow: none; }
+
+/* ---------- sort it ---------- */
+.sort-bins {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6vmin;
+  padding: max(14vmin, 80px) 3vmin 1vmin;
+}
+.sort-bin {
+  position: relative;
+  width: 32vmin;
+  max-width: 220px;
+  border-radius: var(--radius);
+  transition: transform 0.15s ease-out;
+}
+.sort-bin svg { width: 100%; height: auto; display: block; }
+.sort-bin-label {
+  position: absolute;
+  bottom: -1vmin;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: max(2.2vmin, 15px);
+  padding: 0.3vmin 2.4vmin;
+  border-radius: 100px;
+  box-shadow: 0 3px 0 rgba(58, 51, 87, 0.12);
+}
+.sort-tray {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding: 2vmin 2vmin max(4vmin, env(safe-area-inset-bottom));
+}
+.sort-item {
+  width: 22vmin;
+  height: 22vmin;
+  min-width: 92px;
+  min-height: 92px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 1.8vmin;
+  cursor: grab;
+}
+.sort-item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+/* ---------- wash the animal ---------- */
+.wash-scene {
+  width: min(76vmin, 84vw);
+  max-width: 480px;
+  aspect-ratio: 1;
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.wash-animal {
+  position: absolute;
+  inset: 10%;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.wash-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+/* ---------- trace it ---------- */
+.trace-wrap {
+  width: min(90vw, 78vh, 640px);
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 3vmin;
+}
+.trace-svg { width: 100%; height: auto; display: block; touch-action: none; cursor: grab; }
+.trace-star { animation: pulse 1s ease-in-out infinite; }

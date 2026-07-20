@@ -12,6 +12,12 @@ import memory from './memory.js';
 import music from './music.js';
 import bubbles from './bubbles.js';
 import stickers from './stickers.js';
+import shadow from './shadow.js';
+import bigsmall from './bigsmall.js';
+import pattern from './pattern.js';
+import sort from './sort.js';
+import wash from './wash.js';
+import trace from './trace.js';
 
 export const games = [
   peekaboo,
@@ -26,4 +32,10 @@ export const games = [
   music,
   bubbles,
   stickers,
+  shadow,
+  bigsmall,
+  pattern,
+  sort,
+  wash,
+  trace,
 ];

@@ -54,6 +54,32 @@ export const S = {
   // music
   musicIntro: 'Tap the bars to make music!',
 
+  // shadow match
+  shadowPrompt: name => `Whose shadow is this? Find the ${name}!`,
+  shadowReprompt: name => `Tap the ${name} to match the shadow!`,
+
+  // big or small
+  bigSmallPrompt: (size, name) => size === 'big' ? `Tap the BIG ${name}!` : `Tap the little ${name}!`,
+
+  // patterns
+  patternPrompt: 'What comes next? Tap the color!',
+
+  // sort it
+  sortIntro: 'Where does it go? Drag it home!',
+  sortReprompt: 'Drag the animal to its home!',
+  sortYes: name => `Yes! The ${name} lives there!`,
+  sortNo: 'Not quite — try another home!',
+
+  // wash the animal
+  washIntro: name => `Oh no, the ${name} is muddy! Rub it clean!`,
+  washReprompt: 'Keep rubbing to clean the mud!',
+  washDone: name => `All clean! Sparkly ${name}!`,
+
+  // trace it
+  traceIntro: 'Trace the path with your finger!',
+  traceReprompt: 'Follow the glowing star with your finger!',
+  traceDone: 'Great tracing!',
+
   // stickers
   stickerBook: n => n === 0
     ? 'Your sticker book! Play games to win stickers!'

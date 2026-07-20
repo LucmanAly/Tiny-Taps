@@ -336,3 +336,11 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- settings footer ---------- */
+.settings-version {
+  text-align: center;
+  color: #a89fc0;
+  font-size: max(1.7vmin, 12px);
+  margin-top: 2vmin;
+}
