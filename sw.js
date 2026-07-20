@@ -1,6 +1,6 @@
 // Service worker: precache everything so the app works fully offline after
 // the first visit. Bump VERSION on any deploy to refresh caches.
-const VERSION = 'tiny-taps-v2';
+const VERSION = 'tiny-taps-v3';
 
 const ASSETS = [
   '.',
