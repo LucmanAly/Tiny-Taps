@@ -1,12 +1,14 @@
-// Counting: N animals appear; tap the matching number. After a correct
-// answer the app counts along, highlighting each animal one by one.
-// Parent-gated toggle switches between counting to 5 and to 10.
+// Counting: counting is touching, not quizzing. The child taps the animals
+// themselves; every tap instantly counts aloud, stamps a number badge on the
+// animal, and grows a big numeral up top. Tapping the last one celebrates the
+// total and the next round starts by itself — no number buttons, no wrong
+// answers, no waiting on speech.
+// Parent-gated toggle (hold 2s) switches between counting to 5 and to 10.
 
 import { ANIMALS } from '../data/animals.js';
 import { pick, randInt } from '../engine/rand.js';
 
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
-const BTN_COLORS = ['#f04e3e', '#3d7ef0', '#ffb62e', '#4db84d', '#9b5fe0', '#ff8c2e', '#e56b9f', '#2ba49a', '#8a54c9', '#d9620a'];
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -23,17 +25,17 @@ const ICON = `
 function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt } = ctx;
   let alive = true;
-  let busy = false;
   let n = 0;
+  let counted = 0;
   let animalName = '';
   let max = Number(localStorage.getItem('tinytaps-count-max') || 5);
 
+  const bigNum = document.createElement('div');
+  bigNum.className = 'count-big';
   const field = document.createElement('div');
   field.className = 'count-field';
-  const numbers = document.createElement('div');
-  numbers.className = 'number-row';
+  stage.appendChild(bigNum);
   stage.appendChild(field);
-  stage.appendChild(numbers);
 
   // parent-gated difficulty toggle (hold 2s)
   const level = document.createElement('button');
@@ -55,75 +57,60 @@ function start(ctx) {
     level.addEventListener(ev, () => clearTimeout(holdTimer)));
   stage.appendChild(level);
 
-  function say() {
-    if (n) speech.speak(`How many ${animalName}s do you see? Count them, then tap the number!`);
-  }
-
-  async function countAlong() {
-    const items = field.querySelectorAll('.count-animal');
-    for (let i = 0; i < items.length; i++) {
-      if (!alive) return;
-      items[i].classList.add('counted');
-      audio.pop();
-      await speech.speak(WORDS[i + 1], { interrupt: true });
-      await new Promise(r => setTimeout(r, 120));
-    }
-    if (!alive) return;
-    await speech.speak(`${WORDS[n]} ${animalName}${n > 1 ? 's' : ''}!`);
-    celebrate.big();
-    setTimeout(newRound, 2300);
-  }
-
   function newRound() {
     if (!alive) return;
-    busy = false;
+    counted = 0;
     n = randInt(1, max);
     const a = pick(ANIMALS);
     animalName = a.name;
 
+    bigNum.textContent = '';
+    bigNum.classList.remove('total');
     field.innerHTML = '';
     for (let i = 0; i < n; i++) {
-      const img = document.createElement('img');
-      img.src = a.art;
-      img.alt = '';
-      img.className = 'count-animal pop-in';
-      img.style.animationDelay = `${i * 0.08}s`;
-      field.appendChild(img);
+      const item = document.createElement('div');
+      item.className = 'count-item pop-in';
+      item.style.animationDelay = `${i * 0.07}s`;
+      item.innerHTML = `<img src="${a.art}" alt=""><div class="count-badge"></div>`;
+      item.addEventListener('pointerdown', () => {
+        if (!alive || item.classList.contains('counted')) return;
+        counted++;
+        item.classList.add('counted');
+        item.querySelector('.count-badge').textContent = String(counted);
+        audio.pop();
+        bigNum.textContent = String(counted);
+        bigNum.classList.remove('bump');
+        void bigNum.offsetWidth;
+        bigNum.classList.add('bump');
+        // Never awaited: the game must keep up with fast little fingers.
+        speech.speak(WORDS[counted]);
+        if (counted === n) {
+          setTimeout(() => {
+            if (!alive) return;
+            bigNum.classList.add('total');
+            speech.speak(`${WORDS[n]} ${animalName}${n > 1 ? 's' : ''}!`);
+            celebrate.big({ praise: false });
+            setTimeout(newRound, 2600);
+          }, 450);
+        }
+      });
+      field.appendChild(item);
     }
 
     // Only one animal on screen: let it make its sound. With several visible
-    // we stay quiet so the child can count in peace.
+    // we stay quiet so the counting voice has the stage.
     if (n === 1 && a.sound) {
       audio.load('animal:' + a.id, a.sound).then(() => {
-        if (alive && !busy) audio.play('animal:' + a.id);
+        if (alive && counted === 0) audio.play('animal:' + a.id);
       });
     }
 
-    numbers.innerHTML = '';
-    for (let i = 1; i <= max; i++) {
-      const b = document.createElement('button');
-      b.className = 'big-btn num-btn';
-      b.textContent = String(i);
-      b.style.background = `radial-gradient(circle at 35% 30%, ${BTN_COLORS[i - 1]}dd, ${BTN_COLORS[i - 1]})`;
-      b.addEventListener('pointerdown', () => {
-        if (!alive || busy) return;
-        if (i === n) {
-          busy = true;
-          audio.chime();
-          countAlong();
-        } else {
-          speech.speak(WORDS[i]).then(() => { if (alive && !busy) speech.encourage(); });
-          b.classList.remove('wiggle');
-          void b.offsetWidth;
-          b.classList.add('wiggle');
-        }
-      });
-      numbers.appendChild(b);
-    }
-    say();
+    speech.speak(`Let's count the ${animalName}s! Tap each one!`);
   }
 
-  setReprompt(say);
+  setReprompt(() => {
+    if (animalName) speech.speak(`Tap the ${animalName}s to count them!`);
+  });
   newRound();
   return () => { alive = false; };
 }
