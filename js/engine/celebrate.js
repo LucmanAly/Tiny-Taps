@@ -97,9 +97,15 @@ export function burst(x, y, { count = 26, sound = true } = {}) {
   if (sound) audio.sparkle();
 }
 
-// Full celebration: confetti rain + fanfare + spoken praise. Big wins also
-// drop an animal sticker into the sticker book until it's full.
-export function big({ praise = true, sticker = true } = {}) {
+// Full celebration: confetti rain + fanfare + spoken praise. Every round
+// (across every game) counts toward the shared sticker schedule — pass
+// `nextAnimalId` when this game knows which animal is coming up next, so an
+// earned sticker doubles as a preview instead of a random pick. `quick`
+// throttles the *recorded* parent-voice praise to roughly every 3rd win for
+// fast, frequently-repeating games so it stays a periodic treat rather than
+// playing every single round — slower games (Coloring, Trace It, Wash the
+// Animal) pass `quick: false` to always use it.
+export function big({ praise = true, sticker = true, quick = true, nextAnimalId = null } = {}) {
   audio.tada();
   const bursts = 6;
   for (let i = 0; i < bursts; i++) {
@@ -107,9 +113,9 @@ export function big({ praise = true, sticker = true } = {}) {
       spawn(innerWidth * (0.15 + Math.random() * 0.7), innerHeight * 0.3, 34, 11);
     }, i * 160);
   }
-  if (praise) speech.praise();
+  if (praise) speech.praise({ quick });
   if (sticker) {
-    const a = stickers.award();
+    const a = stickers.recordWin(nextAnimalId);
     if (a) setTimeout(() => stickers.showToast(a), 900);
   }
 }

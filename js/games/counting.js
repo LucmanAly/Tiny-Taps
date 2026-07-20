@@ -59,12 +59,12 @@ function start(ctx) {
     level.addEventListener(ev, () => clearTimeout(holdTimer)));
   stage.appendChild(level);
 
-  function newRound(first) {
+  function newRound(first, preset) {
     const build = () => {
     if (!alive) return;
     counted = 0;
     n = randInt(1, max);
-    const a = pick(ANIMALS);
+    const a = preset || pick(ANIMALS);
     animalName = a.name;
 
     bigNum.textContent = '';
@@ -78,6 +78,11 @@ function start(ctx) {
       item.addEventListener('pointerdown', () => {
         if (!alive || item.classList.contains('counted')) return;
         counted++;
+        // Speech is the slowest part of this handler to actually kick off
+        // audibly — fire it first so the voice and the numeral land in sync
+        // instead of the numeral visibly beating the voice. Never awaited:
+        // the game must keep up with fast little fingers.
+        speech.speak(WORDS[counted]);
         item.classList.add('counted');
         item.querySelector('.count-badge').textContent = String(counted);
         audio.pop();
@@ -85,16 +90,15 @@ function start(ctx) {
         bigNum.classList.remove('bump');
         void bigNum.offsetWidth;
         bigNum.classList.add('bump');
-        // Never awaited: the game must keep up with fast little fingers.
-        speech.speak(WORDS[counted]);
         if (counted === n) {
           setTimeout(() => {
             if (!alive) return;
             bigNum.classList.add('total');
+            const upcoming = pick(ANIMALS);
             speech.speak(S.countTotal(WORDS[n], animalName, n > 1)).then(() => {
-              if (alive) celebrate.big();
+              if (alive) celebrate.big({ nextAnimalId: upcoming.id });
             });
-            setTimeout(() => newRound(false), 2600);
+            setTimeout(() => newRound(false, upcoming), 1000);
           }, 450);
         }
       });
@@ -105,11 +109,11 @@ function start(ctx) {
     // we stay quiet so the counting voice has the stage.
     if (n === 1 && a.sound) {
       audio.load('animal:' + a.id, a.sound).then(() => {
-        if (alive && counted === 0) audio.play('animal:' + a.id);
+        if (alive && counted === 0) audio.play('animal:' + a.id, { maxDuration: 2.2 });
       });
     }
 
-    speech.speak(S.countIntro(animalName), { interrupt: !first });
+    speech.speak(S.countIntro(animalName), { interrupt: false });
     };
     if (first) build();
     else fadeSwap(field, build);

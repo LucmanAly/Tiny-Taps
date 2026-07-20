@@ -63,18 +63,22 @@ function start(ctx) {
     const build = () => {
       if (!alive) return;
       open = [];
-      lock = false;
+      lock = true; // locked during the opening peek, unlocked once covers close
       matched = 0;
       grid.innerHTML = '';
       const pair = pickN(ANIMALS, 2);
       preloadSounds(audio, pair.filter(a => a.sound).map(a => a.id));
       const cards = shuffle([pair[0], pair[1], pair[0], pair[1]]);
+      const covers = [];
       cards.forEach((a, i) => {
         const tile = document.createElement('div');
         tile.className = 'peek-tile memory-card pop-in';
         tile.style.animationDelay = `${i * 0.08}s`;
-        tile.innerHTML = `<img src="${a.art}" alt=""><div class="peek-cover">${coverSvg(COVER_COLORS[i % COVER_COLORS.length], i)}</div>`;
+        // start face-up (cover already "off") so the child sees both pairs
+        // briefly before they hide — the classic memory-game opening beat
+        tile.innerHTML = `<img src="${a.art}" alt=""><div class="peek-cover off">${coverSvg(COVER_COLORS[i % COVER_COLORS.length], i)}</div>`;
         const cover = tile.querySelector('.peek-cover');
+        covers.push(cover);
         tile.addEventListener('pointerdown', () => {
           if (!alive || lock || cover.classList.contains('off')) return;
           cover.classList.add('off');
@@ -89,12 +93,12 @@ function start(ctx) {
             const r = y.tile.getBoundingClientRect();
             celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 20 });
             speech.speak(S.memoryMatch(x.a.name));
-            if (x.a.sound) audio.play('animal:' + x.a.id);
+            if (x.a.sound) audio.play('animal:' + x.a.id, { maxDuration: 2.2 });
             if (matched === 2) {
               setTimeout(() => {
                 if (!alive) return;
                 celebrate.big();
-                setTimeout(() => { if (alive) newRound(false); }, 2400);
+                setTimeout(() => { if (alive) newRound(false); }, 1000);
               }, 800);
             }
           } else {
@@ -105,12 +109,17 @@ function start(ctx) {
               x.cover.classList.remove('off');
               y.cover.classList.remove('off');
               lock = false;
-            }, 1000);
+            }, 1400);
           }
         });
         grid.appendChild(tile);
       });
-      speech.speak(S.memoryIntro, { interrupt: !first });
+      speech.speak(S.memoryIntro, { interrupt: false });
+      setTimeout(() => {
+        if (!alive) return;
+        covers.forEach(c => c.classList.remove('off'));
+        lock = false;
+      }, 1200);
     };
     if (first) build();
     else fadeSwap(grid, build);

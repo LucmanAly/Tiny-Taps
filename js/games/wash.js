@@ -106,10 +106,11 @@ function start(ctx) {
       celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
       await speech.speak(S.washDone(current.name));
       if (!alive) return;
-      if (current.sound) await audio.play('animal:' + current.id);
+      if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
       if (!alive) return;
-      celebrate.big();
-      setTimeout(() => newRound(false), 2400);
+      const upcoming = nextAnimal();
+      celebrate.big({ quick: false, nextAnimalId: upcoming.id });
+      setTimeout(() => newRound(false, upcoming), 1000);
     }
   }
 
@@ -138,14 +139,14 @@ function start(ctx) {
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onUp);
 
-  function newRound(first) {
+  function newRound(first, preset) {
     if (!alive) return;
     done = false;
-    current = nextAnimal();
+    current = preset || nextAnimal();
     img.src = current.art;
     if (current.sound) preloadSounds(audio, [current.id]);
     resize();
-    speech.speak(S.washIntro(current.name), { interrupt: !first });
+    speech.speak(S.washIntro(current.name), { interrupt: false });
   }
 
   setReprompt(() => speech.speak(S.washReprompt));

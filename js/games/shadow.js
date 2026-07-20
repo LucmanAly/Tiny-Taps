@@ -43,12 +43,13 @@ export default makeRoundGame({
   async onWin({ target, ctx }) {
     const shadow = ctx.stage.querySelector('.shadow-target');
     if (shadow) shadow.classList.add('revealed');
-    if (target.sound) await ctx.audio.play('animal:' + target.id);
+    if (target.sound) await ctx.audio.play('animal:' + target.id, { maxDuration: 2.2 });
   },
   speakPrompt(target, first, ctx) {
-    ctx.speech.speak(S.shadowPrompt(target.name), { interrupt: !first });
+    ctx.speech.speak(S.shadowPrompt(target.name), { interrupt: false });
   },
   reprompt(target, ctx) {
     if (target) ctx.speech.speak(S.shadowReprompt(target.name));
   },
+  nextAnimalId: target => target.id,
 });

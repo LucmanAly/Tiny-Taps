@@ -49,7 +49,7 @@ function start(ctx) {
       x: randFloat(r, w - r),
       y: canvas.clientHeight + r,
       r,
-      vy: randFloat(0.5, 1.4),
+      vy: randFloat(0.8, 1.9),
       wob: randFloat(0, Math.PI * 2),
       wobSpeed: randFloat(0.01, 0.03),
       hue: pick(HUES),
@@ -90,7 +90,7 @@ function start(ctx) {
   function tick(t) {
     if (!alive) return;
     g.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-    if (t - lastSpawn > 700 && bubbles.length < 9) { spawn(); lastSpawn = t; }
+    if (t - lastSpawn > 550 && bubbles.length < 9) { spawn(); lastSpawn = t; }
     bubbles = bubbles.filter(b => b.y > -b.r * 2);
     for (const b of bubbles) {
       b.wob += b.wobSpeed;

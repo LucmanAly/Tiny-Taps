@@ -7,6 +7,8 @@ let master = null;
 const buffers = new Map();
 const pending = new Map();
 let currentSource = null;
+let currentName = null;
+let currentFinish = null; // promise resolving when currentSource's playback ends
 
 function ensureCtx() {
   if (!ctx) {
@@ -39,10 +41,7 @@ function decode(data) {
   });
 }
 
-export async function load(name, url) {
-  ensureCtx();
-  if (buffers.has(name)) return buffers.get(name);
-  if (pending.has(name)) return pending.get(name);
+async function loadOnce(name, url) {
   const p = fetch(url)
     .then(r => {
       if (!r.ok) throw new Error(`audio ${url}: HTTP ${r.status}`);
@@ -55,37 +54,79 @@ export async function load(name, url) {
   return p;
 }
 
+// Loads (and caches) an audio file. Retries once on failure — a flaky
+// network blip shouldn't permanently silence an animal for the rest of the
+// session.
+export async function load(name, url) {
+  ensureCtx();
+  if (buffers.has(name)) return buffers.get(name);
+  if (pending.has(name)) return pending.get(name);
+  let buf = await loadOnce(name, url);
+  if (!buf) buf = await loadOnce(name, url);
+  return buf;
+}
+
+// Resolves ctx.resume() or gives up after a short timeout — some mobile
+// browsers can leave resume() hanging indefinitely, which would otherwise
+// silently block all playback forever.
+function resumeWithTimeout(ms = 400) {
+  return Promise.race([
+    ctx.resume().catch(() => {}),
+    new Promise(r => setTimeout(r, ms)),
+  ]);
+}
+
 // Plays a loaded (or still-loading) buffer. Stops any other recording already
 // playing so animal sounds never talk over each other. Always resolves — even
 // if the context is suspended or onended never fires — so games can't hang.
-export async function play(name, { volume = 1, rate = 1 } = {}) {
+// `maxDuration` (seconds), when given, plays only the clip's opening and
+// fades out just before the cutoff instead of an abrupt stop.
+export async function play(name, { volume = 1, rate = 1, maxDuration = null } = {}) {
   ensureCtx();
-  if (ctx.state === 'suspended') {
-    try { await ctx.resume(); } catch (e) { /* stay silent, don't block */ }
-  }
+  if (ctx.state === 'suspended') await resumeWithTimeout();
   let buf = buffers.get(name);
   if (!buf && pending.has(name)) buf = await pending.get(name);
   if (!buf) return;
-  stopPlayback();
+  // Never cut off a parent's own recorded voice with an incidental sound
+  // (an animal-hello at the start of the next round, etc). Let it finish
+  // first, then play. Two recordings back-to-back still interrupt normally.
+  if (currentName && currentName.startsWith('rec:') && !name.startsWith('rec:') && currentFinish) {
+    await currentFinish;
+  } else {
+    stopPlayback();
+  }
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = rate;
   const g = ctx.createGain();
-  g.gain.value = volume;
+  const playLen = maxDuration ? Math.min(buf.duration, maxDuration) : buf.duration;
+  const truncated = maxDuration && buf.duration > maxDuration;
+  const t0 = ctx.currentTime;
+  if (truncated) {
+    const fade = Math.min(0.15, playLen * 0.3);
+    g.gain.setValueAtTime(volume, t0);
+    g.gain.setValueAtTime(volume, t0 + playLen - fade);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + playLen);
+  } else {
+    g.gain.value = volume;
+  }
   src.connect(g).connect(master);
   currentSource = src;
-  await new Promise(resolve => {
+  currentName = name;
+  currentFinish = new Promise(resolve => {
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
-      if (currentSource === src) currentSource = null;
+      if (currentSource === src) { currentSource = null; currentName = null; currentFinish = null; }
       resolve();
     };
     src.onended = finish;
-    setTimeout(finish, (buf.duration / rate) * 1000 + 400);
-    src.start(0);
+    setTimeout(finish, (playLen / rate) * 1000 + 400);
+    if (truncated) src.start(0, 0, playLen);
+    else src.start(0);
   });
+  await currentFinish;
 }
 
 // Decode an in-memory blob (e.g. a parent voice recording) into a named buffer.
@@ -113,6 +154,8 @@ export function stopPlayback() {
     try { currentSource.stop(); } catch (e) { /* already stopped */ }
     currentSource = null;
   }
+  currentName = null;
+  currentFinish = null;
 }
 
 export function duration(name) {
@@ -177,8 +220,11 @@ export function note(freq) {
   tone(freq * 2, 0, 0.3, { type: 'sine', vol: 0.08 });
 }
 
+// A happy "yum!" bite — ascending triangle glide with a soft sparkle tail,
+// matching pop()'s positive character (was previously a descending square
+// wave, which read as an error buzzer rather than a reward).
 export function chomp() {
   ensureCtx();
-  tone(180, 0, 0.1, { type: 'square', vol: 0.18, glide: 90 });
-  tone(140, 0.12, 0.1, { type: 'square', vol: 0.18, glide: 70 });
+  tone(240, 0, 0.09, { type: 'triangle', vol: 0.32, glide: 520 });
+  tone(600, 0.07, 0.16, { type: 'sine', vol: 0.16, glide: 950 });
 }

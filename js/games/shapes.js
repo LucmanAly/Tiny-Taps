@@ -66,7 +66,7 @@ function start(ctx) {
   stage.appendChild(row);
 
   function say(first) {
-    if (target) speech.speak(S.shapesPrompt(target.name), { interrupt: !first });
+    if (target) speech.speak(S.shapesPrompt(target.name), { interrupt: false });
   }
 
   function newRound(first) {
@@ -110,7 +110,7 @@ function start(ctx) {
             clone.remove();
             celebrate.burst(to.left + to.width / 2, to.top + to.height / 2, { count: 30 });
             speech.praise();
-            setTimeout(() => newRound(false), 1800);
+            setTimeout(() => newRound(false), 900);
           }, 650);
         } else {
           b.classList.remove('wiggle');
