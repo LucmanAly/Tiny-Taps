@@ -91,8 +91,9 @@ function start(ctx) {
           setTimeout(() => {
             if (!alive) return;
             bigNum.classList.add('total');
-            speech.speak(S.countTotal(WORDS[n], animalName, n > 1));
-            celebrate.big({ praise: false });
+            speech.speak(S.countTotal(WORDS[n], animalName, n > 1)).then(() => {
+              if (alive) celebrate.big();
+            });
             setTimeout(() => newRound(false), 2600);
           }, 450);
         }

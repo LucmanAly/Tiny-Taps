@@ -93,13 +93,13 @@ function start(ctx) {
             if (matched === 2) {
               setTimeout(() => {
                 if (!alive) return;
-                celebrate.big({ praise: false });
+                celebrate.big();
                 setTimeout(() => { if (alive) newRound(false); }, 2400);
               }, 800);
             }
           } else {
             lock = true;
-            setTimeout(() => audio.boing(), 250);
+            setTimeout(() => { audio.boing(); speech.encourage(); }, 250);
             setTimeout(() => {
               if (!alive) return;
               x.cover.classList.remove('off');

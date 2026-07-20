@@ -74,10 +74,11 @@ function start(ctx) {
           busy = true;
           card.classList.add('zoom-win');
           celebrate.burst(e.clientX, e.clientY, { count: 26 });
-          speech.speak(S.soundsYes(a.name));
+          await speech.speak(S.soundsYes(a.name));
+          if (!alive) return;
           await audio.play('animal:' + a.id);
           if (!alive) return;
-          celebrate.big({ praise: false });
+          celebrate.big();
           setTimeout(() => newRound(false), 2000);
         } else {
           card.classList.remove('wiggle');
