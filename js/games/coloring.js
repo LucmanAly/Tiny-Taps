@@ -341,8 +341,6 @@ function start(ctx) {
     if (!alive || !touched) return;
     const svg = pic.querySelector('svg');
     if (svg) savePicture(svg.outerHTML);
-    await speech.speak(TXT.colorDone);
-    if (!alive) return;
     celebrate.big({ quick: false });
     setTimeout(() => newPage(false), 1000);
   });

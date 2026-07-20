@@ -204,7 +204,7 @@
 .level-btn {
   position: absolute;
   top: max(1.5vmin, env(safe-area-inset-top));
-  right: max(1.5vmin, env(safe-area-inset-right));
+  right: calc(max(1.5vmin, env(safe-area-inset-right)) + max(10.5vmin, 61px));
   width: 9vmin;
   height: 9vmin;
   min-width: 52px;
@@ -522,7 +522,7 @@
 .gallery-btn {
   position: absolute;
   top: max(1.5vmin, env(safe-area-inset-top));
-  right: max(1.5vmin, env(safe-area-inset-right));
+  right: calc(max(1.5vmin, env(safe-area-inset-right)) + max(10.5vmin, 61px));
   width: 9vmin;
   height: 9vmin;
   min-width: 52px;
@@ -692,13 +692,13 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 3vmin;
+  gap: 6vmin;
   padding: max(14vmin, 80px) 3vmin 1vmin;
 }
 .sort-bin {
   position: relative;
-  width: 24vmin;
-  max-width: 160px;
+  width: 32vmin;
+  max-width: 220px;
   border-radius: var(--radius);
   transition: transform 0.15s ease-out;
 }

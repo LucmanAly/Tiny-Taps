@@ -104,8 +104,6 @@ function start(ctx) {
       g.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       const r = scene.getBoundingClientRect();
       celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
-      await speech.speak(S.washDone(current.name));
-      if (!alive) return;
       if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
       if (!alive) return;
       const upcoming = nextAnimal();

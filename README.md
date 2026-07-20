@@ -64,6 +64,20 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v2.2** — reliability, voice, and visual polish pass: a per-game mute
+  toggle alongside the global volume setting; a Settings voice picker so a
+  parent can choose the best-sounding installed TTS voice, plus a broader
+  auto-selection heuristic; narration trimmed to essentials app-wide
+  (Counting now speaks only the numbers, no surrounding commentary);
+  parent-voice praise now always plays on the first win after recording
+  instead of being silently caught by the quick-game throttle, with a
+  hardened record→decode pipeline and an audible self-test right in
+  Settings; a real Trace It bug fix — the straight line under-registered
+  fast swipes because its forward-search window was too small, now widened
+  (while still requiring the trace to actually start near the beginning);
+  Sort It shows 2 of its 3 environments per round instead of all 3 at once;
+  and a redesigned splash logo, bolder menu font/contrast, and richer menu
+  card styling.
 - **v2.1** — pacing and reliability pass from real play-testing: snappier
   round transitions, in-sync Counting voice, scroll-safe menu taps, trimmed
   animal sound clips, more reliable Animal Sounds/parent-voice playback, a
