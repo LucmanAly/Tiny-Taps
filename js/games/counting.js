@@ -7,6 +7,8 @@
 
 import { ANIMALS } from '../data/animals.js';
 import { pick, randInt } from '../engine/rand.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
@@ -57,7 +59,8 @@ function start(ctx) {
     level.addEventListener(ev, () => clearTimeout(holdTimer)));
   stage.appendChild(level);
 
-  function newRound() {
+  function newRound(first) {
+    const build = () => {
     if (!alive) return;
     counted = 0;
     n = randInt(1, max);
@@ -88,9 +91,9 @@ function start(ctx) {
           setTimeout(() => {
             if (!alive) return;
             bigNum.classList.add('total');
-            speech.speak(`${WORDS[n]} ${animalName}${n > 1 ? 's' : ''}!`);
+            speech.speak(S.countTotal(WORDS[n], animalName, n > 1));
             celebrate.big({ praise: false });
-            setTimeout(newRound, 2600);
+            setTimeout(() => newRound(false), 2600);
           }, 450);
         }
       });
@@ -105,13 +108,16 @@ function start(ctx) {
       });
     }
 
-    speech.speak(`Let's count the ${animalName}s! Tap each one!`);
+    speech.speak(S.countIntro(animalName), { interrupt: !first });
+    };
+    if (first) build();
+    else fadeSwap(field, build);
   }
 
   setReprompt(() => {
-    if (animalName) speech.speak(`Tap the ${animalName}s to count them!`);
+    if (animalName) speech.speak(S.countReprompt(animalName));
   });
-  newRound();
+  newRound(true);
   return () => { alive = false; };
 }
 

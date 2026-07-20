@@ -8,7 +8,10 @@ import counting from './counting.js';
 import puzzle from './puzzle.js';
 import feedme from './feedme.js';
 import coloring from './coloring.js';
+import memory from './memory.js';
+import music from './music.js';
 import bubbles from './bubbles.js';
+import stickers from './stickers.js';
 
 export const games = [
   peekaboo,
@@ -19,5 +22,8 @@ export const games = [
   puzzle,
   feedme,
   coloring,
+  memory,
+  music,
   bubbles,
+  stickers,
 ];

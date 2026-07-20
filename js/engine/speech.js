@@ -11,6 +11,24 @@ let voicesReady = false;
 
 // Map of exact phrase -> audio buffer name, for optional parent recordings.
 const recordings = new Map();
+// Category ('praise' | 'encourage') -> audio buffer name of a parent recording.
+const recordedCats = new Map();
+// Parent-adjustable speaking speed multiplier.
+let userRate = Number(localStorage.getItem('tinytaps-rate') || 1);
+
+export function setUserRate(r) {
+  userRate = r;
+  localStorage.setItem('tinytaps-rate', String(r));
+}
+
+export function getUserRate() {
+  return userRate;
+}
+
+export function setRecordedCategory(cat, bufferName) {
+  if (bufferName) recordedCats.set(cat, bufferName);
+  else recordedCats.delete(cat);
+}
 
 function pickVoice() {
   if (!synth) return;
@@ -50,14 +68,28 @@ export function speak(text, { interrupt = true, rate = 0.92, pitch = 1.08 } = {}
   return new Promise(resolve => {
     const u = new SpeechSynthesisUtterance(text);
     if (voice) u.voice = voice;
-    u.rate = rate;
+    u.rate = rate * userRate;
     u.pitch = pitch;
     u.volume = 1;
-    u.onend = resolve;
-    u.onerror = resolve;
+    let settled = false;
+    let guard;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(guard);
+      resolve();
+    };
+    u.onend = done;
+    u.onerror = done;
+    // Safety guards: if speech never starts (broken TTS) resolve quickly;
+    // once it does start, allow generous time so we never resolve while the
+    // voice is still talking.
+    guard = setTimeout(done, 2500);
+    u.onstart = () => {
+      clearTimeout(guard);
+      guard = setTimeout(done, 2000 + text.length * 220);
+    };
     synth.speak(u);
-    // Safety: some browsers drop onend; don't hang forever.
-    setTimeout(resolve, 1000 + text.length * 120);
   });
 }
 
@@ -69,9 +101,13 @@ const PRAISE = ['Great job!', 'Yay! You did it!', 'Hooray!', 'Wonderful!', 'Amaz
 const ENCOURAGE = ['Try again!', 'Almost! Try again!', 'You can do it!', 'Oops! One more try!'];
 
 export function praise() {
+  const rec = recordedCats.get('praise');
+  if (rec) return audio.play(rec);
   return speak(pick(PRAISE));
 }
 
 export function encourage() {
+  const rec = recordedCats.get('encourage');
+  if (rec) return audio.play(rec);
   return speak(pick(ENCOURAGE));
 }

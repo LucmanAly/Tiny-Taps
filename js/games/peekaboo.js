@@ -3,6 +3,8 @@
 
 import { ANIMALS, preloadSounds } from '../data/animals.js';
 import { pickN } from '../engine/rand.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const COVER_COLORS = [
   ['#ff8a70', '#e85c40'], ['#ffd54a', '#f0a416'], ['#7ed67e', '#4aa84a'],
@@ -55,6 +57,8 @@ function start(ctx) {
   stage.appendChild(wrap);
 
   function newRound(first) {
+    const build = () => {
+    if (!alive) return;
     revealed = 0;
     grid.innerHTML = '';
     const six = pickN(ANIMALS, 6);
@@ -74,7 +78,7 @@ function start(ctx) {
         speech.stop();
         if (a.sound) await audio.play('animal:' + a.id);
         if (!alive) return;
-        speech.speak(`A ${a.name}!`);
+        speech.speak(S.reveal(a.name));
         if (done) {
           setTimeout(() => {
             if (!alive) return;
@@ -85,10 +89,13 @@ function start(ctx) {
       });
       grid.appendChild(tile);
     });
-    speech.speak(first ? 'Peekaboo! Who is hiding? Tap and see!' : 'More friends are hiding! Tap and see!');
+    speech.speak(first ? S.peekabooIntro : S.peekabooMore, { interrupt: !first });
+    };
+    if (first) build();
+    else fadeSwap(grid, build);
   }
 
-  setReprompt(() => speech.speak('Tap a square! Who is hiding?'));
+  setReprompt(() => speech.speak(S.peekabooReprompt));
   newRound(true);
 
   return () => { alive = false; };

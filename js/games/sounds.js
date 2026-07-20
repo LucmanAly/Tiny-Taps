@@ -2,6 +2,8 @@
 
 import { SOUND_ANIMALS, preloadSounds } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const EAR_ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -56,6 +58,8 @@ function start(ctx) {
 
   async function newRound(first) {
     if (!alive) return;
+    if (!first) await new Promise(r => fadeSwap(row, r));
+    if (!alive) return;
     busy = false;
     target = nextAnimal();
     const options = shuffle([target, ...pickN(SOUND_ANIMALS.filter(a => a !== target), 2)]);
@@ -70,7 +74,7 @@ function start(ctx) {
           busy = true;
           card.classList.add('zoom-win');
           celebrate.burst(e.clientX, e.clientY, { count: 26 });
-          speech.speak(`Yes! The ${a.name}!`);
+          speech.speak(S.soundsYes(a.name));
           await audio.play('animal:' + a.id);
           if (!alive) return;
           celebrate.big({ praise: false });
@@ -85,13 +89,13 @@ function start(ctx) {
       });
       row.appendChild(card);
     });
-    if (first) await speech.speak('Listen! Who makes this sound?');
+    if (first) await speech.speak(S.soundsIntro, { interrupt: false });
     await preloadSounds(audio, [target.id]);
     if (alive) playTarget();
   }
 
   setReprompt(() => {
-    speech.speak('Who makes this sound? Tap the animal!').then(() => {
+    speech.speak(S.soundsReprompt).then(() => {
       if (alive && !busy) playTarget();
     });
   });
