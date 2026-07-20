@@ -100,9 +100,22 @@ export function stop() {
 const PRAISE = ['Great job!', 'Yay! You did it!', 'Hooray!', 'Wonderful!', 'Amazing!', 'Way to go!', 'Super!'];
 const ENCOURAGE = ['Try again!', 'Almost! Try again!', 'You can do it!', 'Oops! One more try!'];
 
-export function praise() {
+// Every completed round says something positive; the parent's *recorded*
+// clip specifically is the extra-special one. `quick` (fast, frequently-
+// repeating games) throttles it to roughly every 3rd win so it stays a
+// periodic treat instead of playing every round — a synthesized cheer still
+// plays every time either way. Pass `quick: false` for slower games where
+// every completion should hear it.
+let quickPraiseCount = 0;
+export function praise({ quick = true } = {}) {
   const rec = recordedCats.get('praise');
-  if (rec) return audio.play(rec);
+  if (rec) {
+    if (quick) {
+      quickPraiseCount++;
+      if (quickPraiseCount % 3 !== 0) return speak(pick(PRAISE));
+    }
+    return audio.play(rec);
+  }
   return speak(pick(PRAISE));
 }
 

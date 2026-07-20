@@ -76,20 +76,20 @@ function start(ctx) {
         const r = tile.getBoundingClientRect();
         celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 18 });
         speech.stop();
-        if (a.sound) await audio.play('animal:' + a.id);
+        if (a.sound) await audio.play('animal:' + a.id, { maxDuration: 2.2 });
         if (!alive) return;
         speech.speak(S.reveal(a.name));
         if (done) {
           setTimeout(() => {
             if (!alive) return;
             celebrate.big();
-            setTimeout(() => { if (alive) newRound(false); }, 2300);
+            setTimeout(() => { if (alive) newRound(false); }, 1000);
           }, 900);
         }
       });
       grid.appendChild(tile);
     });
-    speech.speak(first ? S.peekabooIntro : S.peekabooMore, { interrupt: !first });
+    speech.speak(first ? S.peekabooIntro : S.peekabooMore, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(grid, build);

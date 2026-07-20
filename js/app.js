@@ -4,6 +4,7 @@ import * as celebrate from './engine/celebrate.js';
 import * as recordings from './engine/recordings.js';
 import { games } from './games/index.js';
 import { S } from './data/strings.js';
+import { addTap } from './engine/ui.js';
 import { VERSION } from './data/version.js';
 
 const screenEl = document.getElementById('screen');
@@ -136,7 +137,7 @@ function showMenu() {
     const card = el('button', 'menu-card', grid);
     card.style.background = ACCENTS[game.id] || '#ffffff';
     card.innerHTML = `<div class="card-icon">${game.icon}</div><div class="card-label">${game.title}</div>`;
-    card.addEventListener('pointerdown', () => {
+    addTap(card, () => {
       audio.pop();
       startGame(game);
     });

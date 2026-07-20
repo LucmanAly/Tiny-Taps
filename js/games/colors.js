@@ -62,7 +62,7 @@ function start(ctx) {
   stage.appendChild(row);
 
   function say(first) {
-    if (target) speech.speak(S.colorsPrompt(target.name), { interrupt: !first });
+    if (target) speech.speak(S.colorsPrompt(target.name), { interrupt: false });
   }
 
   function newRound(first) {
@@ -85,7 +85,7 @@ function start(ctx) {
           audio.pop();
           celebrate.burst(e.clientX, e.clientY, { count: 30 });
           speech.praise();
-          setTimeout(() => newRound(false), 1600);
+          setTimeout(() => newRound(false), 900);
         } else {
           b.classList.remove('wiggle');
           void b.offsetWidth;

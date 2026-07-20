@@ -5,6 +5,7 @@
 // (including recorded-voice praise/encourage, sequenced so nothing overlaps).
 
 import { fadeSwap } from './ui.js';
+import * as stickers from './stickers.js';
 
 export function makeRoundGame(config) {
   const {
@@ -18,7 +19,9 @@ export function makeRoundGame(config) {
     speakPrompt,     // (target, first, ctx) => void
     reprompt,        // (target, ctx) => void
     onWin,           // optional async ({ target, opt, btn, event, ctx }) => void, before burst+praise
-    winDelay = 1700,
+    nextAnimalId,    // optional (target) => animal id, so a sticker earned this
+                     // round previews the animal coming up next
+    winDelay = 900,
     burstCount = 26,
   } = config;
 
@@ -35,11 +38,11 @@ export function makeRoundGame(config) {
     stage.appendChild(promptArea);
     stage.appendChild(row);
 
-    function newRound(first) {
+    function newRound(first, preset) {
       const build = () => {
         if (!alive) return;
         busy = false;
-        target = nextRound();
+        target = preset || nextRound();
         renderPrompt(promptArea, target, ctx);
         row.innerHTML = '';
         options(target, ctx).forEach(opt => {
@@ -53,8 +56,16 @@ export function makeRoundGame(config) {
               if (onWin) await onWin({ target, opt, btn: b, event: e, ctx });
               if (!alive) return;
               celebrate.burst(e.clientX, e.clientY, { count: burstCount });
-              speech.praise();
-              setTimeout(() => newRound(false), winDelay);
+              speech.praise({ quick: true });
+              // Draw what's actually coming up next now (not the target that
+              // was just answered) so a sticker preview matches reality, and
+              // reuse that draw when the round rebuilds instead of drawing
+              // again.
+              const upcoming = nextRound();
+              const preferredId = nextAnimalId ? nextAnimalId(upcoming) : null;
+              const won = stickers.recordWin(preferredId);
+              if (won) setTimeout(() => stickers.showToast(won), winDelay);
+              setTimeout(() => newRound(false, upcoming), winDelay);
             } else {
               b.classList.remove('wiggle');
               void b.offsetWidth;

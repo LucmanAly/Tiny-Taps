@@ -50,18 +50,18 @@ function start(ctx) {
     if (!target) return;
     listen.classList.add('playing');
     speech.stop();
-    await audio.play('animal:' + target.id);
+    await audio.play('animal:' + target.id, { maxDuration: 2.2 });
     listen.classList.remove('playing');
   }
 
   listen.addEventListener('pointerdown', () => { if (!busy) playTarget(); });
 
-  async function newRound(first) {
+  async function newRound(first, preset) {
     if (!alive) return;
     if (!first) await new Promise(r => fadeSwap(row, r));
     if (!alive) return;
     busy = false;
-    target = nextAnimal();
+    target = preset || nextAnimal();
     const options = shuffle([target, ...pickN(SOUND_ANIMALS.filter(a => a !== target), 2)]);
     row.innerHTML = '';
     options.forEach(a => {
@@ -76,10 +76,11 @@ function start(ctx) {
           celebrate.burst(e.clientX, e.clientY, { count: 26 });
           await speech.speak(S.soundsYes(a.name));
           if (!alive) return;
-          await audio.play('animal:' + a.id);
+          await audio.play('animal:' + a.id, { maxDuration: 2.2 });
           if (!alive) return;
-          celebrate.big();
-          setTimeout(() => newRound(false), 2000);
+          const upcoming = nextAnimal();
+          celebrate.big({ nextAnimalId: upcoming.id });
+          setTimeout(() => newRound(false, upcoming), 900);
         } else {
           card.classList.remove('wiggle');
           void card.offsetWidth;
@@ -92,6 +93,11 @@ function start(ctx) {
     });
     if (first) await speech.speak(S.soundsIntro, { interrupt: false });
     await preloadSounds(audio, [target.id]);
+    // A flaky load can leave no buffer with no visible error; retry once
+    // before giving up so playback fires reliably every round.
+    if (!audio.hasBuffer('animal:' + target.id)) {
+      await audio.load('animal:' + target.id, target.sound);
+    }
     if (alive) playTarget();
   }
 

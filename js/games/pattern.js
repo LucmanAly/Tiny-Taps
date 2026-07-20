@@ -49,7 +49,7 @@ export default makeRoundGame({
     }));
   },
   speakPrompt(target, first, ctx) {
-    ctx.speech.speak(S.patternPrompt, { interrupt: !first });
+    ctx.speech.speak(S.patternPrompt, { interrupt: false });
   },
   reprompt(target, ctx) {
     ctx.speech.speak(S.patternPrompt);

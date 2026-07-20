@@ -343,8 +343,8 @@ function start(ctx) {
     if (svg) savePicture(svg.outerHTML);
     await speech.speak(TXT.colorDone);
     if (!alive) return;
-    celebrate.big();
-    setTimeout(() => newPage(false), 2600);
+    celebrate.big({ quick: false });
+    setTimeout(() => newPage(false), 1000);
   });
   bar.appendChild(done);
 
@@ -397,12 +397,12 @@ function start(ctx) {
         audio.sparkle();
       });
     });
-    speech.speak(TXT.colorIntro(page.name), { interrupt: !first });
+    speech.speak(TXT.colorIntro(page.name), { interrupt: false });
     // One animal on screen: let it say hello with its real sound.
     const a = animal(page.id);
     if (a && a.sound) {
       audio.load('animal:' + a.id, a.sound).then(() => {
-        if (alive) audio.play('animal:' + a.id);
+        if (alive) audio.play('animal:' + a.id, { maxDuration: 2.2 });
       });
     }
   }

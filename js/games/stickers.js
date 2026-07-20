@@ -4,6 +4,7 @@
 import { ANIMALS } from '../data/animals.js';
 import { earned } from '../engine/stickers.js';
 import { S } from '../data/strings.js';
+import { addTap } from '../engine/ui.js';
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -41,7 +42,7 @@ function start(ctx) {
     cell.style.animationDelay = `${i * 0.03}s`;
     cell.innerHTML = `<img src="${a.art}" alt="${a.name}">`;
     if (have.has(a.id)) {
-      cell.addEventListener('pointerdown', () => {
+      addTap(cell, () => {
         if (!alive) return;
         audio.pop();
         cell.classList.remove('wiggle');

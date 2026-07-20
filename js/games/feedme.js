@@ -45,7 +45,7 @@ function start(ctx) {
   stage.appendChild(tray);
 
   function say(first) {
-    if (current) speech.speak(S.feedHungry(current.name), { interrupt: !first });
+    if (current) speech.speak(S.feedHungry(current.name), { interrupt: false });
   }
 
   function fillTray() {
@@ -59,6 +59,8 @@ function start(ctx) {
       tray.appendChild(item);
       makeDraggable(item, {
         getTargets: () => [{ el: animalImg, data: 'animal' }],
+        autoCompleteIfCorrect: f === correct ? () => !fed : null,
+        autoCompleteTarget: f === correct ? () => ({ el: animalImg, data: 'animal' }) : null,
         onDrop: hit => {
           if (!alive || fed || !hit) return 'reject';
           if (f === correct) {
@@ -74,10 +76,11 @@ function start(ctx) {
               celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
               await speech.speak(S.feedYum(current.name));
               if (!alive) return;
-              if (current.sound) await audio.play('animal:' + current.id);
+              if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
               if (!alive) return;
-              celebrate.big();
-              setTimeout(() => newRound(false), 2200);
+              const upcoming = animal(nextPair());
+              celebrate.big({ nextAnimalId: upcoming.id });
+              setTimeout(() => newRound(false, upcoming), 900);
             }, 550);
             return 'accept';
           }
@@ -89,18 +92,18 @@ function start(ctx) {
     });
   }
 
-  function newRound(first) {
+  function newRound(first, preset) {
     const build = () => {
     if (!alive) return;
     fed = false;
-    current = animal(nextPair());
+    current = preset || animal(nextPair());
     animalImg.src = current.art;
     animalImg.classList.remove('munch', 'pop-in', 'slide-in');
     void animalImg.offsetWidth;
     animalImg.classList.add('slide-in');
     if (current.sound) {
       audio.load('animal:' + current.id, current.sound).then(() => {
-        if (alive && current) audio.play('animal:' + current.id);
+        if (alive && current) audio.play('animal:' + current.id, { maxDuration: 2.2 });
       });
     }
     fillTray();

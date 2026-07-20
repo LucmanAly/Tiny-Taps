@@ -607,7 +607,7 @@
 .shadow-target.revealed img { filter: none; }
 
 /* ---------- big or small ---------- */
-.bigsmall-prompt { min-height: 16vmin; }
+.bigsmall-prompt { min-height: 10vmin; }
 .bigsmall-label {
   font-size: 7vmin;
   font-weight: 700;
@@ -619,10 +619,10 @@
   letter-spacing: 0.04em;
 }
 .bigsmall-row {
-  flex: 1;
   align-items: flex-end;
   gap: 6vmin;
-  padding-bottom: 6vmin;
+  margin-top: 3vmin;
+  padding-bottom: 2vmin;
 }
 .bigsmall-opt {
   background: none;
@@ -689,15 +689,16 @@
   flex: 1;
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6vmin;
+  gap: 3vmin;
   padding: max(14vmin, 80px) 3vmin 1vmin;
 }
 .sort-bin {
   position: relative;
-  width: 32vmin;
-  max-width: 220px;
+  width: 24vmin;
+  max-width: 160px;
   border-radius: var(--radius);
   transition: transform 0.15s ease-out;
 }

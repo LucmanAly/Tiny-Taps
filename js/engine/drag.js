@@ -7,10 +7,17 @@ export function makeDraggable(el, {
   onDrop,              // (targetData|null, el) => 'accept' | 'reject'
   snapRadiusFactor = 0.6, // fraction of target size still counted as a hit
   onPickup = null,
+  // Leniency for "which item" games (e.g. Feed Me): if the child has picked
+  // up the correct item, the first bit of real movement finishes the drag
+  // for them instead of demanding an accurate carry all the way to the
+  // target — picking the right one is the actual challenge, not the aim.
+  autoCompleteIfCorrect = null, // () => boolean
+  autoCompleteTarget = null,    // () => { el, data }
 } = {}) {
   let startX = 0, startY = 0, dx = 0, dy = 0;
   let dragging = false;
   let disabled = false;
+  let autoCompleting = false;
 
   el.style.touchAction = 'none';
 
@@ -20,7 +27,7 @@ export function makeDraggable(el, {
   }
 
   function onDown(e) {
-    if (disabled || dragging) return;
+    if (disabled || dragging || autoCompleting) return;
     dragging = true;
     dx = 0; dy = 0;
     startX = e.clientX;
@@ -38,6 +45,27 @@ export function makeDraggable(el, {
     dx = e.clientX - startX;
     dy = e.clientY - startY;
     el.style.transform = `translate(${dx}px, ${dy}px) scale(1.12)`;
+    if (autoCompleteIfCorrect && autoCompleteTarget && Math.hypot(dx, dy) > 10 && autoCompleteIfCorrect()) {
+      finishToTarget(autoCompleteTarget());
+    }
+  }
+
+  function finishToTarget(target) {
+    if (!target || autoCompleting) return;
+    autoCompleting = true;
+    dragging = false;
+    el.classList.remove('dragging');
+    const verdict = onDrop ? onDrop(target.data, el) : 'reject';
+    const c = center(el);
+    if (verdict === 'accept') {
+      const tc = center(target.el);
+      el.style.transition = 'transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      el.style.transform = `translate(${dx + tc.x - c.x}px, ${dy + tc.y - c.y}px) scale(1)`;
+    } else {
+      el.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      el.style.transform = 'translate(0, 0) scale(1)';
+      el.addEventListener('transitionend', () => { el.style.zIndex = ''; }, { once: true });
+    }
   }
 
   function onUp() {

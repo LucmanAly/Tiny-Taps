@@ -73,7 +73,7 @@ function start(ctx) {
               setTimeout(() => {
                 if (!alive) return;
                 celebrate.big();
-                setTimeout(() => newRound(false), 2400);
+                setTimeout(() => newRound(false), 1000);
               }, 600);
             }
             return 'accept';
@@ -84,7 +84,7 @@ function start(ctx) {
         },
       });
     });
-    speech.speak(S.puzzleIntro, { interrupt: !first });
+    speech.speak(S.puzzleIntro, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(stage, build);

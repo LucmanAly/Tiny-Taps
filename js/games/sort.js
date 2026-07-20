@@ -1,5 +1,5 @@
-// Sort It: drag each animal to its home — the barn or the pond.
-// Categorization, the biggest untouched cognitive skill in the app.
+// Sort It: drag each animal to its home — the farm, the water, or the
+// jungle. Categorization, the biggest untouched cognitive skill in the app.
 
 import { ANIMALS, preloadSounds } from '../data/animals.js';
 import { cycler } from '../engine/rand.js';
@@ -7,8 +7,7 @@ import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
 
-const POOL = ANIMALS.filter(a => a.habitat === 'farm' || a.habitat === 'water');
-const nextAnimal = cycler(POOL);
+const nextAnimal = cycler(ANIMALS);
 
 const BARN_SVG = `
 <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
@@ -35,6 +34,26 @@ const POND_SVG = `
   <circle cx="86" cy="40" r="3" fill="#ff9fce"/>
 </svg>`;
 
+const JUNGLE_SVG = `
+<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="70" width="120" height="30" fill="#6fae4a"/>
+  <rect x="34" y="46" width="10" height="40" rx="3" fill="#8a6a3c"/>
+  <path d="M39 46 C20 40 10 24 8 12 C24 16 36 28 40 44 Z" fill="#4a9a3a"/>
+  <path d="M39 46 C58 38 68 22 70 10 C54 14 42 26 38 44 Z" fill="#5aad42"/>
+  <path d="M39 44 C22 46 8 42 2 34 C16 30 32 32 40 42 Z" fill="#3f8f32"/>
+  <rect x="82" y="52" width="9" height="34" rx="3" fill="#8a6a3c"/>
+  <path d="M86.5 52 C70 46 60 32 58 22 C74 26 84 36 88 50 Z" fill="#5aad42"/>
+  <path d="M86.5 52 C102 44 110 30 110 18 C96 24 88 34 84 50 Z" fill="#4a9a3a"/>
+  <circle cx="20" cy="80" r="6" fill="#ffcf3d"/>
+  <circle cx="100" cy="82" r="5" fill="#ff9fce"/>
+</svg>`;
+
+const BINS = [
+  { habitat: 'farm', label: 'Farm', svg: BARN_SVG },
+  { habitat: 'water', label: 'Water', svg: POND_SVG },
+  { habitat: 'wild', label: 'Jungle', svg: JUNGLE_SVG },
+];
+
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -55,14 +74,13 @@ function start(ctx) {
 
   const bins = document.createElement('div');
   bins.className = 'sort-bins';
-  const barn = document.createElement('div');
-  barn.className = 'sort-bin';
-  barn.innerHTML = `${BARN_SVG}<div class="sort-bin-label">Farm</div>`;
-  const pond = document.createElement('div');
-  pond.className = 'sort-bin';
-  pond.innerHTML = `${POND_SVG}<div class="sort-bin-label">Water</div>`;
-  bins.appendChild(barn);
-  bins.appendChild(pond);
+  const binEls = BINS.map(b => {
+    const el = document.createElement('div');
+    el.className = 'sort-bin';
+    el.innerHTML = `${b.svg}<div class="sort-bin-label">${b.label}</div>`;
+    bins.appendChild(el);
+    return el;
+  });
 
   const tray = document.createElement('div');
   tray.className = 'sort-tray';
@@ -70,11 +88,11 @@ function start(ctx) {
   stage.appendChild(bins);
   stage.appendChild(tray);
 
-  function newRound(first) {
+  function newRound(first, preset) {
     const build = () => {
       if (!alive) return;
       placed = false;
-      current = nextAnimal();
+      current = preset || nextAnimal();
       tray.innerHTML = '';
       const item = document.createElement('div');
       item.className = 'sort-item pop-in';
@@ -84,24 +102,22 @@ function start(ctx) {
       if (current.sound) preloadSounds(audio, [current.id]);
 
       makeDraggable(item, {
-        getTargets: () => [
-          { el: barn, data: 'farm' },
-          { el: pond, data: 'water' },
-        ],
+        getTargets: () => BINS.map((b, i) => ({ el: binEls[i], data: b.habitat })),
         onDrop: hit => {
           if (!alive || placed || !hit) return 'reject';
           if (hit === current.habitat) {
             placed = true;
             audio.chime();
-            const target = hit === 'farm' ? barn : pond;
+            const target = binEls[BINS.findIndex(b => b.habitat === hit)];
             const r = target.getBoundingClientRect();
             celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 24 });
             speech.speak(S.sortYes(current.name)).then(async () => {
               if (!alive) return;
-              if (current.sound) await audio.play('animal:' + current.id);
+              if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
               if (!alive) return;
-              celebrate.big();
-              setTimeout(() => newRound(false), 2200);
+              const upcoming = nextAnimal();
+              celebrate.big({ nextAnimalId: upcoming.id });
+              setTimeout(() => newRound(false, upcoming), 900);
             });
             return 'accept';
           }
@@ -111,7 +127,7 @@ function start(ctx) {
         },
       });
 
-      speech.speak(S.sortIntro, { interrupt: !first });
+      speech.speak(S.sortIntro, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(tray, build);

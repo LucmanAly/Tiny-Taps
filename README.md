@@ -64,6 +64,14 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v2.1** — pacing and reliability pass from real play-testing: snappier
+  round transitions, in-sync Counting voice, scroll-safe menu taps, trimmed
+  animal sound clips, more reliable Animal Sounds/parent-voice playback, a
+  friendlier Feed Me chomp sound, a spoken Big/Small prompt, a consistent
+  sticker rule with next-animal previews, Trace It difficulty progression,
+  faster Bubbles, a tighter Big/Small layout, a third Sort It bin (Jungle)
+  with the full animal roster, a redesigned Matching opening peek, and
+  drag-to-target leniency in Feed Me.
 - **v2.0** — six new games: Shadow Match, Big or Small, Patterns, Sort It,
   Wash the Animal, Trace It. Fixed recorded praise/encouragement not playing
   on task completion in several games. Added a shared quiz-game engine

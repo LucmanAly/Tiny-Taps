@@ -42,9 +42,10 @@ export default makeRoundGame({
     }));
   },
   speakPrompt(target, first, ctx) {
-    ctx.speech.speak(S.bigSmallPrompt(target.size, target.animal.name), { interrupt: !first });
+    ctx.speech.speak(S.bigSmallPrompt(target.size, target.animal.name), { interrupt: false });
   },
   reprompt(target, ctx) {
     if (target) ctx.speech.speak(S.bigSmallPrompt(target.size, target.animal.name));
   },
+  nextAnimalId: target => target.animal.id,
 });

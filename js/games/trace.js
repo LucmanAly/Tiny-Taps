@@ -4,17 +4,27 @@
 // classic 2-4yo pre-writing exercise; nothing else in the app practices
 // controlled continuous finger motion.
 
-import { cycler } from '../engine/rand.js';
+import { pick } from '../engine/rand.js';
 import { S } from '../data/strings.js';
 
+// Easiest to hardest: a straight line first; a circle last, since it has no
+// start/end landmark and demands one continuous curve all the way around.
 const PATHS = [
   { id: 'line', d: 'M30 100 L270 100' },
   { id: 'wave', d: 'M20 110 Q80 50 140 110 T260 110' },
   { id: 'zigzag', d: 'M20 160 L80 40 L140 160 L200 40 L260 160' },
-  { id: 'circle', d: 'M150 40 A60 60 0 1 1 149.9 40 Z' },
   { id: 'mountain', d: 'M20 170 L90 60 L150 130 L210 40 L280 170' },
+  { id: 'circle', d: 'M150 40 A60 60 0 1 1 149.9 40 Z' },
 ];
-const nextPath = cycler(PATHS);
+
+// Starts at the easiest shape and advances one step per completed trace.
+// Once at the hardest, keeps things fresh by picking randomly among all of
+// them on replay rather than looping the same fixed order forever.
+let level = 0;
+function nextPath() {
+  if (level < PATHS.length - 1) return PATHS[level++];
+  return pick(PATHS);
+}
 
 const TOL = 34;              // generous hit tolerance, in path viewBox units
 const MAX_ADVANCE_FRAC = 0.18; // forward search window per pointer move, as a fraction of the path
@@ -115,8 +125,8 @@ function start(ctx) {
     celebrate.burst(screen.x, screen.y, { count: 30 });
     await speech.speak(S.traceDone);
     if (!alive) return;
-    celebrate.big();
-    setTimeout(() => newRound(false), 2200);
+    celebrate.big({ quick: false });
+    setTimeout(() => newRound(false), 1000);
   }
 
   function onDown(e) {
@@ -147,7 +157,7 @@ function start(ctx) {
     const startPt = pathIndex.pts[0];
     star.setAttribute('cx', startPt.x);
     star.setAttribute('cy', startPt.y);
-    speech.speak(S.traceIntro, { interrupt: !first });
+    speech.speak(S.traceIntro, { interrupt: false });
   }
 
   setReprompt(() => speech.speak(S.traceReprompt));
