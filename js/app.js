@@ -1,13 +1,36 @@
 import * as audio from './engine/audio.js';
 import * as speech from './engine/speech.js';
 import * as celebrate from './engine/celebrate.js';
+import * as recordings from './engine/recordings.js';
 import { games } from './games/index.js';
+import { S } from './data/strings.js';
 
 const screenEl = document.getElementById('screen');
 let currentCleanup = null;
 let repromptFn = null;
 let repromptTimer = null;
 const REPROMPT_MS = 9000;
+
+/* ---------------- settings (parent-facing) ---------------- */
+
+const LS_VOLUME = 'tinytaps-volume';
+const LS_HIDDEN = 'tinytaps-hidden';
+
+function hiddenGames() {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN) || '[]')); }
+  catch (e) { return new Set(); }
+}
+
+function setHiddenGames(set) {
+  localStorage.setItem(LS_HIDDEN, JSON.stringify([...set]));
+}
+
+// Per-game accent tints so a pre-reader can navigate by color.
+const ACCENTS = {
+  peekaboo: '#f1e6ff', sounds: '#dff5f3', colors: '#ffe7e1', shapes: '#e4efff',
+  counting: '#fff1d6', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
+  memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
+};
 
 /* ---------------- idle re-prompt ----------------
    Games register a phrase to repeat if the child goes quiet/stuck. */
@@ -92,7 +115,7 @@ function showSplash() {
     audio.unlock();
     speech.init();
     audio.chime();
-    speech.speak('Tiny Taps!');
+    speech.speak(S.appName);
     showMenu();
   }, { once: true });
 }
@@ -104,16 +127,19 @@ function showMenu() {
   const s = el('div', 'screen menu', screenEl);
   el('div', 'menu-title', s).textContent = 'Pick a game!';
   const grid = el('div', 'menu-grid', s);
+  const hidden = hiddenGames();
   for (const game of games) {
+    if (hidden.has(game.id)) continue;
     const card = el('button', 'menu-card', grid);
+    card.style.background = ACCENTS[game.id] || '#ffffff';
     card.innerHTML = `<div class="card-icon">${game.icon}</div><div class="card-label">${game.title}</div>`;
     card.addEventListener('pointerdown', () => {
       audio.pop();
-      speech.speak(game.title);
       startGame(game);
     });
   }
   makeCreditsButton(s);
+  makeSettingsButton(s);
 }
 
 /* ---------------- credits (parent-facing, hold to open) ---------------- */
@@ -163,7 +189,150 @@ function showCredits() {
   overlay.querySelector('.credits-close').addEventListener('pointerdown', () => overlay.remove());
 }
 
-/* ---------------- game shell + parent gate ---------------- */
+/* ---------------- parent settings (hold to open) ---------------- */
+
+const GEAR_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 8.5 A3.5 3.5 0 1 0 12 15.5 A3.5 3.5 0 1 0 12 8.5 Z M12 2.8 L13 5.6 A6.6 6.6 0 0 1 15.4 6.6 L18.2 5.5 L20.5 8.4 L18.4 10.5 A6.8 6.8 0 0 1 18.4 13.5 L20.5 15.6 L18.2 18.5 L15.4 17.4 A6.6 6.6 0 0 1 13 18.4 L12 21.2 L11 18.4 A6.6 6.6 0 0 1 8.6 17.4 L5.8 18.5 L3.5 15.6 L5.6 13.5 A6.8 6.8 0 0 1 5.6 10.5 L3.5 8.4 L5.8 5.5 L8.6 6.6 A6.6 6.6 0 0 1 11 5.6 Z"
+        fill="none" stroke="#3a3357" stroke-width="1.8" stroke-linejoin="round"/>
+</svg>`;
+
+// One category per row: what the recording replaces + example phrase.
+const REC_ITEMS = [
+  { key: 'praise', label: 'Praise', hint: 'e.g. “Great job!”' },
+  { key: 'encourage', label: 'Encourage', hint: 'e.g. “Try again!”' },
+];
+
+function makeSettingsButton(parent) {
+  const btn = el('button', 'settings-btn', parent);
+  btn.innerHTML = GEAR_ICON;
+  btn.title = 'Parent settings (hold)';
+  let t = null;
+  btn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    t = setTimeout(showSettings, 1200);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
+    btn.addEventListener(ev, () => clearTimeout(t)));
+}
+
+let activeRecorder = null;
+
+function showSettings() {
+  const overlay = el('div', 'credits-overlay', document.body);
+  const panel = el('div', 'credits-panel settings-panel', overlay);
+
+  const vol = Number(localStorage.getItem(LS_VOLUME) || 0.9);
+  const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+  const hidden = hiddenGames();
+
+  panel.innerHTML = `
+    <h2>Parent settings</h2>
+    <label class="set-row">Volume
+      <input type="range" id="set-vol" min="0" max="1" step="0.05" value="${vol}">
+    </label>
+    <label class="set-row">Voice speed
+      <input type="range" id="set-rate" min="0.7" max="1.3" step="0.05" value="${speech.getUserRate()}">
+    </label>
+    <h3>Your voice</h3>
+    <p>Record yourself — the app will use your voice instead of the robot one
+    for these moments.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
+    <div id="rec-rows"></div>
+    <h3>Games on the menu</h3>
+    <div class="set-games" id="set-games"></div>
+    <button class="big-btn credits-close">Close</button>`;
+
+  panel.querySelector('#set-vol').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    localStorage.setItem(LS_VOLUME, String(v));
+    audio.setVolume(v);
+  });
+  panel.querySelector('#set-vol').addEventListener('change', () => audio.chime());
+
+  panel.querySelector('#set-rate').addEventListener('change', e => {
+    speech.setUserRate(Number(e.target.value));
+    speech.speak('Hello! This is how I talk now!');
+  });
+
+  const recRows = panel.querySelector('#rec-rows');
+  REC_ITEMS.forEach(item => {
+    const row = el('div', 'rec-row', recRows);
+    row.innerHTML = `
+      <div class="rec-label">${item.label}<span>${item.hint}</span></div>
+      <button class="big-btn rec-btn rec-record">● Record</button>
+      <button class="big-btn rec-btn rec-play">▶</button>
+      <button class="big-btn rec-btn rec-del">✕</button>
+      <div class="rec-status">${audio.hasBuffer('rec:' + item.key) ? 'Saved' : ''}</div>`;
+    const [recBtn, playBtn, delBtn] = row.querySelectorAll('button');
+    const status = row.querySelector('.rec-status');
+    if (!canRecord) recBtn.disabled = true;
+
+    recBtn.addEventListener('pointerdown', async () => {
+      if (activeRecorder) { activeRecorder.stop(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const rec = new MediaRecorder(stream);
+        const chunks = [];
+        rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        rec.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          activeRecorder = null;
+          recBtn.classList.remove('recording');
+          recBtn.textContent = '● Record';
+          const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+          const buf = await audio.loadBlob('rec:' + item.key, blob);
+          if (buf) {
+            await recordings.save(item.key, blob);
+            speech.setRecordedCategory(item.key, 'rec:' + item.key);
+            status.textContent = 'Saved!';
+          } else {
+            status.textContent = 'Recording failed — try again';
+          }
+        };
+        rec.start();
+        activeRecorder = rec;
+        recBtn.classList.add('recording');
+        recBtn.textContent = '■ Stop';
+        status.textContent = 'Recording… tap Stop when done';
+      } catch (e) {
+        status.textContent = 'Microphone not available';
+      }
+    });
+
+    playBtn.addEventListener('pointerdown', () => {
+      if (audio.hasBuffer('rec:' + item.key)) audio.play('rec:' + item.key);
+      else status.textContent = 'Nothing recorded yet';
+    });
+
+    delBtn.addEventListener('pointerdown', async () => {
+      await recordings.remove(item.key);
+      speech.setRecordedCategory(item.key, null);
+      status.textContent = 'Cleared';
+    });
+  });
+
+  const gamesBox = panel.querySelector('#set-games');
+  games.forEach(g => {
+    const lab = el('label', 'set-game', gamesBox);
+    lab.innerHTML = `<input type="checkbox" ${hidden.has(g.id) ? '' : 'checked'}> ${g.title}`;
+    lab.querySelector('input').addEventListener('change', e => {
+      const h = hiddenGames();
+      if (e.target.checked) h.delete(g.id);
+      else h.add(g.id);
+      // Never allow hiding everything.
+      if (h.size >= games.length) { h.delete(g.id); e.target.checked = true; }
+      setHiddenGames(h);
+    });
+  });
+
+  panel.querySelector('.credits-close').addEventListener('pointerdown', () => {
+    if (activeRecorder) { try { activeRecorder.stop(); } catch (e) { /* ok */ } }
+    overlay.remove();
+    showMenu();
+  });
+}
+
+/* ---------------- game shell ---------------- */
 
 const HOME_ICON = `
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -182,11 +351,22 @@ function makeHomeButton(parent) {
   return btn;
 }
 
+let lastStart = 0;
+
 function startGame(game) {
+  // Toddlers tap with several fingers at once — don't start a game twice.
+  const now = performance.now();
+  if (now - lastStart < 600) return;
+  lastStart = now;
+
   clearScreen();
   const s = el('div', 'screen game-screen', screenEl);
   const stage = el('div', 'game-stage', s);
   makeHomeButton(s);
+
+  // Say the game's name first; games queue their intro behind it
+  // (their first speak uses interrupt: false).
+  speech.speak(game.title);
 
   const ctx = {
     stage,
@@ -203,6 +383,18 @@ function startGame(game) {
 
 celebrate.init(document.getElementById('celebrate-canvas'));
 speech.init();
+audio.setVolume(Number(localStorage.getItem(LS_VOLUME) || 0.9));
+
+// Load any parent voice recordings saved in IndexedDB.
+(async () => {
+  try {
+    const saved = await recordings.loadAll();
+    for (const [key, blob] of saved) {
+      const buf = await audio.loadBlob('rec:' + key, blob);
+      if (buf) speech.setRecordedCategory(key, 'rec:' + key);
+    }
+  } catch (e) { /* recordings are optional */ }
+})();
 
 // Keep the screen awake while playing (best-effort; not all browsers).
 async function keepAwake() {

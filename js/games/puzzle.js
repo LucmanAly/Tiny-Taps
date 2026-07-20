@@ -3,6 +3,8 @@
 import { ANIMALS } from '../data/animals.js';
 import { shuffle, pickN } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -30,7 +32,8 @@ function start(ctx) {
   stage.appendChild(arena);
   stage.appendChild(tray);
 
-  function newRound() {
+  function newRound(first) {
+    const build = () => {
     if (!alive) return;
     board.innerHTML = '';
     tray.innerHTML = '';
@@ -64,13 +67,13 @@ function start(ctx) {
             audio.chime();
             const r = slot.getBoundingClientRect();
             celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 20 });
-            speech.speak(`The ${a.name}!`);
+            speech.speak(S.reveal(a.name));
             remaining--;
             if (remaining === 0) {
               setTimeout(() => {
                 if (!alive) return;
                 celebrate.big();
-                setTimeout(newRound, 2400);
+                setTimeout(() => newRound(false), 2400);
               }, 600);
             }
             return 'accept';
@@ -81,11 +84,14 @@ function start(ctx) {
         },
       });
     });
-    speech.speak('Put each animal in its spot!');
+    speech.speak(S.puzzleIntro, { interrupt: !first });
+    };
+    if (first) build();
+    else fadeSwap(stage, build);
   }
 
-  setReprompt(() => speech.speak('Drag the animals to their spots!'));
-  newRound();
+  setReprompt(() => speech.speak(S.puzzleReprompt));
+  newRound(true);
   return () => { alive = false; };
 }
 

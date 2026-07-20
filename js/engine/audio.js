@@ -88,6 +88,26 @@ export async function play(name, { volume = 1, rate = 1 } = {}) {
   });
 }
 
+// Decode an in-memory blob (e.g. a parent voice recording) into a named buffer.
+export async function loadBlob(name, blob) {
+  ensureCtx();
+  try {
+    const data = await blob.arrayBuffer();
+    const buf = await decode(data);
+    buffers.set(name, buf);
+    return buf;
+  } catch (e) { console.warn('loadBlob', name, e); return null; }
+}
+
+export function hasBuffer(name) {
+  return buffers.has(name);
+}
+
+export function setVolume(v) {
+  ensureCtx();
+  master.gain.value = Math.max(0, Math.min(1, v));
+}
+
 export function stopPlayback() {
   if (currentSource) {
     try { currentSource.stop(); } catch (e) { /* already stopped */ }
@@ -148,6 +168,13 @@ export function tada() {
 
 function sparkleAt(offset) {
   [1568, 2093, 2637].forEach((f, i) => tone(f, offset + i * 0.06, 0.3, { vol: 0.1 }));
+}
+
+// Single musical note for the music game.
+export function note(freq) {
+  ensureCtx();
+  tone(freq, 0, 0.55, { type: 'triangle', vol: 0.32 });
+  tone(freq * 2, 0, 0.3, { type: 'sine', vol: 0.08 });
 }
 
 export function chomp() {

@@ -1,6 +1,11 @@
 // Service worker: precache everything so the app works fully offline after
-// the first visit. Bump VERSION on any deploy to refresh caches.
-const VERSION = 'tiny-taps-v3';
+// the first visit.
+//
+// Strategy: code (html/js/css/manifest) is network-first with cache fallback,
+// so a deploy reaches the child's tablet on the very next launch while still
+// working fully offline. Heavy immutable assets (art, audio, icons) are
+// cache-first. Bump VERSION on any deploy to clear stale precaches.
+const VERSION = 'tiny-taps-v4';
 
 const ASSETS = [
   '.',
@@ -10,11 +15,15 @@ const ASSETS = [
   'css/games.css',
   'js/app.js',
   'js/data/animals.js',
+  'js/data/strings.js',
   'js/engine/audio.js',
   'js/engine/celebrate.js',
   'js/engine/drag.js',
   'js/engine/rand.js',
+  'js/engine/recordings.js',
   'js/engine/speech.js',
+  'js/engine/stickers.js',
+  'js/engine/ui.js',
   'js/games/index.js',
   'js/games/peekaboo.js',
   'js/games/sounds.js',
@@ -24,7 +33,10 @@ const ASSETS = [
   'js/games/puzzle.js',
   'js/games/feedme.js',
   'js/games/coloring.js',
+  'js/games/memory.js',
+  'js/games/music.js',
   'js/games/bubbles.js',
+  'js/games/stickers.js',
   'assets/art/dog.svg', 'assets/art/cat.svg', 'assets/art/cow.svg',
   'assets/art/duck.svg', 'assets/art/sheep.svg', 'assets/art/horse.svg',
   'assets/art/rooster.svg', 'assets/art/pig.svg', 'assets/art/lion.svg',
@@ -58,15 +70,35 @@ self.addEventListener('activate', e => {
   );
 });
 
+function isCode(url) {
+  const p = new URL(url).pathname;
+  return p.endsWith('/') || /\.(html|js|css|webmanifest)$/.test(p);
+}
+
+async function putIfOk(request, res) {
+  if (res && res.ok) {
+    const copy = res.clone();
+    const c = await caches.open(VERSION);
+    c.put(request, copy);
+  }
+  return res;
+}
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(hit =>
-      hit || fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(VERSION).then(c => c.put(e.request, copy));
-        return res;
-      })
-    )
-  );
+  if (isCode(e.request.url)) {
+    // Network-first: fresh code when online, cached code offline.
+    e.respondWith(
+      fetch(e.request)
+        .then(res => putIfOk(e.request, res))
+        .catch(() => caches.match(e.request, { ignoreSearch: true }))
+    );
+  } else {
+    // Cache-first for immutable art/audio/icons.
+    e.respondWith(
+      caches.match(e.request, { ignoreSearch: true }).then(hit =>
+        hit || fetch(e.request).then(res => putIfOk(e.request, res))
+      )
+    );
+  }
 });

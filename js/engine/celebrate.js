@@ -2,6 +2,7 @@
 
 import * as audio from './audio.js';
 import * as speech from './speech.js';
+import * as stickers from './stickers.js';
 
 const COLORS = ['#ff8a70', '#ffd54a', '#7ed67e', '#62d9d0', '#b98aef', '#ff9fce', '#73b9ff'];
 
@@ -96,8 +97,9 @@ export function burst(x, y, { count = 26, sound = true } = {}) {
   if (sound) audio.sparkle();
 }
 
-// Full celebration: confetti rain + fanfare + spoken praise.
-export function big({ praise = true } = {}) {
+// Full celebration: confetti rain + fanfare + spoken praise. Big wins also
+// drop an animal sticker into the sticker book until it's full.
+export function big({ praise = true, sticker = true } = {}) {
   audio.tada();
   const bursts = 6;
   for (let i = 0; i < bursts; i++) {
@@ -106,4 +108,8 @@ export function big({ praise = true } = {}) {
     }, i * 160);
   }
   if (praise) speech.praise();
+  if (sticker) {
+    const a = stickers.award();
+    if (a) setTimeout(() => stickers.showToast(a), 900);
+  }
 }

@@ -4,6 +4,22 @@
 
 import { cycler } from '../engine/rand.js';
 import { animal } from '../data/animals.js';
+import { S as TXT } from '../data/strings.js';
+
+// Finished pictures, saved as colored SVG snapshots.
+const GALLERY_KEY = 'tinytaps-gallery';
+
+function savedPictures() {
+  try { return JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function savePicture(svg) {
+  const list = savedPictures();
+  list.push({ svg, t: Date.now() });
+  while (list.length > 24) list.shift();
+  try { localStorage.setItem(GALLERY_KEY, JSON.stringify(list)); } catch (e) { /* full */ }
+}
 
 const PALETTE = ['#f04e3e', '#ff8c2e', '#ffcf3d', '#4db84d', '#3d7ef0', '#9b5fe0', '#ff9fce', '#8a5a3c'];
 const LINE = '#3a3357';
@@ -323,13 +339,48 @@ function start(ctx) {
   done.innerHTML = CHECK_ICON;
   done.addEventListener('pointerdown', () => {
     if (!alive || !touched) return;
+    const svg = pic.querySelector('svg');
+    if (svg) savePicture(svg.outerHTML);
     celebrate.big();
-    speech.speak('What a beautiful picture!');
-    setTimeout(newPage, 2600);
+    speech.speak(TXT.colorDone);
+    setTimeout(() => newPage(false), 2600);
   });
   bar.appendChild(done);
 
-  function newPage() {
+  // Gallery of saved masterpieces (kids love revisiting their own work).
+  const galleryBtn = document.createElement('button');
+  galleryBtn.className = 'big-btn gallery-btn';
+  galleryBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#3a3357" stroke-width="2.2"/>
+      <circle cx="9" cy="10" r="2" fill="#3a3357"/>
+      <path d="M5 17 L10 12.5 L13.5 15.5 L16.5 13 L19 15.5" fill="none" stroke="#3a3357" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  galleryBtn.addEventListener('pointerdown', () => {
+    if (!alive) return;
+    audio.pop();
+    showGallery();
+  });
+  stage.appendChild(galleryBtn);
+
+  function showGallery() {
+    const pics = savedPictures();
+    const overlay = document.createElement('div');
+    overlay.className = 'gallery-overlay';
+    const cells = pics.length
+      ? pics.slice().reverse().map(p2 => `<div class="gallery-cell">${p2.svg}</div>`).join('')
+      : '<div class="gallery-empty">Color a picture and tap the check to save it here!</div>';
+    overlay.innerHTML = `
+      <div class="gallery-panel">
+        <div class="gallery-grid">${cells}</div>
+        <button class="big-btn gallery-close">✕</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    speech.speak(TXT.galleryIntro);
+    overlay.querySelector('.gallery-close').addEventListener('pointerdown', () => overlay.remove());
+  }
+
+  function newPage(first) {
     if (!alive) return;
     touched = false;
     const page = nextPage();
@@ -345,7 +396,7 @@ function start(ctx) {
         audio.sparkle();
       });
     });
-    speech.speak(`Let's color the ${page.name}! Pick a color, then tap the picture!`);
+    speech.speak(TXT.colorIntro(page.name), { interrupt: !first });
     // One animal on screen: let it say hello with its real sound.
     const a = animal(page.id);
     if (a && a.sound) {
@@ -355,8 +406,8 @@ function start(ctx) {
     }
   }
 
-  setReprompt(() => speech.speak('Tap a color dot, then tap the picture to color it!'));
-  newPage();
+  setReprompt(() => speech.speak(TXT.colorReprompt));
+  newPage(true);
   return () => { alive = false; };
 }
 

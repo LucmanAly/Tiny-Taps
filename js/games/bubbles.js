@@ -1,6 +1,7 @@
 // Bubbles: pure free play. Bubbles float up; tap to pop them.
 
 import { randFloat, randInt, pick } from '../engine/rand.js';
+import { S } from '../data/strings.js';
 
 const HUES = [200, 280, 330, 150, 45, 190, 260];
 
@@ -124,7 +125,7 @@ function start(ctx) {
 
   for (let i = 0; i < 5; i++) { spawn(); bubbles[i].y = randFloat(0, canvas.clientHeight); }
   raf = requestAnimationFrame(tick);
-  speech.speak('Pop the bubbles!');
+  speech.speak(S.bubblesIntro, { interrupt: false });
   setReprompt(null);
 
   return () => {

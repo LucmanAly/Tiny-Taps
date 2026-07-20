@@ -1,6 +1,8 @@
 // Shapes: a dashed outline appears; tap the matching shape to fill it in.
 
 import { shuffle, pickN, cycler } from '../engine/rand.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const SHAPES = [
   { id: 'circle',   name: 'circle',   d: 'M50 8 A42 42 0 1 1 49.9 8 Z', c: ['#ff9c8a', '#f04e3e'] },
@@ -63,11 +65,12 @@ function start(ctx) {
   stage.appendChild(promptArea);
   stage.appendChild(row);
 
-  function say() {
-    if (target) speech.speak(`Where is the ${target.name}? Tap the ${target.name}!`);
+  function say(first) {
+    if (target) speech.speak(S.shapesPrompt(target.name), { interrupt: !first });
   }
 
-  function newRound() {
+  function newRound(first) {
+    const build = () => {
     if (!alive) return;
     busy = false;
     target = nextShape();
@@ -107,7 +110,7 @@ function start(ctx) {
             clone.remove();
             celebrate.burst(to.left + to.width / 2, to.top + to.height / 2, { count: 30 });
             speech.praise();
-            setTimeout(newRound, 1800);
+            setTimeout(() => newRound(false), 1800);
           }, 650);
         } else {
           b.classList.remove('wiggle');
@@ -119,11 +122,14 @@ function start(ctx) {
       });
       row.appendChild(b);
     });
-    say();
+    say(first);
+    };
+    if (first) build();
+    else fadeSwap(row, build);
   }
 
-  setReprompt(say);
-  newRound();
+  setReprompt(() => say(false));
+  newRound(true);
   return () => { alive = false; };
 }
 

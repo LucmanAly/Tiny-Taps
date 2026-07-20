@@ -1,6 +1,8 @@
 // Colors: a color is shown (and spoken); tap the matching balloon.
 
 import { shuffle, pickN, cycler } from '../engine/rand.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const COLORS = [
   { id: 'red',    name: 'red',    main: '#f04e3e', light: '#ff9c8a', dark: '#c02a1e' },
@@ -59,11 +61,12 @@ function start(ctx) {
   stage.appendChild(promptArea);
   stage.appendChild(row);
 
-  function say() {
-    if (target) speech.speak(`Tap the ${target.name} balloon!`);
+  function say(first) {
+    if (target) speech.speak(S.colorsPrompt(target.name), { interrupt: !first });
   }
 
-  function newRound() {
+  function newRound(first) {
+    const build = () => {
     if (!alive) return;
     target = nextColor();
     const options = shuffle([target, ...pickN(COLORS.filter(c => c !== target), 2)]);
@@ -82,7 +85,7 @@ function start(ctx) {
           audio.pop();
           celebrate.burst(e.clientX, e.clientY, { count: 30 });
           speech.praise();
-          setTimeout(newRound, 1600);
+          setTimeout(() => newRound(false), 1600);
         } else {
           b.classList.remove('wiggle');
           void b.offsetWidth;
@@ -93,11 +96,14 @@ function start(ctx) {
       });
       row.appendChild(b);
     });
-    say();
+    say(first);
+    };
+    if (first) build();
+    else fadeSwap(row, build);
   }
 
-  setReprompt(say);
-  newRound();
+  setReprompt(() => say(false));
+  newRound(true);
   return () => { alive = false; };
 }
 

@@ -5,6 +5,8 @@
 import { animal, food, DIET, FOODS } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
+import { fadeSwap } from '../engine/ui.js';
+import { S } from '../data/strings.js';
 
 const PAIR_IDS = Object.keys(DIET);
 
@@ -42,8 +44,8 @@ function start(ctx) {
   stage.appendChild(arena);
   stage.appendChild(tray);
 
-  function say() {
-    if (current) speech.speak(`The ${current.name} is hungry! Feed the ${current.name}!`);
+  function say(first) {
+    if (current) speech.speak(S.feedHungry(current.name), { interrupt: !first });
   }
 
   function fillTray() {
@@ -70,42 +72,46 @@ function start(ctx) {
               if (!alive) return;
               const r = animalImg.getBoundingClientRect();
               celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
-              speech.speak(`Yum yum! The ${current.name} loves it!`);
+              speech.speak(S.feedYum(current.name));
               if (current.sound) audio.play('animal:' + current.id);
               celebrate.big({ praise: false });
-              setTimeout(newRound, 2200);
+              setTimeout(() => newRound(false), 2200);
             }, 550);
             return 'accept';
           }
           audio.boing();
-          speech.speak(`No no, the ${current.name} does not eat that! Try again!`);
+          speech.speak(S.feedNo(current.name));
           return 'reject';
         },
       });
     });
   }
 
-  function newRound() {
+  function newRound(first) {
+    const build = () => {
     if (!alive) return;
     fed = false;
     current = animal(nextPair());
     animalImg.src = current.art;
-    animalImg.classList.remove('munch', 'pop-in');
+    animalImg.classList.remove('munch', 'pop-in', 'slide-in');
     void animalImg.offsetWidth;
-    animalImg.classList.add('pop-in');
+    animalImg.classList.add('slide-in');
     if (current.sound) {
       audio.load('animal:' + current.id, current.sound).then(() => {
         if (alive && current) audio.play('animal:' + current.id);
       });
     }
     fillTray();
-    say();
+    say(first);
+    };
+    if (first) build();
+    else fadeSwap(tray, build);
   }
 
   setReprompt(() => {
-    if (current) speech.speak(`Drag the food to the ${current.name}'s mouth!`);
+    if (current) speech.speak(S.feedReprompt(current.name));
   });
-  newRound();
+  newRound(true);
   return () => { alive = false; };
 }
 
