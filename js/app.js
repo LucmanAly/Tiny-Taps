@@ -206,14 +206,11 @@ const REC_ITEMS = [
 function makeSettingsButton(parent) {
   const btn = el('button', 'settings-btn', parent);
   btn.innerHTML = GEAR_ICON;
-  btn.title = 'Parent settings (hold)';
-  let t = null;
+  btn.title = 'Parent settings';
   btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    t = setTimeout(showSettings, 1200);
+    showSettings();
   });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
-    btn.addEventListener(ev, () => clearTimeout(t)));
 }
 
 let activeRecorder = null;

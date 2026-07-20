@@ -126,8 +126,11 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2.4vmin;
-  align-content: center;
-  padding-bottom: 2vmin;
+  align-content: start;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5vmin 0.5vmin max(14vmin, 90px);
 }
 @media (orientation: portrait) {
   .menu-grid { grid-template-columns: repeat(2, 1fr); }
