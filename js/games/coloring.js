@@ -395,7 +395,7 @@ function start(ctx) {
         audio.sparkle();
       });
     });
-    speech.speak(TXT.colorIntro(page.name), { interrupt: false });
+    if (first) speech.speak(TXT.colorIntro(page.name), { interrupt: false });
     // One animal on screen: let it say hello with its real sound.
     const a = animal(page.id);
     if (a && a.sound) {

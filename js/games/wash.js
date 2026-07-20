@@ -144,7 +144,7 @@ function start(ctx) {
     img.src = current.art;
     if (current.sound) preloadSounds(audio, [current.id]);
     resize();
-    speech.speak(S.washIntro(current.name), { interrupt: false });
+    if (first) speech.speak(S.washIntro(current.name), { interrupt: false });
   }
 
   setReprompt(() => speech.speak(S.washReprompt));

@@ -114,7 +114,7 @@ function start(ctx) {
         });
         grid.appendChild(tile);
       });
-      speech.speak(S.memoryIntro, { interrupt: false });
+      if (first) speech.speak(S.memoryIntro, { interrupt: false });
       setTimeout(() => {
         if (!alive) return;
         covers.forEach(c => c.classList.remove('off'));
