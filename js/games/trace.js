@@ -162,7 +162,7 @@ function start(ctx) {
     const startPt = pathIndex.pts[0];
     star.setAttribute('cx', startPt.x);
     star.setAttribute('cy', startPt.y);
-    speech.speak(S.traceIntro, { interrupt: false });
+    if (first) speech.speak(S.traceIntro, { interrupt: false });
   }
 
   setReprompt(() => speech.speak(S.traceReprompt));

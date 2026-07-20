@@ -134,7 +134,7 @@ function start(ctx) {
         },
       });
 
-      speech.speak(S.sortIntro, { interrupt: false });
+      if (first) speech.speak(S.sortIntro, { interrupt: false });
     };
     if (first) build();
     else fadeSwap(tray, build);
