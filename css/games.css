@@ -338,49 +338,29 @@
   cursor: grab;
 }
 .puzzle-piece img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-.spatial-title {
+.fit-title {
   font-size: max(3vmin, 19px);
   font-weight: 900;
-  margin-bottom: 1.5vmin;
+  margin-bottom: 1vmin;
   color: var(--ink);
 }
-.spatial-board {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5vmin;
-  padding: 2vmin;
+.fit-picture {
+  width: min(66vmin, 43vh, 430px);
   border-radius: var(--radius);
-  background: rgba(255,255,255,0.48);
-  box-shadow: inset 0 0 0 3px rgba(58,51,87,0.08);
-}
-.spatial-cell {
-  width: min(18vmin, 15vh);
-  height: min(18vmin, 15vh);
-  min-width: 62px;
-  min-height: 62px;
-  border-radius: 18px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(255,255,255,0.74);
+  box-shadow: var(--shadow);
   padding: 1vmin;
-  box-shadow: 0 3px 0 rgba(58,51,87,0.1);
 }
-.spatial-cell svg, .spatial-piece svg { width: 100%; height: 100%; pointer-events: none; }
-.spatial-gap {
-  border: 5px dashed rgba(58,51,87,0.28);
-  background: rgba(255,255,255,0.28);
-  box-shadow: none;
-}
-.spatial-gap span { font-size: max(7vmin, 38px); font-weight: 900; color: rgba(58,51,87,0.28); }
-.spatial-gap.filled { border: 5px solid var(--grass); background: #fff; }
-.spatial-tray {
+.fit-picture-svg { width: 100%; height: auto; display: block; }
+.fit-gap-target { transition: fill 0.2s ease, stroke 0.2s ease; }
+.fit-gap-target.filled { filter: drop-shadow(0 0 5px rgba(255,255,255,0.9)); }
+.fit-tray {
   display: flex;
   justify-content: center;
   gap: 3vmin;
-  padding-top: 2.5vmin;
+  padding-top: 2vmin;
 }
-.spatial-piece {
+.fit-piece {
   width: min(18vmin, 15vh);
   height: min(18vmin, 15vh);
   min-width: 68px;
@@ -391,11 +371,12 @@
   box-shadow: var(--shadow);
   cursor: grab;
 }
+.fit-piece svg { width: 100%; height: 100%; pointer-events: none; }
 @media (orientation: landscape) and (max-height: 560px) {
   .puzzle-shell { padding-top: calc(env(safe-area-inset-top, 0px) + 58px); gap: 1vmin; }
-  .spatial-title { display: none; }
-  .spatial-board { padding: 1vmin; gap: 1vmin; }
-  .spatial-cell, .spatial-piece { min-width: 52px; min-height: 52px; }
+  .fit-title { display: none; }
+  .fit-picture { width: min(56vmin, 48vh, 330px); }
+  .fit-piece { min-width: 52px; min-height: 52px; }
 }
 
 /* ---------- coloring ---------- */

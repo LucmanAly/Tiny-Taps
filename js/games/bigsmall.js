@@ -1,10 +1,9 @@
-// Big or Small: the same animal appears twice, one huge and one tiny; tap
-// the one matching the spoken size word. Comparison vocabulary.
+// Big or Small: the same animal appears twice, one huge and one tiny. At the
+// start of every round, computer voice says exactly "Big" or "Small" once.
 
 import { ANIMALS } from '../data/animals.js';
 import { shuffle, cycler } from '../engine/rand.js';
 import { makeRoundGame } from '../engine/roundgame.js';
-import { S } from '../data/strings.js';
 
 const nextAnimal = cycler(ANIMALS);
 
@@ -42,10 +41,8 @@ export default makeRoundGame({
     }));
   },
   speakPrompt(target, first, ctx) {
-    ctx.speech.speak(S.bigSmallPrompt(target.size, target.animal.name), { interrupt: false });
+    ctx.speech.speakWord(target.size === 'big' ? 'Big' : 'Small');
   },
-  reprompt(target, ctx) {
-    if (target) ctx.speech.speak(S.bigSmallPrompt(target.size, target.animal.name));
-  },
+  reprompt() {},
   nextAnimalId: target => target.animal.id,
 });

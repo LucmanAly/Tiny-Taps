@@ -1,9 +1,9 @@
-// Puzzle Fit 3.1: classic animal silhouettes plus a spatial-pattern mode.
-// Shapes mode presents a 3×3 alternating block pattern with one gap; the
-// child drags the block that preserves the pattern into the missing space.
+// Puzzle Fit: classic animal silhouettes plus a negative-space picture mode.
+// In Shapes mode, one geometric piece is cut out of a large familiar picture;
+// the child chooses the one piece whose outline exactly fills that gap.
 
 import { ANIMALS } from '../data/animals.js';
-import { shuffle, pickN, randInt } from '../engine/rand.js';
+import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
 
@@ -18,6 +18,41 @@ const BLOCKS = [
   { id: 'orange-hexagon', shape: 'hexagon', color: '#ff8c2e' },
 ];
 
+const PICTURE_PUZZLES = [
+  {
+    id: 'robot', title: 'Fix the robot', answer: 'circle', color: '#ffcf3d',
+    art: '<rect x="72" y="42" width="156" height="164" rx="24" fill="#7fb3ff"/><rect x="102" y="12" width="96" height="44" rx="18" fill="#9b5fe0"/><circle cx="112" cy="92" r="12" fill="#3a3357"/><circle cx="188" cy="92" r="12" fill="#3a3357"/><path d="M108 148 H192" stroke="#fff" stroke-width="12" stroke-linecap="round"/><path d="M72 102 L38 142 M228 102 L262 142 M105 205 L92 230 M195 205 L208 230" stroke="#5b83c6" stroke-width="18" stroke-linecap="round"/>',
+    gap: '<circle cx="150" cy="148" r="30"/>',
+  },
+  {
+    id: 'house', title: 'Fix the house', answer: 'square', color: '#ffd8a8',
+    art: '<path d="M42 112 L150 24 L258 112" fill="#f06f61" stroke="#d94c43" stroke-width="8" stroke-linejoin="round"/><rect x="62" y="106" width="176" height="122" rx="8" fill="#ffcf66"/><rect x="128" y="160" width="44" height="68" rx="6" fill="#8a5a3c"/><circle cx="160" cy="194" r="4" fill="#ffd54a"/>',
+    gap: '<rect x="82" y="126" width="54" height="54" rx="5"/>',
+  },
+  {
+    id: 'boat', title: 'Fix the sailboat', answer: 'triangle', color: '#fff4b5',
+    art: '<path d="M54 160 H250 L220 210 H88 Z" fill="#ef765d"/><path d="M150 36 V166" stroke="#7b5a44" stroke-width="10" stroke-linecap="round"/><path d="M150 44 L244 148 H150 Z" fill="#76b9f4"/><path d="M40 224 Q78 204 116 224 T192 224 T268 224" fill="none" stroke="#5fc9e8" stroke-width="12" stroke-linecap="round"/>',
+    gap: '<path d="M140 52 L140 146 L62 146 Z"/>',
+  },
+  {
+    id: 'kite', title: 'Fix the kite', answer: 'diamond', color: '#ff8a70',
+    art: '<path d="M150 28 L242 112 L150 196 L58 112 Z" fill="#9b5fe0" stroke="#7040aa" stroke-width="7"/><path d="M150 196 Q190 210 164 226 Q140 240 188 252" fill="none" stroke="#6b6389" stroke-width="7" stroke-linecap="round"/><path d="M180 222 L194 208 L202 230 Z M162 244 L174 232 L184 252 Z" fill="#ffcf3d"/>',
+    gap: '<path d="M150 70 L194 112 L150 154 L106 112 Z"/>',
+  },
+  {
+    id: 'night', title: 'Fix the night sky', answer: 'star', color: '#ffdf4d',
+    art: '<rect x="28" y="26" width="244" height="202" rx="34" fill="#5168b8"/><path d="M102 70 Q70 120 112 158 Q145 188 190 158 Q140 166 122 126 Q108 96 128 62 Q112 62 102 70 Z" fill="#f7efc2"/><circle cx="224" cy="74" r="7" fill="#fff"/><circle cx="70" cy="184" r="5" fill="#fff"/>',
+    gap: '<path d="M208 116 L218 142 L246 142 L224 158 L232 184 L208 168 L184 184 L192 158 L170 142 L198 142 Z"/>',
+  },
+  {
+    id: 'hive', title: 'Fix the beehive', answer: 'hexagon', color: '#ffbd3f',
+    art: '<path d="M82 210 Q50 174 68 134 Q48 96 84 76 Q94 36 138 42 Q170 18 198 52 Q238 54 236 96 Q266 122 242 154 Q254 196 214 214 Z" fill="#f4a72c" stroke="#d88818" stroke-width="8"/><path d="M78 104 H232 M68 146 H244 M84 186 H226" stroke="#ffd36f" stroke-width="10"/><path d="M126 210 Q126 162 174 162 Q222 162 222 210" fill="#6b4324"/>',
+    gap: '<path d="M112 86 H148 L166 116 L148 146 H112 L94 116 Z"/>',
+  },
+];
+
+const nextPicture = cycler(PICTURE_PUZZLES);
+
 function blockSvg(block) {
   const shapes = {
     circle: '<circle cx="50" cy="50" r="34"/>',
@@ -28,6 +63,15 @@ function blockSvg(block) {
     hexagon: '<path d="M25 12 H75 L94 50 L75 88 H25 L6 50 Z"/>',
   };
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="${block.color}" stroke="#fff" stroke-width="4" stroke-linejoin="round">${shapes[block.shape]}</g></svg>`;
+}
+
+function pictureSvg(puzzle) {
+  return `<svg class="fit-picture-svg" viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+    ${puzzle.art}
+    <g class="fit-gap-target" fill="#fff" stroke="#3a3357" stroke-width="6" stroke-dasharray="8 7" stroke-linejoin="round">
+      ${puzzle.gap}
+    </g>
+  </svg>`;
 }
 
 const ICON = `
@@ -126,32 +170,16 @@ function start(ctx) {
   }
 
   function buildShapes(roundEpoch) {
-    const [a, b] = pickN(BLOCKS, 2);
-    const missing = randInt(0, 8);
-    const expected = (Math.floor(missing / 3) + (missing % 3)) % 2 === 0 ? a : b;
+    const puzzle = nextPicture();
+    const expected = BLOCKS.find(block => block.shape === puzzle.answer);
     const distractors = pickN(BLOCKS.filter(x => x.id !== expected.id), 2);
-    content.innerHTML = '<div class="spatial-title">Complete the pattern</div><div class="spatial-board"></div><div class="spatial-tray"></div>';
-    const board = content.querySelector('.spatial-board');
-    const tray = content.querySelector('.spatial-tray');
-    let gap = null;
-
-    for (let i = 0; i < 9; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'spatial-cell pop-in';
-      if (i === missing) {
-        cell.classList.add('spatial-gap');
-        cell.innerHTML = '<span>?</span>';
-        gap = cell;
-      } else {
-        const token = (Math.floor(i / 3) + (i % 3)) % 2 === 0 ? a : b;
-        cell.innerHTML = blockSvg(token);
-      }
-      board.appendChild(cell);
-    }
+    content.innerHTML = `<div class="fit-title">${puzzle.title}</div><div class="fit-picture pop-in">${pictureSvg(puzzle)}</div><div class="fit-tray"></div>`;
+    const tray = content.querySelector('.fit-tray');
+    const gap = content.querySelector('.fit-gap-target');
 
     shuffle([expected, ...distractors]).forEach(token => {
       const piece = document.createElement('div');
-      piece.className = 'spatial-piece pop-in';
+      piece.className = 'fit-piece pop-in';
       piece.innerHTML = blockSvg(token);
       tray.appendChild(piece);
       makeDraggable(piece, {
@@ -166,7 +194,9 @@ function start(ctx) {
           }
           if (recordOutcome) recordOutcome(true, `shape:${expected.id}`);
           gap.classList.add('filled');
-          gap.innerHTML = blockSvg(expected);
+          gap.setAttribute('fill', puzzle.color);
+          gap.setAttribute('stroke', 'rgba(58,51,87,0.18)');
+          gap.removeAttribute('stroke-dasharray');
           piece.style.visibility = 'hidden';
           audio.chime();
           const r = gap.getBoundingClientRect();

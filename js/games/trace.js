@@ -1,4 +1,4 @@
-// Trace It 3.1: choose letters, shapes, numbers or animals. Each item is a
+// Trace It 3.2: choose letters, shapes, numbers or animals. Each item is a
 // sequence of generous centre-line strokes. Computer speech is used once,
 // only after the whole item is complete; recorded parent praise then follows
 // through the normal celebration path.
@@ -6,7 +6,26 @@
 import { TRACE_CATEGORIES } from '../data/trace-items.js';
 
 const TOL = 30;
+const START_TOL = 36;
+const SAMPLE_STEP = 6;
+const LOOKAHEAD_DISTANCE = 12;
+const MIN_FINGER_TRAVEL = 0.7;
 const CATEGORY_KEY = 'tinytaps-trace-category';
+
+// Pure forward-progress calculation kept exported for the release check. It
+// never moves without finger travel and can inspect only a short arc ahead.
+export function nextPathPoint(index, pointIndex, local, travel) {
+  if (travel <= 0 || pointIndex >= index.pts.length - 1) return pointIndex;
+  const currentLength = index.pts[pointIndex].len;
+  const maxLength = currentLength + Math.max(LOOKAHEAD_DISTANCE, travel * 1.6);
+  let best = pointIndex;
+  for (let i = pointIndex; i < index.pts.length; i++) {
+    const p = index.pts[i];
+    if (p.len > maxLength) break;
+    if (Math.hypot(p.x - local.x, p.y - local.y) <= TOL) best = i;
+  }
+  return best;
+}
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -27,6 +46,9 @@ function start(ctx) {
   let strokeIndex = 0;
   let pointIndex = 0;
   let dragging = false;
+  let pointerId = null;
+  let lastPointer = null;
+  let fingerTravel = 0;
   let done = false;
 
   const shell = document.createElement('div');
@@ -93,6 +115,8 @@ function start(ctx) {
   function activateStroke(index) {
     strokeIndex = index;
     pointIndex = 0;
+    fingerTravel = 0;
+    lastPointer = null;
     guides.forEach((g, i) => g.classList.toggle('active', i === index));
     const p = indexes[index].pts[0];
     star.setAttribute('cx', p.x);
@@ -142,18 +166,15 @@ function start(ctx) {
     return { x: local.x, y: local.y };
   }
 
-  function advance(clientX, clientY) {
+  function advanceSample(local, travel) {
     if (!indexes[strokeIndex] || done) return;
-    const local = toLocal(clientX, clientY);
     const index = indexes[strokeIndex];
-    const upper = pointIndex > 0
-      ? index.pts.length - 1
-      : Math.min(index.pts.length - 1, Math.max(6, Math.floor(index.pts.length * 0.2)));
-    let best = -1;
-    for (let i = pointIndex; i <= upper; i++) {
-      const p = index.pts[i];
-      if (Math.hypot(p.x - local.x, p.y - local.y) <= TOL) best = i;
+    fingerTravel += travel;
+    if (pointIndex >= index.pts.length - 1) {
+      if (fingerTravel >= index.total * MIN_FINGER_TRAVEL) completeStroke();
+      return;
     }
+    const best = nextPathPoint(index, pointIndex, local, travel);
     if (best <= pointIndex) return;
     const oldBand = Math.floor(pointIndex / 12);
     pointIndex = best;
@@ -162,13 +183,35 @@ function start(ctx) {
     star.setAttribute('cx', p.x);
     star.setAttribute('cy', p.y);
     if (Math.floor(pointIndex / 12) > oldBand) audio.pop();
-    if (pointIndex >= index.pts.length - 1) completeStroke();
+    if (pointIndex >= index.pts.length - 1 && fingerTravel >= index.total * MIN_FINGER_TRAVEL) {
+      completeStroke();
+    }
+  }
+
+  function advanceTo(local) {
+    if (!lastPointer) { lastPointer = local; return; }
+    const activeStroke = strokeIndex;
+    const dx = local.x - lastPointer.x;
+    const dy = local.y - lastPointer.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 0.5) return;
+    const steps = Math.max(1, Math.ceil(distance / SAMPLE_STEP));
+    for (let i = 1; i <= steps && !done && strokeIndex === activeStroke; i++) {
+      const sample = {
+        x: lastPointer.x + dx * (i / steps),
+        y: lastPointer.y + dy * (i / steps),
+      };
+      advanceSample(sample, distance / steps);
+    }
+    if (strokeIndex === activeStroke) lastPointer = local;
   }
 
   function completeStroke() {
     fills[strokeIndex].setAttribute('stroke-dasharray', `${indexes[strokeIndex].total} 0`);
     if (strokeIndex < indexes.length - 1) {
       audio.chime();
+      dragging = false;
+      pointerId = null;
       activateStroke(strokeIndex + 1);
       return;
     }
@@ -192,12 +235,28 @@ function start(ctx) {
 
   function onDown(e) {
     if (!alive || done) return;
+    const local = toLocal(e.clientX, e.clientY);
+    const expected = indexes[strokeIndex]?.pts[pointIndex];
+    if (!expected || Math.hypot(expected.x - local.x, expected.y - local.y) > START_TOL) return;
     dragging = true;
+    pointerId = e.pointerId;
+    lastPointer = local;
     svg.setPointerCapture(e.pointerId);
-    advance(e.clientX, e.clientY);
+    e.preventDefault();
   }
-  function onMove(e) { if (dragging && alive && !done) advance(e.clientX, e.clientY); }
-  function onUp() { dragging = false; }
+  function onMove(e) {
+    if (!dragging || e.pointerId !== pointerId || !alive || done) return;
+    const coalesced = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    const events = coalesced.length ? coalesced : [e];
+    for (const event of events) advanceTo(toLocal(event.clientX, event.clientY));
+    e.preventDefault();
+  }
+  function onUp(e) {
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    dragging = false;
+    pointerId = null;
+    lastPointer = null;
+  }
   svg.addEventListener('pointerdown', onDown);
   svg.addEventListener('pointermove', onMove);
   svg.addEventListener('pointerup', onUp);

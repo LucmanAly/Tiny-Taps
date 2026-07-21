@@ -10,7 +10,7 @@ nothing to buy, works offline once loaded:
 3. **Colors** — tap the balloon that matches the color
 4. **Shapes** — tap the shape that fits the dashed outline
 5. **Counting** — tap each animal to count it aloud; badges and a big numeral track the count (1–5 or 1–10 — press-and-hold the corner button)
-6. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or complete a missing-block pattern
+6. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
 7. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
 8. **Coloring** — big hand-sketched coloring pages; finished pictures are saved to an in-app gallery
 9. **Matching** — flip four cards, find the two matching friends
@@ -28,8 +28,9 @@ The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
 game shows a single animal, it says hello with its real voice.
 
-Gameplay is intentionally quiet. Counting speaks only each tapped number, and
-Trace It speaks only the completed letter, shape, number, or animal name.
+Gameplay is intentionally quiet. Counting speaks only each tapped number,
+Big or Small speaks only the target size at round start, and Trace It speaks
+only the completed letter, shape, number, or animal name.
 Recorded parent praise and encouragement remain active. The Home button
 responds immediately to one normal tap.
 
@@ -52,9 +53,8 @@ levels based on recent play. A private parent view shows favorite games,
 completed activities and concepts currently being practiced. This history
 never leaves the device and can be reset at any time.
 
-Optional controls include a short hold for the Home button to prevent
-accidental exits and **Play Mix**, which changes among age-appropriate games
-every 90 seconds.
+The optional **Play Mix** control changes among age-appropriate games every
+90 seconds.
 
 ## Adding sounds for the newer animals
 
@@ -83,6 +83,13 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.2** — tracing and spatial-fit correction: made Trace It progress
+  sequential, movement-based, and tolerant of sparse pointer events; added a
+  distinct recognizable trace outline for every animal; replaced Puzzle Fit's
+  Shapes sequence with negative-space picture fitting; restricted Counting and
+  Trace completion speech to the item name; added the one-word Big/Small
+  round-start cue; and documented the current architecture and voice boundary.
 
 - **v3.1** — quiet-play and tracing release: removed general computer
   narration while preserving recorded parent praise/encouragement; Counting

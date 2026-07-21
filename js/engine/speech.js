@@ -1,5 +1,6 @@
-// Voice services for the two intentionally spoken game events (Counting and
-// Trace It), Settings previews, and saved parent praise/encouragement clips.
+// Voice services for the three intentionally spoken game events (Counting,
+// Big/Small round start, and Trace It completion), Settings previews, and
+// saved parent praise/encouragement clips.
 
 import { pick } from './rand.js';
 import * as audio from './audio.js';
@@ -99,7 +100,7 @@ export function registerRecording(phrase, bufferName) {
   recordings.set(phrase.toLowerCase(), bufferName);
 }
 
-// Gameplay narration is intentionally disabled in 3.1. Keep this legacy
+// General gameplay narration is intentionally disabled. Keep this legacy
 // entrypoint as a silent resolved promise so older games can retain their
 // sequencing/await logic without ever producing computer speech.
 export function speak() {
@@ -107,8 +108,8 @@ export function speak() {
 }
 
 // The only computer-speech channel used during play. Counting calls it for a
-// number as it is tapped; Trace It calls it once after a completed trace.
-// Settings also uses it for the parent-facing voice preview.
+// tapped number, Big/Small for the target size at round start, and Trace It
+// for the completed item's name. Settings uses it for parent-facing previews.
 export function speakWord(text, { interrupt = true, rate = 0.92, pitch = 1.08 } = {}) {
   const rec = recordings.get(text.toLowerCase());
   if (rec) return audio.play(rec);
