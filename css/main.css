@@ -20,6 +20,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   position: fixed;
@@ -38,12 +39,13 @@ body {
   -webkit-touch-callout: none;
 }
 
-#app { position: fixed; inset: 0; }
+#app { position: fixed; inset: 0; height: 100%; height: 100dvh; }
 
 #screen {
   position: absolute;
   inset: 0;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  height: 100%;
+  height: 100dvh;
 }
 
 #celebrate-canvas {
@@ -67,8 +69,8 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   animation: screen-in 0.35s ease-out;
 }
 @keyframes screen-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ---------- splash ---------- */
@@ -109,7 +111,12 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 }
 
 /* ---------- menu ---------- */
-.menu { padding: 3vmin; }
+.menu {
+  padding-top: calc(env(safe-area-inset-top, 0px) + max(10px, 2vmin));
+  padding-right: calc(env(safe-area-inset-right, 0px) + max(10px, 2vmin));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + max(66px, 11vmin));
+  padding-left: calc(env(safe-area-inset-left, 0px) + max(10px, 2vmin));
+}
 .menu-title {
   font-size: 6vmin;
   font-weight: 800;
@@ -169,8 +176,8 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   font-size: max(7vmin, 40px); font-weight: 900; letter-spacing: 0.08em;
 }
 .mix-btn {
-  position: absolute;
-  left: 50%; bottom: max(1.5vmin, env(safe-area-inset-bottom));
+  position: fixed;
+  left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   transform: translateX(-50%);
   min-height: 44px; padding: 0.8vmin 3vmin;
   border: none; border-radius: 100px; background: #fff;
@@ -181,9 +188,9 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 
 /* ---------- credits (parent-facing) ---------- */
 .credits-btn {
-  position: absolute;
-  bottom: max(1.5vmin, env(safe-area-inset-bottom));
-  right: max(1.5vmin, env(safe-area-inset-right));
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
   width: 6vmin;
   height: 6vmin;
   min-width: 36px;
@@ -206,13 +213,13 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4vmin;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-right, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 12px) calc(env(safe-area-inset-left, 0px) + 12px);
 }
 .credits-panel {
   background: #fff;
   border-radius: var(--radius);
   max-width: 640px;
-  max-height: 84vh;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
   overflow-y: auto;
   touch-action: pan-y;
   padding: 4vmin;
@@ -249,11 +256,6 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 }
 .home-btn svg { width: 62%; height: 62%; }
 .home-btn:active { transform: scale(0.9); }
-.home-btn.holding { animation: hold-ring 0.8s linear forwards; }
-@keyframes hold-ring {
-  from { box-shadow: inset 0 0 0 0 var(--grass), 0 3px 0 rgba(58,51,87,0.15); }
-  to { box-shadow: inset 0 0 0 27px var(--grass), 0 3px 0 rgba(58,51,87,0.15); }
-}
 .mute-btn {
   position: absolute;
   top: max(1.5vmin, env(safe-area-inset-top));
@@ -322,9 +324,9 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 
 /* ---------- parent settings ---------- */
 .settings-btn {
-  position: absolute;
-  bottom: max(1.5vmin, env(safe-area-inset-bottom));
-  left: max(1.5vmin, env(safe-area-inset-left));
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
   width: 7vmin;
   height: 7vmin;
   min-width: 40px;
@@ -344,6 +346,27 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   -webkit-user-select: auto;
   user-select: auto;
   width: min(94vw, 560px);
+}
+.settings-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 20;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin: -1vmin -1vmin 1vmin 2vmin;
+  background: #d93636;
+  color: #fff;
+  box-shadow: 0 4px 0 #a92424;
+  font: 800 max(2vmin, 15px) var(--font);
+}
+
+@media (display-mode: standalone) {
+  .menu {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+  }
 }
 .settings-panel h3 { margin: 2vmin 0 0.6vmin; }
 .set-row {

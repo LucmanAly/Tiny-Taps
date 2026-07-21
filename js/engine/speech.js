@@ -1,6 +1,5 @@
-// Spoken prompts via the device's text-to-speech. The child can't read, so
-// every instruction goes through here. Pluggable: if a recorded clip exists
-// for a phrase (added to `recordings`), it plays instead of TTS.
+// Voice services for the two intentionally spoken game events (Counting and
+// Trace It), Settings previews, and saved parent praise/encouragement clips.
 
 import { pick } from './rand.js';
 import * as audio from './audio.js';
@@ -100,7 +99,17 @@ export function registerRecording(phrase, bufferName) {
   recordings.set(phrase.toLowerCase(), bufferName);
 }
 
-export function speak(text, { interrupt = true, rate = 0.92, pitch = 1.08 } = {}) {
+// Gameplay narration is intentionally disabled in 3.1. Keep this legacy
+// entrypoint as a silent resolved promise so older games can retain their
+// sequencing/await logic without ever producing computer speech.
+export function speak() {
+  return Promise.resolve();
+}
+
+// The only computer-speech channel used during play. Counting calls it for a
+// number as it is tapped; Trace It calls it once after a completed trace.
+// Settings also uses it for the parent-facing voice preview.
+export function speakWord(text, { interrupt = true, rate = 0.92, pitch = 1.08 } = {}) {
   const rec = recordings.get(text.toLowerCase());
   if (rec) return audio.play(rec);
   if (!synth || audio.isMuted()) return Promise.resolve();
@@ -141,27 +150,24 @@ export function stop() {
 const PRAISE = ['Great job!', 'Yay! You did it!', 'Hooray!', 'Wonderful!', 'Amazing!', 'Way to go!', 'Super!'];
 const ENCOURAGE = ['Try again!', 'Almost! Try again!', 'You can do it!', 'Oops! One more try!'];
 
-// Every completed round says something positive; the parent's *recorded*
-// clip specifically is the extra-special one. `quick` (fast, frequently-
-// repeating games) throttles it to roughly every 3rd win so it stays a
-// periodic treat instead of playing every round — a synthesized cheer still
-// plays every time either way. Pass `quick: false` for slower games where
-// every completion should hear it.
+// `quick` (fast, frequently repeating games) throttles a saved parent praise
+// clip to roughly every 3rd win so it stays a periodic treat. Pass
+// `quick: false` for slower games where every completion should hear it.
 let quickPraiseCount = 0;
 export function praise({ quick = true } = {}) {
   const rec = recordedCats.get('praise');
   if (rec) {
     if (quick) {
       quickPraiseCount++;
-      if (quickPraiseCount % 3 !== 0) return speak(pick(PRAISE));
+      if (quickPraiseCount % 3 !== 0) return Promise.resolve();
     }
     return audio.play(rec);
   }
-  return speak(pick(PRAISE));
+  return Promise.resolve();
 }
 
 export function encourage() {
   const rec = recordedCats.get('encourage');
   if (rec) return audio.play(rec);
-  return speak(pick(ENCOURAGE));
+  return Promise.resolve();
 }

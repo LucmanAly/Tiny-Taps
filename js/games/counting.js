@@ -8,7 +8,6 @@
 import { ANIMALS } from '../data/animals.js';
 import { cycler, randInt } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
-import { S } from '../data/strings.js';
 
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
@@ -29,7 +28,6 @@ function start(ctx) {
   let alive = true;
   let n = 0;
   let counted = 0;
-  let animalName = '';
   let max = Number(localStorage.getItem('tinytaps-count-max') || 5);
   const nextAnimal = cycler(ANIMALS);
 
@@ -67,8 +65,6 @@ function start(ctx) {
     const adaptiveMax = difficulty ? [3, 5, max][difficulty() - 1] : max;
     n = randInt(1, Math.min(max, adaptiveMax));
     const a = preset || nextAnimal();
-    animalName = a.name;
-
     bigNum.textContent = '';
     bigNum.classList.remove('total');
     field.innerHTML = '';
@@ -84,7 +80,7 @@ function start(ctx) {
         // audibly — fire it first so the voice and the numeral land in sync
         // instead of the numeral visibly beating the voice. Never awaited:
         // the game must keep up with fast little fingers.
-        speech.speak(WORDS[counted]);
+        speech.speakWord(WORDS[counted]);
         item.classList.add('counted');
         item.querySelector('.count-badge').textContent = String(counted);
         audio.pop();
@@ -118,9 +114,7 @@ function start(ctx) {
     else fadeSwap(field, build);
   }
 
-  setReprompt(() => {
-    if (animalName) speech.speak(S.countReprompt);
-  });
+  setReprompt(null);
   newRound(true);
   return () => { alive = false; };
 }

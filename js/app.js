@@ -19,7 +19,6 @@ const REPROMPT_MS = 9000;
 const LS_VOLUME = 'tinytaps-volume';
 const LS_HIDDEN = 'tinytaps-hidden';
 const LS_PROFILE = 'tinytaps-profile';
-const LS_HOME_HOLD = 'tinytaps-home-hold';
 const LS_MIX = 'tinytaps-mix';
 
 const PROFILES = {
@@ -147,7 +146,6 @@ function showSplash() {
     audio.unlock();
     speech.init();
     audio.chime();
-    speech.speak(S.appName);
     showMenu();
   }, { once: true });
 }
@@ -284,6 +282,7 @@ function showSettings() {
   const hidden = hiddenGames();
 
   panel.innerHTML = `
+    <button class="settings-close" aria-label="Close settings">✕ Close</button>
     <h2>Parent settings</h2>
     <label class="set-row">Learning stage
       <select id="set-profile">
@@ -299,18 +298,16 @@ function showSettings() {
     <label class="set-row">Voice
       <select id="set-voice"></select>
     </label>
-    <label class="set-check"><input type="checkbox" id="set-home-hold" ${localStorage.getItem(LS_HOME_HOLD) === '1' ? 'checked' : ''}> Hold Home for 0.8 seconds (prevents accidental exits)</label>
     <label class="set-check"><input type="checkbox" id="set-mix" ${localStorage.getItem(LS_MIX) === '1' ? 'checked' : ''}> Show Play Mix (automatically changes games)</label>
     <button class="big-btn progress-open">View on-device progress</button>
     <div class="offline-status">${localStorage.getItem('tinytaps-offline-ready') === '1' ? '✓ Ready to play offline' : 'Offline files finish saving after the first online visit'}</div>
     <details class="install-help"><summary>Install on iPhone or iPad</summary><p>Open Tiny Taps in Safari, tap Share, choose <strong>Add to Home Screen</strong>, then tap Add. Open it once while online before taking it offline.</p></details>
     <h3>Your voice</h3>
-    <p>Record yourself — the app will use your voice instead of the robot one
-    for these moments.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
+    <p>Record yourself for praise and encouragement. These recordings remain
+    active even though general computer narration is off.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
     <div id="rec-rows"></div>
     <h3>Games on the menu</h3>
     <div class="set-games" id="set-games"></div>
-    <button class="big-btn credits-close">Close</button>
     <div class="settings-version">Tiny Taps v${VERSION}</div>`;
 
   panel.querySelector('#set-vol').addEventListener('input', e => {
@@ -321,8 +318,6 @@ function showSettings() {
   panel.querySelector('#set-profile').addEventListener('change', e => {
     localStorage.setItem(LS_PROFILE, e.target.value);
   });
-  panel.querySelector('#set-home-hold').addEventListener('change', e =>
-    localStorage.setItem(LS_HOME_HOLD, e.target.checked ? '1' : '0'));
   panel.querySelector('#set-mix').addEventListener('change', e =>
     localStorage.setItem(LS_MIX, e.target.checked ? '1' : '0'));
   panel.querySelector('.progress-open').addEventListener('pointerdown', () => showProgress(panel));
@@ -330,7 +325,7 @@ function showSettings() {
 
   panel.querySelector('#set-rate').addEventListener('change', e => {
     speech.setUserRate(Number(e.target.value));
-    speech.speak('Hello! This is how I talk now!');
+    speech.speakWord('Hello! This is how I talk now!');
   });
 
   // Voice picker: which installed voice sounds least robotic varies a lot by
@@ -347,7 +342,7 @@ function showSettings() {
   if (window.speechSynthesis) window.speechSynthesis.addEventListener('voiceschanged', fillVoices, { once: true });
   voiceSelect.addEventListener('change', e => {
     speech.setVoiceOverride(e.target.value);
-    speech.speak('Hello! This is how I sound now!');
+    speech.speakWord('Hello! This is how I sound now!');
   });
 
   const recRows = panel.querySelector('#rec-rows');
@@ -427,7 +422,7 @@ function showSettings() {
     });
   });
 
-  panel.querySelector('.credits-close').addEventListener('pointerdown', () => {
+  panel.querySelector('.settings-close').addEventListener('pointerdown', () => {
     if (activeRecorder) { try { activeRecorder.stop(); } catch (e) { /* ok */ } }
     overlay.remove();
     showMenu();
@@ -473,18 +468,11 @@ const HOME_ICON = `
 function makeHomeButton(parent) {
   const btn = el('button', 'home-btn', parent);
   btn.innerHTML = HOME_ICON;
-  let timer = null;
-  const go = () => { audio.chime(); showMenu(); };
   btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    if (localStorage.getItem(LS_HOME_HOLD) === '1') {
-      btn.classList.add('holding');
-      timer = setTimeout(go, 800);
-    } else go();
+    audio.chime();
+    showMenu();
   });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => btn.addEventListener(ev, () => {
-    clearTimeout(timer); btn.classList.remove('holding');
-  }));
   return btn;
 }
 
@@ -533,10 +521,6 @@ function startGame(game, mix = false) {
   makeHomeButton(s);
   makeMuteButton(s);
   progress.start(game.id);
-
-  // Say the game's name first; games queue their intro behind it
-  // (their first speak uses interrupt: false).
-  speech.speak(game.title);
 
   const ctx = {
     stage,

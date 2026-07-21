@@ -10,7 +10,7 @@ nothing to buy, works offline once loaded:
 3. **Colors** — tap the balloon that matches the color
 4. **Shapes** — tap the shape that fits the dashed outline
 5. **Counting** — tap each animal to count it aloud; badges and a big numeral track the count (1–5 or 1–10 — press-and-hold the corner button)
-6. **Puzzle Fit** — drag each animal onto its outlined spot
+6. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or complete a missing-block pattern
 7. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
 8. **Coloring** — big hand-sketched coloring pages; finished pictures are saved to an in-app gallery
 9. **Matching** — flip four cards, find the two matching friends
@@ -22,14 +22,16 @@ nothing to buy, works offline once loaded:
 15. **Patterns** — a color sequence marches by; tap what comes next
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
-18. **Trace It** — drag a finger along a glowing path to paint it in
+18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
 game shows a single animal, it says hello with its real voice.
 
-Everything is spoken aloud (device text-to-speech) — no reading needed.
-The Home button responds to a normal tap.
+Gameplay is intentionally quiet. Counting speaks only each tapped number, and
+Trace It speaks only the completed letter, shape, number, or animal name.
+Recorded parent praise and encouragement remain active. The Home button
+responds immediately to one normal tap.
 
 ## Parent settings
 
@@ -81,6 +83,15 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.1** — quiet-play and tracing release: removed general computer
+  narration while preserving recorded parent praise/encouragement; Counting
+  now speaks numbers only; rebuilt Trace It with Alphabet A–Z, Shapes,
+  Numbers 1–10, and the full Animals library plus one-word completion speech;
+  Puzzle Fit now switches between animal silhouettes and an age-appropriate
+  missing-block spatial pattern; restored immediate single-tap Home; moved a
+  prominent red Close control to the top of Settings; and hardened dynamic
+  viewport/safe-area positioning for Safari and standalone iPhone/iPad PWAs.
 
 - **v3.0** — developmental journey release: three age/stage menu presets, a
   calmer six-game home screen with More Games, adaptive three-level difficulty,

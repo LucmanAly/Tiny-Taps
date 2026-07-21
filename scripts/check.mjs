@@ -44,6 +44,15 @@ for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
 
+// Computer speech during gameplay is restricted to Counting and Trace It.
+for (const file of files.filter(f => f.includes(`${path.sep}games${path.sep}`))) {
+  const rel = path.relative(root, file);
+  const source = fs.readFileSync(file, 'utf8');
+  if (source.includes('speakWord(') && !['js/games/counting.js', 'js/games/trace.js'].includes(rel)) {
+    errors.push(`${rel} uses the restricted computer-speech channel`);
+  }
+}
+
 if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);

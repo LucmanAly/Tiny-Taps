@@ -1,32 +1,12 @@
-// Trace It: a glowing dashed path appears; drag a finger along it and a
-// rainbow stroke fills in behind a star marker. Forgiveness is the whole
-// mechanic — a generous tolerance means near enough always counts. The
-// classic 2-4yo pre-writing exercise; nothing else in the app practices
-// controlled continuous finger motion.
+// Trace It 3.1: choose letters, shapes, numbers or animals. Each item is a
+// sequence of generous centre-line strokes. Computer speech is used once,
+// only after the whole item is complete; recorded parent praise then follows
+// through the normal celebration path.
 
-import { pick } from '../engine/rand.js';
-import { S } from '../data/strings.js';
+import { TRACE_CATEGORIES } from '../data/trace-items.js';
 
-// Easiest to hardest: a straight line first; a circle last, since it has no
-// start/end landmark and demands one continuous curve all the way around.
-const PATHS = [
-  { id: 'line', d: 'M30 100 L270 100' },
-  { id: 'wave', d: 'M20 110 Q80 50 140 110 T260 110' },
-  { id: 'zigzag', d: 'M20 160 L80 40 L140 160 L200 40 L260 160' },
-  { id: 'mountain', d: 'M20 170 L90 60 L150 130 L210 40 L280 170' },
-  { id: 'circle', d: 'M150 40 A60 60 0 1 1 149.9 40 Z' },
-];
-
-// Starts at the easiest shape and advances one step per completed trace.
-// Once at the hardest, keeps things fresh by picking randomly among all of
-// them on replay rather than looping the same fixed order forever.
-let level = 0;
-function nextPath() {
-  if (level < PATHS.length - 1) return PATHS[level++];
-  return pick(PATHS);
-}
-
-const TOL = 34; // generous hit tolerance, in path viewBox units
+const TOL = 30;
+const CATEGORY_KEY = 'tinytaps-trace-category';
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -37,146 +17,195 @@ const ICON = `
 function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
-  let pathIndex = null;
-  let progress = 0;
-  let done = false;
+  let category = TRACE_CATEGORIES[localStorage.getItem(CATEGORY_KEY)]
+    ? localStorage.getItem(CATEGORY_KEY) : 'alphabet';
+  const cursors = { alphabet: 0, shapes: 0, numbers: 0, animals: 0 };
+  let current = null;
+  let indexes = [];
+  let fills = [];
+  let guides = [];
+  let strokeIndex = 0;
+  let pointIndex = 0;
   let dragging = false;
-  let currentId = 'trace';
+  let done = false;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'trace-wrap';
-  wrap.innerHTML = `
-    <svg class="trace-svg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="trace-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ff8a70"/>
-          <stop offset="50%" stop-color="#ffd54a"/>
-          <stop offset="100%" stop-color="#7ed67e"/>
-        </linearGradient>
-      </defs>
-      <path class="trace-guide" fill="none" stroke="#d7d0e6" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 18"/>
-      <path class="trace-fill" fill="none" stroke="url(#trace-grad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle class="trace-star" r="11" fill="#ffd54a" stroke="#fff" stroke-width="2.4"/>
-    </svg>`;
-  stage.appendChild(wrap);
+  const shell = document.createElement('div');
+  shell.className = 'trace-shell';
+  shell.innerHTML = `
+    <div class="trace-tabs" role="group" aria-label="Choose what to trace"></div>
+    <div class="trace-card">
+      <div class="trace-item-name"></div>
+      <svg class="trace-svg" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="trace-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ff8a70"/>
+            <stop offset="45%" stop-color="#ffd54a"/>
+            <stop offset="100%" stop-color="#4db8d8"/>
+          </linearGradient>
+        </defs>
+        <image class="trace-animal-preview" x="55" y="25" width="190" height="190" preserveAspectRatio="xMidYMid meet"/>
+        <g class="trace-guides"></g>
+        <g class="trace-fills"></g>
+        <circle class="trace-star" r="10" fill="#ffd54a" stroke="#fff" stroke-width="2.5"/>
+      </svg>
+      <div class="trace-stroke-dots"></div>
+    </div>`;
+  stage.appendChild(shell);
 
-  const svg = wrap.querySelector('.trace-svg');
-  const guide = wrap.querySelector('.trace-guide');
-  const fillPath = wrap.querySelector('.trace-fill');
-  const star = wrap.querySelector('.trace-star');
+  const tabs = shell.querySelector('.trace-tabs');
+  const svg = shell.querySelector('.trace-svg');
+  const guideGroup = shell.querySelector('.trace-guides');
+  const fillGroup = shell.querySelector('.trace-fills');
+  const star = shell.querySelector('.trace-star');
+  const preview = shell.querySelector('.trace-animal-preview');
+  const name = shell.querySelector('.trace-item-name');
+  const strokeDots = shell.querySelector('.trace-stroke-dots');
 
-  function toLocal(clientX, clientY) {
-    const pt = svg.createSVGPoint();
-    pt.x = clientX; pt.y = clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const loc = pt.matrixTransform(ctm.inverse());
-    return { x: loc.x, y: loc.y };
+  for (const [id, group] of Object.entries(TRACE_CATEGORIES)) {
+    const button = document.createElement('button');
+    button.className = 'trace-tab';
+    button.dataset.category = id;
+    button.textContent = group.label;
+    button.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      if (category === id) return;
+      category = id;
+      localStorage.setItem(CATEGORY_KEY, id);
+      speech.stop();
+      audio.pop();
+      renderNext();
+    });
+    tabs.appendChild(button);
   }
 
-  function buildIndex(pathEl) {
+  function pathIndex(pathEl) {
     const total = pathEl.getTotalLength();
-    const n = Math.max(20, Math.floor(total / 3));
+    const count = Math.max(20, Math.ceil(total / 3));
     const pts = [];
-    for (let i = 0; i <= n; i++) {
-      const len = (i / n) * total;
+    for (let i = 0; i <= count; i++) {
+      const len = (i / count) * total;
       const p = pathEl.getPointAtLength(len);
       pts.push({ x: p.x, y: p.y, len });
     }
-    return { pts, total };
+    return { total, pts };
   }
 
-  function updateVisual() {
-    const p = pathIndex.pts[progress];
-    fillPath.setAttribute('stroke-dasharray', `${p.len} ${pathIndex.total}`);
+  function activateStroke(index) {
+    strokeIndex = index;
+    pointIndex = 0;
+    guides.forEach((g, i) => g.classList.toggle('active', i === index));
+    const p = indexes[index].pts[0];
     star.setAttribute('cx', p.x);
     star.setAttribute('cy', p.y);
+    star.style.opacity = '1';
+    [...strokeDots.children].forEach((dot, i) => {
+      dot.classList.toggle('done', i < index);
+      dot.classList.toggle('active', i === index);
+    });
   }
 
-  function tryAdvance(clientX, clientY) {
-    if (!pathIndex) return;
+  function renderNext() {
+    if (!alive) return;
+    done = false;
+    dragging = false;
+    const group = TRACE_CATEGORIES[category];
+    current = group.items[cursors[category] % group.items.length];
+    cursors[category]++;
+    tabs.querySelectorAll('.trace-tab').forEach(b =>
+      b.classList.toggle('selected', b.dataset.category === category));
+    name.textContent = current.label;
+    if (current.art) {
+      preview.setAttribute('href', current.art);
+      preview.style.display = '';
+    } else {
+      preview.removeAttribute('href');
+      preview.style.display = 'none';
+    }
+    guideGroup.innerHTML = current.paths.map(d =>
+      `<path class="trace-guide" d="${d}"/>`).join('');
+    fillGroup.innerHTML = current.paths.map(d =>
+      `<path class="trace-fill" d="${d}"/>`).join('');
+    guides = [...guideGroup.querySelectorAll('path')];
+    fills = [...fillGroup.querySelectorAll('path')];
+    indexes = fills.map(pathIndex);
+    fills.forEach((p, i) => p.setAttribute('stroke-dasharray', `0 ${indexes[i].total}`));
+    strokeDots.innerHTML = current.paths.map(() => '<span></span>').join('');
+    activateStroke(0);
+  }
+
+  function toLocal(clientX, clientY) {
+    const point = svg.createSVGPoint();
+    point.x = clientX; point.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: -999, y: -999 };
+    const local = point.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+  }
+
+  function advance(clientX, clientY) {
+    if (!indexes[strokeIndex] || done) return;
     const local = toLocal(clientX, clientY);
-    // Once real tracing has begun (progress > 0) scan all the way to the
-    // path's end and take the farthest point still within tolerance, so a
-    // fast swipe with few pointermove events (a straight line is usually
-    // traced in one quick motion, unlike a curve) can still catch up in a
-    // single step. But the very first contact has to land near the actual
-    // start — a small fixed window there — so a stray tap near the far end
-    // can't shortcut the whole trace without ever touching the beginning.
-    const upper = progress > 0
-      ? pathIndex.pts.length - 1
-      : Math.min(pathIndex.pts.length - 1, Math.max(6, Math.floor(pathIndex.pts.length * 0.18)));
+    const index = indexes[strokeIndex];
+    const upper = pointIndex > 0
+      ? index.pts.length - 1
+      : Math.min(index.pts.length - 1, Math.max(6, Math.floor(index.pts.length * 0.2)));
     let best = -1;
-    for (let i = progress; i <= upper; i++) {
-      const pt = pathIndex.pts[i];
-      const dist = Math.hypot(pt.x - local.x, pt.y - local.y);
-      if (dist <= TOL) best = i;
+    for (let i = pointIndex; i <= upper; i++) {
+      const p = index.pts[i];
+      if (Math.hypot(p.x - local.x, p.y - local.y) <= TOL) best = i;
     }
-    if (best > progress) {
-      const crossedTenth = Math.floor(best / 10) > Math.floor(progress / 10);
-      progress = best;
-      updateVisual();
-      if (crossedTenth) audio.pop();
-      if (progress >= pathIndex.pts.length - 1) finish();
-    }
+    if (best <= pointIndex) return;
+    const oldBand = Math.floor(pointIndex / 12);
+    pointIndex = best;
+    const p = index.pts[pointIndex];
+    fills[strokeIndex].setAttribute('stroke-dasharray', `${p.len} ${index.total}`);
+    star.setAttribute('cx', p.x);
+    star.setAttribute('cy', p.y);
+    if (Math.floor(pointIndex / 12) > oldBand) audio.pop();
+    if (pointIndex >= index.pts.length - 1) completeStroke();
   }
 
-  async function finish() {
+  function completeStroke() {
+    fills[strokeIndex].setAttribute('stroke-dasharray', `${indexes[strokeIndex].total} 0`);
+    if (strokeIndex < indexes.length - 1) {
+      audio.chime();
+      activateStroke(strokeIndex + 1);
+      return;
+    }
+    completeItem();
+  }
+
+  async function completeItem() {
     if (done || !alive) return;
     done = true;
-    const end = pathIndex.pts[pathIndex.pts.length - 1];
-    const screenPt = svg.createSVGPoint();
-    screenPt.x = end.x; screenPt.y = end.y;
-    const ctm = svg.getScreenCTM();
+    dragging = false;
+    star.style.opacity = '0';
+    [...strokeDots.children].forEach(dot => dot.classList.add('done'));
     const r = svg.getBoundingClientRect();
-    const screen = ctm ? screenPt.matrixTransform(ctm) : { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    celebrate.burst(screen.x, screen.y, { count: 30 });
-    if (recordOutcome) recordOutcome(true, currentId);
+    celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 34 });
+    if (recordOutcome) recordOutcome(true, `${category}:${current.id}`);
+    await speech.speakWord(current.spoken, { rate: 0.86, pitch: 1.02 });
+    if (!alive) return;
     celebrate.big({ quick: false });
-    setTimeout(() => newRound(false), 1000);
+    setTimeout(renderNext, 900);
   }
 
   function onDown(e) {
     if (!alive || done) return;
     dragging = true;
     svg.setPointerCapture(e.pointerId);
-    tryAdvance(e.clientX, e.clientY);
+    advance(e.clientX, e.clientY);
   }
-  function onMove(e) {
-    if (!alive || done || !dragging) return;
-    tryAdvance(e.clientX, e.clientY);
-  }
+  function onMove(e) { if (dragging && alive && !done) advance(e.clientX, e.clientY); }
   function onUp() { dragging = false; }
   svg.addEventListener('pointerdown', onDown);
   svg.addEventListener('pointermove', onMove);
   svg.addEventListener('pointerup', onUp);
   svg.addEventListener('pointercancel', onUp);
 
-  function newRound(first) {
-    if (!alive) return;
-    done = false;
-    progress = 0;
-    const current = nextPath();
-    currentId = current.id;
-    guide.setAttribute('d', current.d);
-    fillPath.setAttribute('d', current.d);
-    pathIndex = buildIndex(fillPath);
-    fillPath.setAttribute('stroke-dasharray', `0 ${pathIndex.total}`);
-    const startPt = pathIndex.pts[0];
-    star.setAttribute('cx', startPt.x);
-    star.setAttribute('cy', startPt.y);
-    if (first) speech.speak(S.traceIntro, { interrupt: false });
-  }
-
-  setReprompt(() => speech.speak(S.traceReprompt));
-  newRound(true);
-
-  return () => { alive = false; };
+  setReprompt(null);
+  renderNext();
+  return () => { alive = false; speech.stop(); };
 }
 
-export default {
-  id: 'trace',
-  title: 'Trace It',
-  icon: ICON,
-  start,
-};
+export default { id: 'trace', title: 'Trace It', icon: ICON, start };
