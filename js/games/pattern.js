@@ -30,12 +30,17 @@ export default makeRoundGame({
   icon: ICON,
   promptAreaClass: 'prompt-area pattern-prompt',
   optionClass: 'pattern-opt',
-  nextRound() {
-    const [x, y] = shuffle(PALETTE).slice(0, 2);
-    const len = Math.random() < 0.5 ? 3 : 4;
-    const seq = Array.from({ length: len }, (_, i) => (i % 2 === 0 ? x : y));
-    const next = len % 2 === 0 ? x : y;
-    return { x, y, seq, next };
+  nextRound(ctx) {
+    const level = ctx && ctx.difficulty ? ctx.difficulty() : 1;
+    const [x, y, z] = shuffle(PALETTE).slice(0, 3);
+    let unit;
+    if (level === 1) unit = [x, y];                 // ABAB
+    else if (level === 2) unit = [x, x, y];         // AABAAB
+    else unit = [x, y, z];                          // ABCABC
+    const len = level === 1 ? (Math.random() < 0.5 ? 3 : 4) : unit.length + 2;
+    const seq = Array.from({ length: len }, (_, i) => unit[i % unit.length]);
+    const next = unit[len % unit.length];
+    return { x, y, z, seq, next, choices: level === 3 ? [x, y, z] : [x, y] };
   },
   renderPrompt(promptEl, target) {
     promptEl.innerHTML = `<div class="pattern-row pop-in">${
@@ -43,7 +48,7 @@ export default makeRoundGame({
     }</div>`;
   },
   options(target) {
-    return shuffle([target.x, target.y]).map(c => ({
+    return shuffle(target.choices).map(c => ({
       correct: c.id === target.next.id,
       render(btn) { btn.innerHTML = dot(c.c, 'pattern-opt-dot'); },
     }));

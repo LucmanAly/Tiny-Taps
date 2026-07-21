@@ -2,7 +2,7 @@
 // hear its real sound.
 
 import { ANIMALS, preloadSounds } from '../data/animals.js';
-import { pickN } from '../engine/rand.js';
+import { groupCycler } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
 
@@ -45,9 +45,10 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let revealed = 0;
+  const nextSix = groupCycler(ANIMALS, 6);
 
   const grid = document.createElement('div');
   grid.className = 'peek-grid';
@@ -61,7 +62,7 @@ function start(ctx) {
     if (!alive) return;
     revealed = 0;
     grid.innerHTML = '';
-    const six = pickN(ANIMALS, 6);
+    const six = nextSix();
     preloadSounds(audio, six.map(a => a.id));
     six.forEach((a, i) => {
       const tile = document.createElement('div');
@@ -72,6 +73,7 @@ function start(ctx) {
         if (!alive || cover.classList.contains('off')) return;
         cover.classList.add('off');
         revealed++;
+        if (recordOutcome) recordOutcome(true, a.name);
         const done = revealed === 6;
         const r = tile.getBoundingClientRect();
         celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 18 });

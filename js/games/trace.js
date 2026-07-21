@@ -35,12 +35,13 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let pathIndex = null;
   let progress = 0;
   let done = false;
   let dragging = false;
+  let currentId = 'trace';
 
   const wrap = document.createElement('div');
   wrap.className = 'trace-wrap';
@@ -130,6 +131,7 @@ function start(ctx) {
     const r = svg.getBoundingClientRect();
     const screen = ctm ? screenPt.matrixTransform(ctm) : { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     celebrate.burst(screen.x, screen.y, { count: 30 });
+    if (recordOutcome) recordOutcome(true, currentId);
     celebrate.big({ quick: false });
     setTimeout(() => newRound(false), 1000);
   }
@@ -155,6 +157,7 @@ function start(ctx) {
     done = false;
     progress = 0;
     const current = nextPath();
+    currentId = current.id;
     guide.setAttribute('d', current.d);
     fillPath.setAttribute('d', current.d);
     pathIndex = buildIndex(fillPath);

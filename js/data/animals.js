@@ -16,17 +16,17 @@ export const ANIMALS = [
   { id: 'elephant',  name: 'elephant',  art: 'assets/art/elephant.svg',  sound: 'assets/audio/elephant.mp3', habitat: 'wild' },
   { id: 'frog',      name: 'frog',      art: 'assets/art/frog.svg',      sound: 'assets/audio/frog.mp3',     habitat: 'water' },
   { id: 'owl',       name: 'owl',       art: 'assets/art/owl.svg',       sound: 'assets/audio/owl.mp3',      habitat: 'wild' },
-  { id: 'bear',      name: 'bear',      art: 'assets/art/bear.svg',      sound: null,                        habitat: 'wild' },
-  { id: 'bee',       name: 'bee',       art: 'assets/art/bee.svg',       sound: null,                        habitat: 'wild' },
-  { id: 'bunny',     name: 'bunny',     art: 'assets/art/bunny.svg',     sound: null,                        habitat: 'farm' },
+  { id: 'bear',      name: 'bear',      art: 'assets/art/bear.svg',      sound: 'assets/audio/bear.mp3',     habitat: 'wild' },
+  { id: 'bee',       name: 'bee',       art: 'assets/art/bee.svg',       sound: 'assets/audio/bee.mp3',      habitat: 'wild' },
+  { id: 'bunny',     name: 'bunny',     art: 'assets/art/bunny.svg',     sound: 'assets/audio/bunny.mp3',    habitat: 'farm' },
   { id: 'butterfly', name: 'butterfly', art: 'assets/art/butterfly.svg', sound: null,                        habitat: 'wild' },
   { id: 'dinosaur',  name: 'dinosaur',  art: 'assets/art/dinosaur.svg',  sound: null,                        habitat: 'wild' },
   { id: 'fish',      name: 'fish',      art: 'assets/art/fish.svg',      sound: null,                        habitat: 'water' },
   { id: 'giraffe',   name: 'giraffe',   art: 'assets/art/giraffe.svg',   sound: null,                        habitat: 'wild' },
-  { id: 'monkey',    name: 'monkey',    art: 'assets/art/monkey.svg',    sound: null,                        habitat: 'wild' },
+  { id: 'monkey',    name: 'monkey',    art: 'assets/art/monkey.svg',    sound: 'assets/audio/monkey.mp3',   habitat: 'wild' },
   { id: 'shark',     name: 'shark',     art: 'assets/art/shark.svg',     sound: null,                        habitat: 'water' },
   { id: 'turtle',    name: 'turtle',    art: 'assets/art/turtle.svg',    sound: null,                        habitat: 'water' },
-  { id: 'zebra',     name: 'zebra',     art: 'assets/art/zebra.svg',     sound: null,                        habitat: 'wild' },
+  { id: 'zebra',     name: 'zebra',     art: 'assets/art/zebra.svg',     sound: 'assets/audio/zebra.mp3',    habitat: 'wild' },
 ];
 
 // Animals with an authentic recording (used by sound-guessing games).

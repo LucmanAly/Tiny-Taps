@@ -3,7 +3,7 @@
 // first memory game.
 
 import { ANIMALS, preloadSounds } from '../data/animals.js';
-import { pickN, shuffle } from '../engine/rand.js';
+import { groupCycler, shuffle } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
 
@@ -46,11 +46,12 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
   let open = [];
   let lock = false;
   let matched = 0;
+  const nextAnimals = groupCycler(ANIMALS, 4);
 
   const grid = document.createElement('div');
   grid.className = 'memory-grid';
@@ -66,9 +67,11 @@ function start(ctx) {
       lock = true; // locked during the opening peek, unlocked once covers close
       matched = 0;
       grid.innerHTML = '';
-      const pair = pickN(ANIMALS, 2);
+      const pairCount = difficulty ? Math.min(4, difficulty() + 1) : 2;
+      grid.style.setProperty('--memory-cols', pairCount <= 2 ? 2 : pairCount);
+      const pair = nextAnimals().slice(0, pairCount);
       preloadSounds(audio, pair.filter(a => a.sound).map(a => a.id));
-      const cards = shuffle([pair[0], pair[1], pair[0], pair[1]]);
+      const cards = shuffle(pair.flatMap(a => [a, a]));
       const covers = [];
       cards.forEach((a, i) => {
         const tile = document.createElement('div');
@@ -88,13 +91,14 @@ function start(ctx) {
           const [x, y] = open;
           open = [];
           if (x.a.id === y.a.id) {
+            if (recordOutcome) recordOutcome(true, x.a.name);
             matched++;
             audio.chime();
             const r = y.tile.getBoundingClientRect();
             celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 20 });
             speech.speak(S.memoryMatch(x.a.name));
             if (x.a.sound) audio.play('animal:' + x.a.id, { maxDuration: 2.2 });
-            if (matched === 2) {
+            if (matched === pairCount) {
               setTimeout(() => {
                 if (!alive) return;
                 celebrate.big();
@@ -102,6 +106,7 @@ function start(ctx) {
               }, 800);
             }
           } else {
+            if (recordOutcome) recordOutcome(false, `${x.a.name}/${y.a.name}`);
             lock = true;
             setTimeout(() => { audio.boing(); speech.encourage(); }, 250);
             setTimeout(() => {

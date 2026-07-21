@@ -67,7 +67,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let current = null;
   let placed = false;
@@ -114,6 +114,7 @@ function start(ctx) {
         onDrop: hit => {
           if (!alive || placed || !hit) return 'reject';
           if (hit === current.habitat) {
+            if (recordOutcome) recordOutcome(true, current.name);
             placed = true;
             audio.chime();
             const target = binEls[roundBins.findIndex(b => b.habitat === hit)];
@@ -128,6 +129,7 @@ function start(ctx) {
             })();
             return 'accept';
           }
+          if (recordOutcome) recordOutcome(false, current.name);
           audio.boing();
           speech.encourage();
           return 'reject';

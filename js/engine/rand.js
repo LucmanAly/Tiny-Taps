@@ -37,3 +37,18 @@ export function cycler(arr) {
     return last;
   };
 }
+
+// Draw groups from a shuffled bag so recently seen items stay out of the next
+// rounds. Useful for animal grids where a simple random sample can feel oddly
+// repetitive to a child.
+export function groupCycler(arr, count) {
+  let bag = shuffle(arr);
+  return () => {
+    if (bag.length < count) {
+      const held = bag.slice();
+      const refill = shuffle(arr.filter(x => !held.includes(x)));
+      bag = [...bag, ...refill];
+    }
+    return bag.splice(0, count);
+  };
+}

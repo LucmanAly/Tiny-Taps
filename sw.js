@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v2.2';
+const VERSION = 'tiny-taps-v3.0';
 
 const ASSETS = [
   '.',
@@ -22,6 +22,7 @@ const ASSETS = [
   'js/engine/drag.js',
   'js/engine/rand.js',
   'js/engine/recordings.js',
+  'js/engine/progress.js',
   'js/engine/roundgame.js',
   'js/engine/speech.js',
   'js/engine/stickers.js',
@@ -61,12 +62,21 @@ const ASSETS = [
   'assets/audio/duck.mp3', 'assets/audio/sheep.mp3', 'assets/audio/horse.mp3',
   'assets/audio/rooster.mp3', 'assets/audio/pig.mp3', 'assets/audio/lion.mp3',
   'assets/audio/elephant.mp3', 'assets/audio/frog.mp3', 'assets/audio/owl.mp3',
+  'assets/audio/bear.mp3', 'assets/audio/bee.mp3', 'assets/audio/bunny.mp3',
+  'assets/audio/monkey.mp3', 'assets/audio/zebra.mp3',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(VERSION).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    // One unavailable optional asset must not prevent the entire PWA from
+    // installing. Cache independently, while requiring the app shell.
+    caches.open(VERSION).then(async c => {
+      const results = await Promise.allSettled(ASSETS.map(asset => c.add(asset)));
+      const shell = ['index.html', 'css/main.css', 'js/app.js'];
+      const failedShell = results.some((r, i) => r.status === 'rejected' && shell.includes(ASSETS[i]));
+      if (failedShell) throw new Error('Tiny Taps app shell could not be cached');
+    }).then(() => self.skipWaiting())
   );
 });
 

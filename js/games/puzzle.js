@@ -18,7 +18,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let remaining = 0;
 
@@ -61,6 +61,7 @@ function start(ctx) {
         onDrop: hitId => {
           if (!alive || !hitId) return 'reject';
           if (hitId === a.id) {
+            if (recordOutcome) recordOutcome(true, a.name);
             const slot = slots.get(a.id);
             slot.classList.add('filled');
             piece.style.visibility = 'hidden';
@@ -78,6 +79,7 @@ function start(ctx) {
             }
             return 'accept';
           }
+          if (recordOutcome) recordOutcome(false, a.name);
           audio.boing();
           speech.encourage();
           return 'reject';

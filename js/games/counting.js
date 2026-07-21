@@ -6,7 +6,7 @@
 // Parent-gated toggle (hold 2s) switches between counting to 5 and to 10.
 
 import { ANIMALS } from '../data/animals.js';
-import { pick, randInt } from '../engine/rand.js';
+import { cycler, randInt } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
 
@@ -25,12 +25,13 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
   let n = 0;
   let counted = 0;
   let animalName = '';
   let max = Number(localStorage.getItem('tinytaps-count-max') || 5);
+  const nextAnimal = cycler(ANIMALS);
 
   const bigNum = document.createElement('div');
   bigNum.className = 'count-big';
@@ -63,8 +64,9 @@ function start(ctx) {
     const build = () => {
     if (!alive) return;
     counted = 0;
-    n = randInt(1, max);
-    const a = preset || pick(ANIMALS);
+    const adaptiveMax = difficulty ? [3, 5, max][difficulty() - 1] : max;
+    n = randInt(1, Math.min(max, adaptiveMax));
+    const a = preset || nextAnimal();
     animalName = a.name;
 
     bigNum.textContent = '';
@@ -91,10 +93,11 @@ function start(ctx) {
         void bigNum.offsetWidth;
         bigNum.classList.add('bump');
         if (counted === n) {
+          if (recordOutcome) recordOutcome(true, String(n));
           setTimeout(() => {
             if (!alive) return;
             bigNum.classList.add('total');
-            const upcoming = pick(ANIMALS);
+            const upcoming = nextAnimal();
             celebrate.big({ nextAnimalId: upcoming.id });
             setTimeout(() => newRound(false, upcoming), 1000);
           }, 450);

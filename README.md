@@ -25,7 +25,7 @@ nothing to buy, works offline once loaded:
 18. **Trace It** — drag a finger along a glowing path to paint it in
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
-giraffe and zebra. Twelve of them come with authentic recorded sounds; when a
+giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
 game shows a single animal, it says hello with its real voice.
 
 Everything is spoken aloud (device text-to-speech) — no reading needed.
@@ -38,10 +38,28 @@ volume, voice speed, showing/hiding games on the menu, the app version, and —
 best of all — **recording your own voice** for praise and encouragement.
 Recordings are stored on-device only.
 
+Tiny Taps 3.0 adds three developmentally focused menu presets:
+
+- **Little Explorer (18–30 months)** — six simple, success-first games
+- **Early Learner (2½–3½ years)** — colors, shapes, sounds and first puzzles
+- **Growing Thinker (3½–4½ years)** — patterns, sorting, tracing and memory
+
+Parents can still make a custom menu. Colors, Shapes, Animal Sounds,
+Counting, Matching and Patterns automatically adjust among three difficulty
+levels based on recent play. A private parent view shows favorite games,
+completed activities and concepts currently being practiced. This history
+never leaves the device and can be reset at any time.
+
+Optional controls include a short hold for the Home button to prevent
+accidental exits and **Play Mix**, which changes among age-appropriate games
+every 90 seconds.
+
 ## Adding sounds for the newer animals
 
-Bear, bee, bunny, butterfly, dinosaur, fish, giraffe, monkey, shark, turtle
-and zebra don't have recordings yet. To add one: drop an `.mp3` into
+Butterfly, dinosaur, fish, giraffe, shark and turtle intentionally remain
+voice-only. Tiny Taps does not use a fabricated dinosaur roar or substitute an
+unrelated ambient recording for animals without a clear, toddler-recognizable
+call. To add a verified recording later, drop an `.mp3` into
 `assets/audio/` (short, trimmed, toddler-friendly; check the license and add
 it to `assets/CREDITS.md`), then set the animal's `sound:` path in
 `js/data/animals.js` and add the file to `sw.js`'s asset list. Every game —
@@ -63,6 +81,14 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.0** — developmental journey release: three age/stage menu presets, a
+  calmer six-game home screen with More Games, adaptive three-level difficulty,
+  private on-device parent observations, optional protected Home button,
+  optional continuous Play Mix, interactive sound-playing stickers, recent
+  variety safeguards, clear iPhone/iPad installation and offline-ready status,
+  resilient per-asset offline caching, automated asset checks, and five new
+  licensed authentic recordings (bear, bee, bunny, monkey and zebra).
 
 - **v2.2** — reliability, voice, and visual polish pass: a per-game mute
   toggle alongside the global volume setting; a Settings voice picker so a

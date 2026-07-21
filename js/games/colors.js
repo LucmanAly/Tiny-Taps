@@ -48,7 +48,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
   let target = null;
   const nextColor = cycler(COLORS);
@@ -69,7 +69,9 @@ function start(ctx) {
     const build = () => {
     if (!alive) return;
     target = nextColor();
-    const options = shuffle([target, ...pickN(COLORS.filter(c => c !== target), 2)]);
+    const level = difficulty ? difficulty() : 2;
+    const optionCount = level === 1 ? 2 : level === 2 ? 3 : 4;
+    const options = shuffle([target, ...pickN(COLORS.filter(c => c !== target), optionCount - 1)]);
     promptArea.innerHTML = `<div class="color-swatch pop-in" style="background:radial-gradient(circle at 38% 30%, ${target.light}, ${target.main} 60%, ${target.dark})"></div>`;
     row.innerHTML = '';
     let done = false;
@@ -80,6 +82,7 @@ function start(ctx) {
       b.addEventListener('pointerdown', e => {
         if (!alive || done) return;
         if (c === target) {
+          if (recordOutcome) recordOutcome(true, target.name);
           done = true;
           b.classList.add('popped');
           audio.pop();
@@ -87,6 +90,7 @@ function start(ctx) {
           speech.praise();
           setTimeout(() => newRound(false), 900);
         } else {
+          if (recordOutcome) recordOutcome(false, target.name);
           b.classList.remove('wiggle');
           void b.offsetWidth;
           b.classList.add('wiggle');

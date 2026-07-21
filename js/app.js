@@ -6,6 +6,7 @@ import { games } from './games/index.js';
 import { S } from './data/strings.js';
 import { addTap } from './engine/ui.js';
 import { VERSION } from './data/version.js';
+import * as progress from './engine/progress.js';
 
 const screenEl = document.getElementById('screen');
 let currentCleanup = null;
@@ -17,6 +18,31 @@ const REPROMPT_MS = 9000;
 
 const LS_VOLUME = 'tinytaps-volume';
 const LS_HIDDEN = 'tinytaps-hidden';
+const LS_PROFILE = 'tinytaps-profile';
+const LS_HOME_HOLD = 'tinytaps-home-hold';
+const LS_MIX = 'tinytaps-mix';
+
+const PROFILES = {
+  little: {
+    label: 'Little Explorer', age: '18–30 months',
+    games: ['peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
+  },
+  early: {
+    label: 'Early Learner', age: '2½–3½ years',
+    games: ['sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
+  },
+  growing: {
+    label: 'Growing Thinker', age: '3½–4½ years',
+    games: ['pattern', 'shadow', 'sort', 'trace', 'counting', 'memory'],
+  },
+  custom: { label: 'Custom', age: 'your choices', games: [] },
+};
+
+function profileId() { return localStorage.getItem(LS_PROFILE) || 'little'; }
+function profileGames() {
+  const p = PROFILES[profileId()] || PROFILES.little;
+  return p.games.length ? p.games : games.map(g => g.id);
+}
 
 function hiddenGames() {
   try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN) || '[]')); }
@@ -128,14 +154,16 @@ function showSplash() {
 
 /* ---------------- menu ---------------- */
 
-function showMenu() {
+function showMenu(showAll = false) {
   clearScreen();
   const s = el('div', 'screen menu', screenEl);
-  el('div', 'menu-title', s).textContent = 'Pick a game!';
+  const profile = PROFILES[profileId()] || PROFILES.little;
+  el('div', 'menu-title', s).textContent = showAll ? 'All games' : profile.label;
   const grid = el('div', 'menu-grid', s);
   const hidden = hiddenGames();
-  for (const game of games) {
-    if (hidden.has(game.id)) continue;
+  const featured = new Set(profileGames());
+  const visible = games.filter(g => !hidden.has(g.id) && (showAll || featured.has(g.id)));
+  for (const game of visible) {
     const card = el('button', 'menu-card', grid);
     card.style.backgroundColor = ACCENTS[game.id] || '#ffffff';
     card.innerHTML = `<div class="card-icon">${game.icon}</div><div class="card-label">${game.title}</div>`;
@@ -144,6 +172,17 @@ function showMenu() {
       startGame(game);
     });
   }
+  if (!showAll && games.some(g => !hidden.has(g.id) && !featured.has(g.id))) {
+    const more = el('button', 'menu-card more-card', grid);
+    more.innerHTML = '<div class="card-icon more-dots">•••</div><div class="card-label">More Games</div>';
+    addTap(more, () => showMenu(true));
+  }
+  if (showAll) {
+    const back = el('button', 'menu-card more-card', grid);
+    back.innerHTML = '<div class="card-icon more-dots">⌂</div><div class="card-label">My Games</div>';
+    addTap(back, () => showMenu(false));
+  }
+  if (localStorage.getItem(LS_MIX) === '1') makeMixButton(s);
   makeCreditsButton(s);
   makeSettingsButton(s);
 }
@@ -163,6 +202,11 @@ const CREDITS = [
   ['Elephant trumpet', 'தகவலுழவன், Wikimedia Commons', 'CC0'],
   ['Frog (marsh frog)', 'Llivermore, Wikimedia Commons', 'CC BY-SA 4.0'],
   ['Owl (tawny owl)', 'Alvaro Ortiz Troncoso via xeno-canto/Wikimedia Commons', 'CC BY-SA 4.0'],
+  ['Bear cub growl', 'Shizhao, Wikimedia Commons', 'CC BY 3.0'],
+  ['Bee buzz', 'Free Sounds Library / Spanac, Wikimedia Commons', 'CC BY 3.0'],
+  ['Rabbit squeaks', 'kessir via Freesound/Wikimedia Commons', 'CC0'],
+  ['Howler monkey', 'British Library wildlife collection', 'CC BY 4.0'],
+  ['Grévy’s zebra', 'DiegoC472, Wikimedia Commons', 'CC BY-SA 4.0'],
 ];
 
 function makeCreditsButton(parent) {
@@ -219,6 +263,16 @@ function makeSettingsButton(parent) {
   });
 }
 
+function makeMixButton(parent) {
+  const btn = el('button', 'mix-btn', parent);
+  btn.textContent = '▶ Mix';
+  btn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    const pool = games.filter(g => profileGames().includes(g.id) && !hiddenGames().has(g.id) && g.id !== 'stickers');
+    if (pool.length) startGame(pool[Math.floor(Math.random() * pool.length)], true);
+  });
+}
+
 let activeRecorder = null;
 
 function showSettings() {
@@ -231,6 +285,11 @@ function showSettings() {
 
   panel.innerHTML = `
     <h2>Parent settings</h2>
+    <label class="set-row">Learning stage
+      <select id="set-profile">
+        ${Object.entries(PROFILES).map(([id, p]) => `<option value="${id}"${id === profileId() ? ' selected' : ''}>${p.label} · ${p.age}</option>`).join('')}
+      </select>
+    </label>
     <label class="set-row">Volume
       <input type="range" id="set-vol" min="0" max="1" step="0.05" value="${vol}">
     </label>
@@ -240,6 +299,11 @@ function showSettings() {
     <label class="set-row">Voice
       <select id="set-voice"></select>
     </label>
+    <label class="set-check"><input type="checkbox" id="set-home-hold" ${localStorage.getItem(LS_HOME_HOLD) === '1' ? 'checked' : ''}> Hold Home for 0.8 seconds (prevents accidental exits)</label>
+    <label class="set-check"><input type="checkbox" id="set-mix" ${localStorage.getItem(LS_MIX) === '1' ? 'checked' : ''}> Show Play Mix (automatically changes games)</label>
+    <button class="big-btn progress-open">View on-device progress</button>
+    <div class="offline-status">${localStorage.getItem('tinytaps-offline-ready') === '1' ? '✓ Ready to play offline' : 'Offline files finish saving after the first online visit'}</div>
+    <details class="install-help"><summary>Install on iPhone or iPad</summary><p>Open Tiny Taps in Safari, tap Share, choose <strong>Add to Home Screen</strong>, then tap Add. Open it once while online before taking it offline.</p></details>
     <h3>Your voice</h3>
     <p>Record yourself — the app will use your voice instead of the robot one
     for these moments.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
@@ -254,6 +318,14 @@ function showSettings() {
     localStorage.setItem(LS_VOLUME, String(v));
     audio.setVolume(v);
   });
+  panel.querySelector('#set-profile').addEventListener('change', e => {
+    localStorage.setItem(LS_PROFILE, e.target.value);
+  });
+  panel.querySelector('#set-home-hold').addEventListener('change', e =>
+    localStorage.setItem(LS_HOME_HOLD, e.target.checked ? '1' : '0'));
+  panel.querySelector('#set-mix').addEventListener('change', e =>
+    localStorage.setItem(LS_MIX, e.target.checked ? '1' : '0'));
+  panel.querySelector('.progress-open').addEventListener('pointerdown', () => showProgress(panel));
   panel.querySelector('#set-vol').addEventListener('change', () => audio.chime());
 
   panel.querySelector('#set-rate').addEventListener('change', e => {
@@ -351,6 +423,7 @@ function showSettings() {
       // Never allow hiding everything.
       if (h.size >= games.length) { h.delete(g.id); e.target.checked = true; }
       setHiddenGames(h);
+      localStorage.setItem(LS_PROFILE, 'custom');
     });
   });
 
@@ -358,6 +431,34 @@ function showSettings() {
     if (activeRecorder) { try { activeRecorder.stop(); } catch (e) { /* ok */ } }
     overlay.remove();
     showMenu();
+  });
+}
+
+function showProgress(parentPanel) {
+  const old = parentPanel.querySelector('.progress-box');
+  if (old) { old.remove(); return; }
+  const data = progress.read();
+  const box = el('div', 'progress-box', parentPanel);
+  const ranked = games.map(g => ({ ...g, ...(data.games[g.id] || {}) }))
+    .filter(g => g.plays).sort((a, b) => b.plays - a.plays);
+  const favorites = ranked.slice(0, 3).map(g => g.title).join(', ') || 'No games played yet';
+  const needs = [
+    ...progress.hardestDetails('colors').map(x => `${x} color`),
+    ...progress.hardestDetails('shapes').map(x => `${x} shape`),
+  ].slice(0, 4);
+  box.innerHTML = `<h3>Play observations</h3>
+    <p><strong>Favorite games:</strong> ${favorites}</p>
+    <p><strong>Completed activities:</strong> ${data.totalWins || 0}</p>
+    <p><strong>Currently practicing:</strong> ${needs.join(', ') || 'The app is still learning'}</p>
+    <div class="progress-list">${ranked.map(g => `<div><span>${g.title}</span><span>${g.plays} plays · level ${g.level || 1}</span></div>`).join('')}</div>
+    <p class="privacy-note">Stored only on this device. No scores, comparisons, accounts or uploads.</p>
+    <button class="big-btn progress-reset">Reset progress</button>`;
+  box.querySelector('.progress-reset').addEventListener('pointerdown', () => {
+    if (window.confirm('Reset all local play observations and difficulty levels?')) {
+      progress.reset();
+      box.remove();
+      showProgress(parentPanel);
+    }
   });
 }
 
@@ -372,11 +473,18 @@ const HOME_ICON = `
 function makeHomeButton(parent) {
   const btn = el('button', 'home-btn', parent);
   btn.innerHTML = HOME_ICON;
+  let timer = null;
+  const go = () => { audio.chime(); showMenu(); };
   btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    audio.chime();
-    showMenu();
+    if (localStorage.getItem(LS_HOME_HOLD) === '1') {
+      btn.classList.add('holding');
+      timer = setTimeout(go, 800);
+    } else go();
   });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => btn.addEventListener(ev, () => {
+    clearTimeout(timer); btn.classList.remove('holding');
+  }));
   return btn;
 }
 
@@ -412,7 +520,7 @@ function makeMuteButton(parent) {
 
 let lastStart = 0;
 
-function startGame(game) {
+function startGame(game, mix = false) {
   // Toddlers tap with several fingers at once — don't start a game twice.
   const now = performance.now();
   if (now - lastStart < 600) return;
@@ -424,6 +532,7 @@ function startGame(game) {
   const stage = el('div', 'game-stage', s);
   makeHomeButton(s);
   makeMuteButton(s);
+  progress.start(game.id);
 
   // Say the game's name first; games queue their intro behind it
   // (their first speak uses interrupt: false).
@@ -436,8 +545,18 @@ function startGame(game) {
     celebrate,
     setReprompt,
     exitToMenu: showMenu,
+    difficulty: () => progress.level(game.id),
+    recordOutcome: (correct, detail) => progress.outcome(game.id, correct, detail),
   };
   currentCleanup = game.start(ctx) || null;
+  if (mix) {
+    const mixTimer = setTimeout(() => {
+      const pool = games.filter(g => profileGames().includes(g.id) && !hiddenGames().has(g.id) && g.id !== game.id && g.id !== 'stickers');
+      if (pool.length) startGame(pool[Math.floor(Math.random() * pool.length)], true);
+    }, 90000);
+    const cleanup = currentCleanup;
+    currentCleanup = () => { clearTimeout(mixTimer); if (cleanup) cleanup(); };
+  }
 }
 
 /* ---------------- boot ---------------- */
@@ -481,7 +600,12 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault());
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (!navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', () =>
+        localStorage.setItem('tinytaps-offline-ready', '1'), { once: true });
+    } else localStorage.setItem('tinytaps-offline-ready', '1');
+  }).catch(() => {});
 }
 
 showSplash();

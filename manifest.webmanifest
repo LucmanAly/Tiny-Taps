@@ -1,7 +1,7 @@
 {
   "name": "Tiny Taps",
   "short_name": "Tiny Taps",
-  "description": "Toddler learning mini-games: colors, shapes, counting, animal sounds and more.",
+  "description": "Private, offline toddler learning games that adapt as your child grows.",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",

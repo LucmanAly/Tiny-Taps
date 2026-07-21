@@ -27,7 +27,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let current = null;
   let fed = false;
@@ -64,6 +64,7 @@ function start(ctx) {
         onDrop: hit => {
           if (!alive || fed || !hit) return 'reject';
           if (f === correct) {
+            if (recordOutcome) recordOutcome(true, current.name);
             fed = true;
             item.classList.add('eaten');
             audio.chomp();
@@ -82,6 +83,7 @@ function start(ctx) {
             }, 550);
             return 'accept';
           }
+          if (recordOutcome) recordOutcome(false, current.name);
           audio.boing();
           speech.encourage();
           return 'reject';

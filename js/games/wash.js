@@ -22,7 +22,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, recordOutcome } = ctx;
   let alive = true;
   let current = null;
   let done = false;
@@ -104,6 +104,7 @@ function start(ctx) {
       g.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       const r = scene.getBoundingClientRect();
       celebrate.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 30 });
+      if (recordOutcome) recordOutcome(true, current.name);
       if (current.sound) await audio.play('animal:' + current.id, { maxDuration: 2.2 });
       if (!alive) return;
       const upcoming = nextAnimal();

@@ -18,6 +18,16 @@ these derivatives are distributed under the same license as each original.
 | elephant | [File:Elephant voice - trumpeting.ogg](https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg) | தகவலுழவன் | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | frog | [File:Marsh frog (Pelophylax ridibundus) call.ogg](https://commons.wikimedia.org/wiki/File:Marsh_frog_(Pelophylax_ridibundus)_call.ogg) | Llivermore | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | owl | [File:Strix aluco - Tawny Owl XC494801.mp3](https://commons.wikimedia.org/wiki/File:Strix_aluco_-_Tawny_Owl_XC494801.mp3) | Alvaro Ortiz Troncoso (xeno-canto) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| bear | [File:Bear growl.ogg](https://commons.wikimedia.org/wiki/File:Bear_growl.ogg) | Shizhao | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| bee | [File:Bee buzzing sound (animal noises).opus](https://commons.wikimedia.org/wiki/File:Bee_buzzing_sound_(animal_noises).opus) | Free Sounds Library / Spanac | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| bunny | [File:Rabbit oinks and squeaks.wav](https://commons.wikimedia.org/wiki/File:Rabbit_oinks_and_squeaks.wav) | kessir | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| monkey | [File:Mantled Howler Monkey (Alouatta palliata).ogg](https://commons.wikimedia.org/wiki/File:Mantled_Howler_Monkey_(Alouatta_palliata)_(W_ALOUATTA_PALLIATA_R1_C2).ogg) | British Library wildlife collection | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| zebra | [File:Grévys zebra (Sound Effects).ogg](https://commons.wikimedia.org/wiki/File:Gr%C3%A9vys_zebra_(Sound_Effects).ogg) | DiegoC472 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+
+Some animals intentionally remain voice-only: dinosaurs have no authentic
+recording, and butterfly, generic fish, giraffe, shark, and turtle do not have
+a clear, species-appropriate call suitable for a toddler guessing game. Tiny
+Taps does not substitute fabricated roars or unrelated ambient effects.
 
 UI sounds (pops, chimes, fanfares) are synthesized in-app via WebAudio.
 Spoken prompts use the device's text-to-speech.

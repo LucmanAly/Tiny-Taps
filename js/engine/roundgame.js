@@ -42,7 +42,7 @@ export function makeRoundGame(config) {
       const build = () => {
         if (!alive) return;
         busy = false;
-        target = preset || nextRound();
+        target = preset || nextRound(ctx);
         renderPrompt(promptArea, target, ctx);
         row.innerHTML = '';
         options(target, ctx).forEach(opt => {
@@ -53,6 +53,7 @@ export function makeRoundGame(config) {
             if (!alive || busy) return;
             if (opt.correct) {
               busy = true;
+              if (ctx.recordOutcome) ctx.recordOutcome(true, target.name || target.id || 'round');
               if (onWin) await onWin({ target, opt, btn: b, event: e, ctx });
               if (!alive) return;
               celebrate.burst(e.clientX, e.clientY, { count: burstCount });
@@ -61,12 +62,13 @@ export function makeRoundGame(config) {
               // was just answered) so a sticker preview matches reality, and
               // reuse that draw when the round rebuilds instead of drawing
               // again.
-              const upcoming = nextRound();
+              const upcoming = nextRound(ctx);
               const preferredId = nextAnimalId ? nextAnimalId(upcoming) : null;
               const won = stickers.recordWin(preferredId);
               if (won) setTimeout(() => stickers.showToast(won), winDelay);
               setTimeout(() => newRound(false, upcoming), winDelay);
             } else {
+              if (ctx.recordOutcome) ctx.recordOutcome(false, target.name || target.id || 'round');
               b.classList.remove('wiggle');
               void b.offsetWidth;
               b.classList.add('wiggle');

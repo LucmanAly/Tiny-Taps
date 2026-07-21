@@ -405,9 +405,9 @@
 /* ---------- matching pairs ---------- */
 .memory-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(var(--memory-cols, 2), 1fr);
   gap: 3vmin;
-  width: min(80vw, 66vh);
+  width: min(92vw, 82vh);
   margin: auto;
 }
 .memory-card { cursor: pointer; }

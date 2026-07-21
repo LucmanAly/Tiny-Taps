@@ -49,6 +49,11 @@ function start(ctx) {
         void cell.offsetWidth;
         cell.classList.add('wiggle');
         speech.speak(`Your ${a.name} sticker!`);
+        if (a.sound) {
+          audio.load('animal:' + a.id, a.sound).then(() => {
+            if (alive) audio.play('animal:' + a.id, { maxDuration: 2.2 });
+          });
+        }
       });
     }
     grid.appendChild(cell);

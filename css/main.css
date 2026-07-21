@@ -163,6 +163,21 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   letter-spacing: 0.01em;
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
+.more-card { background-color: rgba(255,255,255,0.72); }
+.more-dots {
+  display: flex; align-items: center; justify-content: center;
+  font-size: max(7vmin, 40px); font-weight: 900; letter-spacing: 0.08em;
+}
+.mix-btn {
+  position: absolute;
+  left: 50%; bottom: max(1.5vmin, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  min-height: 44px; padding: 0.8vmin 3vmin;
+  border: none; border-radius: 100px; background: #fff;
+  box-shadow: 0 3px 0 rgba(58,51,87,0.15);
+  color: var(--ink); font: 800 max(2.1vmin, 15px) var(--font);
+  z-index: 10;
+}
 
 /* ---------- credits (parent-facing) ---------- */
 .credits-btn {
@@ -234,6 +249,11 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 }
 .home-btn svg { width: 62%; height: 62%; }
 .home-btn:active { transform: scale(0.9); }
+.home-btn.holding { animation: hold-ring 0.8s linear forwards; }
+@keyframes hold-ring {
+  from { box-shadow: inset 0 0 0 0 var(--grass), 0 3px 0 rgba(58,51,87,0.15); }
+  to { box-shadow: inset 0 0 0 27px var(--grass), 0 3px 0 rgba(58,51,87,0.15); }
+}
 .mute-btn {
   position: absolute;
   top: max(1.5vmin, env(safe-area-inset-top));
@@ -365,6 +385,19 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 }
 .set-game { display: flex; align-items: center; gap: 0.8vmin; padding: 0.5vmin 0; }
 .set-game input { width: 20px; height: 20px; }
+.set-check { display: flex; gap: 1.2vmin; align-items: flex-start; padding: 0.8vmin 0; }
+.set-check input { width: 20px; height: 20px; flex: none; }
+.progress-open, .progress-reset { padding: 1.1vmin 2vmin; margin: 1vmin 0; }
+.progress-box {
+  margin: 1.5vmin 0; padding: 2vmin; border-radius: 18px;
+  background: #f7f4ff; border: 2px solid #ebe5f7;
+}
+.progress-list > div { display: flex; justify-content: space-between; gap: 2vmin; border-bottom: 1px solid #e4deef; padding: 0.7vmin 0; }
+.progress-list > div span:last-child { color: #6b6389; text-align: right; }
+.privacy-note { font-size: 0.88em; }
+.offline-status { margin: 0.7vmin 0; color: #27733b; font-weight: 700; }
+.install-help { margin: 0.8vmin 0; }
+.install-help summary { cursor: pointer; font-weight: 700; }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {

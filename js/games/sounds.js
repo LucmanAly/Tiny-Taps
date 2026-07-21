@@ -26,7 +26,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
   let target = null;
   let busy = false;
@@ -62,7 +62,8 @@ function start(ctx) {
     if (!alive) return;
     busy = false;
     target = preset || nextAnimal();
-    const options = shuffle([target, ...pickN(SOUND_ANIMALS.filter(a => a !== target), 2)]);
+    const optionCount = (difficulty ? difficulty() : 2) === 1 ? 2 : 3;
+    const options = shuffle([target, ...pickN(SOUND_ANIMALS.filter(a => a !== target), optionCount - 1)]);
     row.innerHTML = '';
     options.forEach(a => {
       const card = document.createElement('button');
@@ -71,6 +72,7 @@ function start(ctx) {
       card.addEventListener('pointerdown', async e => {
         if (!alive || busy) return;
         if (a === target) {
+          if (recordOutcome) recordOutcome(true, target.name);
           busy = true;
           card.classList.add('zoom-win');
           celebrate.burst(e.clientX, e.clientY, { count: 26 });
@@ -82,6 +84,7 @@ function start(ctx) {
           celebrate.big({ nextAnimalId: upcoming.id });
           setTimeout(() => newRound(false, upcoming), 900);
         } else {
+          if (recordOutcome) recordOutcome(false, target.name);
           card.classList.remove('wiggle');
           void card.offsetWidth;
           card.classList.add('wiggle');

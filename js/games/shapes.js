@@ -47,7 +47,7 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, celebrate, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
   let target = null;
   let busy = false;
@@ -79,13 +79,16 @@ function start(ctx) {
     void targetBox.offsetWidth;
     targetBox.classList.add('pop-in');
     row.innerHTML = '';
-    shuffle([target, ...pickN(SHAPES.filter(s => s !== target), 2)]).forEach(s => {
+    const level = difficulty ? difficulty() : 2;
+    const optionCount = level === 1 ? 2 : level === 2 ? 3 : 4;
+    shuffle([target, ...pickN(SHAPES.filter(s => s !== target), optionCount - 1)]).forEach(s => {
       const b = document.createElement('button');
       b.className = 'shape-opt pop-in';
       b.innerHTML = shapeSvg(s, { filled: true });
       b.addEventListener('pointerdown', e => {
         if (!alive || busy) return;
         if (s === target) {
+          if (recordOutcome) recordOutcome(true, target.name);
           busy = true;
           audio.chime();
           // fly a clone into the outline, then fill it
@@ -113,6 +116,7 @@ function start(ctx) {
             setTimeout(() => newRound(false), 900);
           }, 650);
         } else {
+          if (recordOutcome) recordOutcome(false, target.name);
           b.classList.remove('wiggle');
           void b.offsetWidth;
           b.classList.add('wiggle');

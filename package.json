@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Toddler learning mini-games PWA"
+  "description": "Toddler learning mini-games PWA",
+  "scripts": {
+    "check": "node scripts/check.mjs"
+  }
 }
