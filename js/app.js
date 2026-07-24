@@ -5,6 +5,7 @@ import * as recordings from './engine/recordings.js';
 import { games } from './games/index.js';
 import { S } from './data/strings.js';
 import { addTap } from './engine/ui.js';
+import { IntroScene, preloadMascots } from './engine/intro.js';
 import { VERSION } from './data/version.js';
 import * as progress from './engine/progress.js';
 
@@ -135,18 +136,46 @@ const HAND_SVG = `
   <circle cx="50" cy="50" r="10" fill="#fff" opacity="0.95"/>
 </svg>`;
 
+// Animated opening: the mascot walks in and conjures the logo, then hands off
+// to the menu. Falls back to the old tap-to-start splash if anything about the
+// intro fails, so the app can never be left with no way in.
 function showSplash() {
   clearScreen();
-  const s = el('div', 'screen splash', screenEl);
+  const s = el('div', 'screen splash intro-screen', screenEl);
+
+  let handedOver = false;
+  const toMenu = () => {
+    if (handedOver) return;   // one hand-off only, however it was triggered
+    handedOver = true;
+    speech.init();
+    showMenu();
+  };
+
+  // Any touch during the intro is also the audio-unlock gesture iOS needs.
+  const unlockOnce = () => audio.unlock();
+  s.addEventListener('pointerdown', unlockOnce, { once: true });
+
+  try {
+    // Mount immediately so the intro's own background is the first thing
+    // painted; the sequence itself begins once the mascot art is ready.
+    const scene = new IntroScene({ mount: s, onDone: toMenu });
+    scene.start(preloadMascots());
+  } catch (err) {
+    console.warn('intro failed, falling back to splash', err);
+    showStaticSplash(s, toMenu);
+  }
+}
+
+// The pre-existing static splash, kept as the safety net.
+function showStaticSplash(s, done) {
   s.innerHTML = `
     <div class="logo">${LOGO_SVG}</div>
     <h1>Tiny Taps</h1>
     <div class="start-hint">${HAND_SVG}</div>`;
   s.addEventListener('pointerdown', () => {
     audio.unlock();
-    speech.init();
     audio.chime();
-    showMenu();
+    done();
   }, { once: true });
 }
 
