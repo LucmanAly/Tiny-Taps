@@ -119,6 +119,18 @@ export const CONFIG = {
   // retuning the animation moves the sound with it automatically.
   sound: {
     enabled: true,
+    // Browsers refuse to start audio that isn't triggered by a user gesture,
+    // and iOS refuses permanently. When that happens the intro holds on an
+    // inviting "tap to begin" frame; the tap unlocks the sound and starts the
+    // show. Where autoplay *is* permitted (installed PWA, prior engagement)
+    // there is no gate and the sequence plays by itself. Set false to always
+    // auto-play and accept silence where audio is blocked.
+    tapToStartWhenBlocked: true,
+    // How long to give the browser to grant audio before deciding to gate.
+    autoplayGraceMs: 350,
+    // Pulsing "tap here" ring shown while waiting.
+    hintRadiusFrac: 0.135,  // of `unit`
+    hintPulseMs: 1300,
     // Footsteps, as fractions of the walk phase.
     stepFractions: [0.14, 0.38, 0.62, 0.86],
     greetDelay: 90,      // ms after the wave begins
@@ -294,8 +306,27 @@ export class IntroScene {
         if (this.finished || !this.waiting) return;
         if (images) this.images = images;
         this._layout();            // aspect may now come from the real art
-        this.waiting = false;
-        this.startTime = performance.now();
+        // Decide between auto-playing and waiting for a tap based on whether
+        // the browser actually granted audio, rather than guessing from the
+        // platform. resume() is asynchronous, so let the grace period run out
+        // before judging — cached art can arrive before the answer does.
+        const decide = () => {
+          if (this.finished || !this.waiting) return;
+          this.waiting = false;
+          const blocked = this.cfg.sound.enabled
+            && this.cfg.sound.tapToStartWhenBlocked
+            && !audio.isRunning();
+          if (blocked) {
+            this.awaitingTap = true;
+            this.gateTime = performance.now();
+          } else {
+            this.startTime = performance.now();
+          }
+        };
+        const waited = performance.now() - this.mountTime;
+        const remaining = this.cfg.sound.autoplayGraceMs - waited;
+        if (remaining > 0) setTimeout(decide, remaining);
+        else decide();
       };
       // A rejected preload must still start the show (the logo build is pure
       // canvas), otherwise the app would sit on the background forever.
@@ -429,8 +460,17 @@ export class IntroScene {
 
   /* ---- interaction ---- */
 
-  _onSkip() {
-    if (this.finished || this.skipping) return;
+  _onSkip(e) {
+    if (this.finished) return;
+    // While gated, the tap's job is to start the show. Unlocking must happen
+    // synchronously inside the gesture handler — iOS only honours it there.
+    if (this.awaitingTap) {
+      this.awaitingTap = false;
+      try { audio.unlock(); } catch (err) { /* sound is optional */ }
+      this.startTime = performance.now();
+      return;
+    }
+    if (this.skipping) return;
     this.skipping = true;
     this.skipStart = performance.now();
   }
@@ -448,6 +488,12 @@ export class IntroScene {
         const p = phase(now, this.skipStart, this.cfg.fade.skipMs);
         if (p >= 1) { this._finish(); return; }
       }
+      this.raf = requestAnimationFrame(this._tick);
+      return;
+    }
+
+    if (this.awaitingTap) {
+      this._drawTapGate(now);
       this.raf = requestAnimationFrame(this._tick);
       return;
     }
@@ -492,6 +538,50 @@ export class IntroScene {
       return 1 - p;
     }
     return 1;
+  }
+
+  /* ---- waiting for the tap that unlocks sound ---- */
+
+  // Shown only when the browser refused autoplay. The mascot is already on
+  // screen waving, with a pulsing ring inviting a tap, so this reads as the
+  // opening beat of the story rather than a permission prompt.
+  _drawTapGate(now) {
+    const ctx = this.ctx, L = this.L;
+    const t = now - this.gateTime;
+
+    this._paintBackground(1);
+    ctx.save();
+    ctx.globalAlpha = easeOutCubic(clamp01(t / 260));
+
+    // A gentle idle rock so the frame is alive while it waits.
+    const rock = Math.sin(t / 620) * 1.2 * (Math.PI / 180);
+    const bob = Math.abs(Math.sin(t / 620)) * L.mascotH * 0.012;
+    this._drawMascot(this.images.wave || this.images.idle || this.images.walk,
+      L.stopX, L.feetY - bob, rock);
+
+    // Pulsing tap hint, sitting where the logo is about to appear.
+    const cfg = this.cfg.sound;
+    const pulse = (t % cfg.hintPulseMs) / cfg.hintPulseMs;
+    const r = L.unit * cfg.hintRadiusFrac;
+    const hx = L.logoX, hy = L.logoY;
+
+    ctx.lineWidth = Math.max(2, r * 0.09);
+    ctx.strokeStyle = this.cfg.colors.starFillDeep;
+    ctx.globalAlpha *= 1 - easeOutCubic(pulse);
+    ctx.beginPath();
+    ctx.arc(hx, hy, r * (0.55 + pulse * 0.85), 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = easeOutCubic(clamp01(t / 260));
+    ctx.fillStyle = this.cfg.colors.starFill;
+    ctx.beginPath();
+    ctx.arc(hx, hy, r * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(2, r * 0.10);
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   /* ---- reduced motion: the finished scene, calmly ---- */
