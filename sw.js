@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.2';
+const VERSION = 'tiny-taps-v3.2-intro';
 
 const ASSETS = [
   '.',
@@ -21,6 +21,7 @@ const ASSETS = [
   'js/engine/audio.js',
   'js/engine/celebrate.js',
   'js/engine/drag.js',
+  'js/engine/intro.js',
   'js/engine/rand.js',
   'js/engine/recordings.js',
   'js/engine/progress.js',
@@ -66,6 +67,12 @@ const ASSETS = [
   'assets/audio/bear.mp3', 'assets/audio/bee.mp3', 'assets/audio/bunny.mp3',
   'assets/audio/monkey.mp3', 'assets/audio/zebra.mp3',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
+  // Intro mascot art. Note the exact casing (.PNG) — GitHub Pages serves from
+  // a case-sensitive filesystem, so these must match the files byte for byte.
+  // These are large; the install below caches every entry independently, so a
+  // slow or failed mascot download can still never block the PWA installing.
+  'assets/mascot_walking.PNG', 'assets/mascot_waving.PNG',
+  'assets/mascot_magic.PNG', 'assets/mascot_idle.PNG',
 ];
 
 self.addEventListener('install', e => {
