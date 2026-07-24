@@ -38,6 +38,25 @@ export function isMuted() {
   return muted;
 }
 
+// True only when the context exists and is actually producing sound. Callers
+// that fire on a timer rather than a tap (the opening sequence) check this so
+// they stay silent instead of scheduling notes into a suspended context that
+// browsers will never play.
+export function isRunning() {
+  return !!ctx && ctx.state === 'running';
+}
+
+// Creates the context and asks it to start, for code that runs without a user
+// gesture behind it. Browsers are free to refuse — the rejection is swallowed
+// and the context simply stays suspended, so the caller falls back to silence
+// rather than surfacing an error. Unlike unlock(), this makes no sound of its
+// own and is safe to call before any interaction.
+export function tryResume() {
+  ensureCtx();
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  return ctx.state === 'running';
+}
+
 export function unlock() {
   ensureCtx();
   if (ctx.state === 'suspended') ctx.resume();
@@ -251,4 +270,45 @@ export function chomp() {
   ensureCtx();
   tone(240, 0, 0.09, { type: 'triangle', vol: 0.32, glide: 520 });
   tone(600, 0.07, 0.16, { type: 'sine', vol: 0.16, glide: 950 });
+}
+
+/* --- opening-sequence earcons ---
+   Deliberately quieter than the in-game set: these play under an animation
+   rather than as feedback for something the child did, so they should colour
+   the scene without demanding attention. */
+
+// A soft, round footfall. Low and short so it reads as a cosy step on carpet
+// rather than a thud.
+export function footstep() {
+  ensureCtx();
+  tone(160, 0, 0.10, { type: 'sine', vol: 0.09, glide: 104 });
+}
+
+// Friendly two-note "hello" for the wave.
+export function greet() {
+  ensureCtx();
+  tone(523.25, 0, 0.15, { type: 'triangle', vol: 0.17 });
+  tone(698.46, 0.12, 0.24, { type: 'triangle', vol: 0.15 });
+}
+
+// Airy rising sweep as the wand comes down — the wind-up before the magic.
+export function whoosh() {
+  ensureCtx();
+  tone(300, 0, 0.30, { type: 'sine', vol: 0.09, glide: 1250 });
+}
+
+// One rainbow band sweeping in. Called on a pentatonic scale so the notes
+// still sound sweet together when they overlap.
+export function shimmer(freq) {
+  ensureCtx();
+  tone(freq, 0, 0.45, { type: 'sine', vol: 0.12 });
+  tone(freq * 2, 0, 0.20, { type: 'sine', vol: 0.04 });
+}
+
+// Warm resolving chord as the logo settles. A gentle finish rather than a
+// fanfare, because the menu appears immediately afterwards.
+export function softFanfare() {
+  ensureCtx();
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+    tone(f, i * 0.055, 0.8, { type: 'triangle', vol: 0.12 }));
 }

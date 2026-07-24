@@ -115,6 +115,18 @@ export const CONFIG = {
     strength: 0.055,        // final settle overshoot, fraction of scale
   },
 
+  // Cues are positioned against the same phase timings as the visuals, so
+  // retuning the animation moves the sound with it automatically.
+  sound: {
+    enabled: true,
+    // Footsteps, as fractions of the walk phase.
+    stepFractions: [0.14, 0.38, 0.62, 0.86],
+    greetDelay: 90,      // ms after the wave begins
+    // Rainbow band notes: a C-major pentatonic run, one per arc.
+    shimmerNotes: [523.25, 587.33, 659.25, 783.99],
+    shimmerStagger: 95,  // ms between bands
+  },
+
   fade: {
     skipMs: 180,            // quick fade when the child taps to skip
   },
@@ -132,6 +144,8 @@ export const CONFIG = {
 };
 
 /* ---------------- easing ---------------- */
+
+import * as audio from './audio.js';
 
 const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -240,6 +254,7 @@ export class IntroScene {
     this.particles = [];
     this.burstFired = false;
     this.trailFired = false;
+    this.cued = new Set();   // cue names already played, so none repeats
 
     this.reduced = window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -267,6 +282,10 @@ export class IntroScene {
     // Tap anywhere to skip. Listener lives on the canvas, which covers the
     // viewport, and is removed in destroy().
     this.canvas.addEventListener('pointerdown', this._onSkip);
+
+    // Ask for audio up front. If the browser refuses (no user activation yet)
+    // the context stays suspended and every cue is skipped; nothing throws.
+    if (this.cfg.sound.enabled) audio.tryResume();
 
     this.mountTime = performance.now();
     if (imagesPromise) {
@@ -492,6 +511,10 @@ export class IntroScene {
       alpha = 1 - p;
     }
 
+    // Reduced motion is about movement, not sound: keep a single warm chord so
+    // the moment still feels marked rather than silent.
+    this._cue('finish', t, 120, () => audio.softFanfare());
+
     this._paintBackground(1);
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -511,6 +534,7 @@ export class IntroScene {
     const alpha = this._sceneAlpha(t);
     if (this.finished) return;
 
+    this._sound(t);
     this._paintBackground(phase(t, 0, T.bgFadeIn));
 
     ctx.save();
@@ -600,6 +624,53 @@ export class IntroScene {
     this._drawParticles();
 
     ctx.restore();
+  }
+
+  /* ---- sound ----
+     Best effort by design. The intro starts on a timer, not on a tap, so on a
+     cold load there may be no user activation and browsers will keep the audio
+     context suspended; every cue is then skipped rather than queued into
+     silence. Once the app has activation (installed PWA, or any earlier touch)
+     the same cues play normally. */
+
+  _canPlay() {
+    return this.cfg.sound.enabled
+      && !this.skipping
+      && audio.isRunning()
+      && !audio.isMuted();
+  }
+
+  // Fires `fn` the first time `t` passes `at`, once and only once.
+  _cue(name, t, at, fn) {
+    if (t < at || this.cued.has(name)) return;
+    this.cued.add(name);
+    if (!this._canPlay()) return;   // still marked, so it never retries later
+    try { fn(); } catch (e) { /* a bad earcon must not stop the animation */ }
+  }
+
+  _sound(t) {
+    const T = this.cfg.timing;
+    const M = this.cfg.magic;
+    const S = this.cfg.sound;
+
+    // Footsteps across the walk.
+    const walkStart = T.bgFadeIn;
+    const walkLen = T.walkEnd - T.bgFadeIn;
+    S.stepFractions.forEach((f, i) =>
+      this._cue('step' + i, t, walkStart + walkLen * f, () => audio.footstep()));
+
+    this._cue('greet', t, T.walkEnd + S.greetDelay, () => audio.greet());
+
+    const magic = T.waveEnd;
+    this._cue('whoosh', t, magic + M.pointAt, () => audio.whoosh());
+    this._cue('spark', t, magic + M.streakAt, () => audio.sparkle());
+    this._cue('star', t, magic + M.starAt, () => audio.chime());
+
+    S.shimmerNotes.forEach((freq, i) =>
+      this._cue('arc' + i, t, magic + M.rainbowAt + i * S.shimmerStagger,
+        () => audio.shimmer(freq)));
+
+    this._cue('finish', t, magic + M.settleAt, () => audio.softFanfare());
   }
 
   /* ---- painters ---- */
