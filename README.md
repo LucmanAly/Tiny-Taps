@@ -2,7 +2,7 @@
 
 A game for my kids.
 
-Eighteen toddler-friendly mini-games in one small web app — no ads, no links,
+Nineteen toddler-friendly mini-games in one small web app — no ads, no links,
 nothing to buy, works offline once loaded:
 
 1. **Peekaboo** — tap tiles to reveal animals and hear their real sounds; every tap is a win
@@ -23,6 +23,7 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
+19. **Play House** — an open-ended landscape world: change the weather and the time of day, send the mascot to bed, bounce him on the trampoline, and tap the wardrobe to change his outfit
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -83,6 +84,16 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **Unreleased** — Play House: a nineteenth game that is a small sandbox
+  rather than a round-based quiz. Tapping the sky cycles sunny/rainy/windy,
+  tapping the sun toggles day and night, and the mascot walks to the bed, the
+  trampoline or the wardrobe on request. The whole world is drawn on canvas;
+  only the mascot is artwork. He now has three outfits — winter coat, rain
+  coat and t-shirt — each with its own stand, walk, jump and sleep pose, cycled
+  by tapping the wardrobe and loaded one outfit at a time with the next one
+  prefetched. The game is landscape-only, with a rotate prompt in portrait,
+  and Parent Settings now reports the app's total on-device size.
 
 - **v3.2** — tracing and spatial-fit correction: made Trace It progress
   sequential, movement-based, and tolerant of sparse pointer events; added a

@@ -2,12 +2,16 @@
 // The child controls the weather and the time of day, and sends the mascot to
 // the bed, the wardrobe or the trampoline. Nothing can be answered wrongly.
 //
-// Phase 1 deliberately ships with no new artwork: the house, furniture,
-// trampoline, sky, sun, moon, rain, wind and grass are all drawn on canvas,
-// and the mascot reuses the poses the opening sequence already loads. Two
-// stand-ins are marked below for the sleep and jump poses when they arrive.
+// The world itself is entirely procedural: the house, furniture, trampoline,
+// sky, sun, moon, rain, wind and grass are all drawn on canvas, so the only
+// artwork this game costs is the mascot himself.
+//
+// The mascot now has three outfits (winter / rain / summer), each with its own
+// stand, walk, jump and sleep poses. Tapping the wardrobe cycles them. Poses
+// are loaded per outfit rather than all at once, and the next outfit is
+// prefetched quietly in the background so a change never shows a gap.
 
-import { preloadMascots } from '../engine/intro.js';
+import { preloadImages } from '../engine/intro.js';
 
 /* ---------------- configuration ---------------- */
 
@@ -58,9 +62,10 @@ const CONFIG = {
     bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80, homeLandscape: 0.60,
   },
 
-  jump: { count: 3, heightFrac: 0.55, durationMs: 620, squash: 0.22 },
-  sleep: { fadeMs: 420, zzzMs: 2200 },
+  jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
+  sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
   wardrobeOpenMs: 1500,
+  outfitChangeAtFrac: 0.55,       // through the door-opening animation
   waveMs: 1400,
 
   weather: {
@@ -116,10 +121,55 @@ const ICON = `
   <rect x="42" y="52" width="12" height="18" rx="2" fill="#a3714a"/>
 </svg>`;
 
+/* ---------------- outfits ----------------
+   One entry per outfit, each with the poses this world can show. The winter
+   set reuses the three poses the opening sequence already loads, so the first
+   outfit is normally warm in the browser cache before this game even opens.
+   Rain and summer have no dedicated wave pose; `poseFor` falls back to their
+   stand pose, which is already an arms-out greeting. */
+
+const OUTFITS = [
+  {
+    id: 'winter', label: 'Winter coat',
+    poses: {
+      stand: 'assets/mascot_idle.PNG',
+      walk: 'assets/mascot_walking.PNG',
+      wave: 'assets/mascot_waving.PNG',
+      jump: 'assets/mascot_winter_jump.PNG',
+      sleep: 'assets/mascot_winter_sleep.PNG',
+    },
+  },
+  {
+    id: 'rain', label: 'Rain coat',
+    poses: {
+      stand: 'assets/mascot_rain_stand.PNG',
+      walk: 'assets/mascot_rain_walk.PNG',
+      jump: 'assets/mascot_rain_jump.PNG',
+      sleep: 'assets/mascot_rain_sleep.PNG',
+    },
+  },
+  {
+    id: 'summer', label: 'T-shirt',
+    poses: {
+      stand: 'assets/mascot_summer_stand.PNG',
+      walk: 'assets/mascot_summer_walk.PNG',
+      jump: 'assets/mascot_summer_jump.PNG',
+      sleep: 'assets/mascot_summer_sleep.PNG',
+    },
+  },
+];
+
 function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
   let raf = 0;
+
+  // Loaded pose sets, keyed by outfit id. Only outfits actually worn get
+  // fetched, and a set that is still in flight simply isn't in here yet.
+  const wardrobeCache = new Map();
+  let outfitIndex = 0;
+  // Only ever reassigned to a set that has finished loading, so a slow switch
+  // keeps showing the previous outfit instead of blanking the mascot.
   let images = {};
 
   const canvas = document.createElement('canvas');
@@ -137,6 +187,7 @@ function start(ctx) {
   let pending = null;             // what to do once the walk finishes
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
+  let changeOutfitAt = 0;         // when the pending wardrobe change lands (0 = none)
   let stepAt = 0;                 // next footstep sound
 
   let drops = [];
@@ -175,8 +226,14 @@ function start(ctx) {
     const mascotH = Math.max(CONFIG.mascot.minHeight,
       Math.min(CONFIG.mascot.maxHeight,
         unit * (portrait ? CONFIG.mascot.heightFrac : CONFIG.mascot.heightFracLandscape)));
-    const ref = images.idle || images.walk || images.wave;
-    const aspect = ref && ref.naturalWidth ? ref.naturalWidth / ref.naturalHeight : 1024 / 1536;
+    // Hit-testing wants the boy's own width, not the pose file's, for the same
+    // reason drawMascot normalises: the margins around him vary by pose.
+    const ref = poseFor('stand');
+    let aspect = 0.52;
+    if (ref && ref.naturalWidth) {
+      const bb = boundsOf(ref);
+      aspect = (ref.naturalWidth * (bb.x1 - bb.x0)) / (ref.naturalHeight * (bb.y1 - bb.y0));
+    }
 
     const tramW = unit * (portrait ? cfg.trampolineWidthFrac : cfg.trampolineWidthFracLandscape);
     const tramX = w * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
@@ -242,6 +299,7 @@ function start(ctx) {
   function say(word) { speech.speak(word, { interrupt: true }); }
 
   function walkTo(frac, then) {
+    changeOutfitAt = 0;          // any pending wardrobe change is abandoned
     targetX = frac;
     pending = then || null;
     if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
@@ -258,7 +316,104 @@ function start(ctx) {
     activityStart = now();
     if (next === 'sleeping') zzz = [];
     if (next === 'jumping') audio.boing();
-    if (next === 'wardrobe') audio.pop();
+    if (next === 'wardrobe') {
+      audio.pop();
+      // Change once the doors have swung most of the way open, so the new
+      // outfit appears to come out of the wardrobe rather than through it.
+      changeOutfitAt = activityStart + CONFIG.wardrobeOpenMs * CONFIG.outfitChangeAtFrac;
+    }
+  }
+
+  /* ---- outfits ---- */
+
+  // Normalised bounding box of the non-transparent pixels in a pose, cached on
+  // the image itself. The poses are framed inconsistently — some fill the file,
+  // some leave a wide margin — and scaling by the file would make him change
+  // size and hover off the ground as he changed pose. Measured on a small
+  // downsample, which is plenty for a placement fraction and costs about a
+  // millisecond once per image.
+  const BOUNDS = new WeakMap();
+  const FULL_BOUNDS = { x0: 0, x1: 1, y0: 0, y1: 1 };
+
+  function boundsOf(img) {
+    const cached = BOUNDS.get(img);
+    if (cached) return cached;
+    let box = FULL_BOUNDS;
+    try {
+      const cw = 96;
+      const ch = Math.max(1, Math.round(cw * img.naturalHeight / img.naturalWidth));
+      const c = document.createElement('canvas');
+      c.width = cw; c.height = ch;
+      const cg = c.getContext('2d', { willReadFrequently: true });
+      cg.drawImage(img, 0, 0, cw, ch);
+      const d = cg.getImageData(0, 0, cw, ch).data;
+      let x0 = cw, x1 = -1, y0 = ch, y1 = -1;
+      for (let y = 0; y < ch; y++) {
+        for (let x = 0; x < cw; x++) {
+          if (d[(y * cw + x) * 4 + 3] > 24) {
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+          }
+        }
+      }
+      // A fully transparent (or unreadable) image falls back to the whole frame
+      // rather than producing a zero-height box and a division by zero.
+      if (x1 >= x0 && y1 >= y0) {
+        box = { x0: x0 / cw, x1: (x1 + 1) / cw, y0: y0 / ch, y1: (y1 + 1) / ch };
+      }
+    } catch (e) {
+      // Never let a measurement problem stop the world from drawing.
+    }
+    BOUNDS.set(img, box);
+    return box;
+  }
+
+  // Loads an outfit's poses at most once. Never rejects: a pose that fails to
+  // load is simply absent, and `poseFor` falls back to something that isn't.
+  function loadOutfit(index) {
+    const outfit = OUTFITS[index];
+    if (!wardrobeCache.has(outfit.id)) {
+      // No budget here: unlike the opening sequence there is no deadline to
+      // race, and a partially loaded outfit would look like a costume change
+      // that half happened.
+      wardrobeCache.set(outfit.id, preloadImages(outfit.poses, 0));
+    }
+    return wardrobeCache.get(outfit.id);
+  }
+
+  // Warm the outfit after this one so the first wardrobe tap is instant. Kept
+  // strictly sequential so it can never compete with the outfit on screen.
+  function prefetchNextOutfit() {
+    const next = (outfitIndex + 1) % OUTFITS.length;
+    if (!alive || wardrobeCache.has(OUTFITS[next].id)) return;
+    loadOutfit(next);
+  }
+
+  function wearOutfit(index) {
+    outfitIndex = index;
+    const outfit = OUTFITS[index];
+    loadOutfit(index).then(loaded => {
+      // Ignore a set that finished after the child moved on to another outfit.
+      if (!alive || OUTFITS[outfitIndex].id !== outfit.id) return;
+      images = loaded || {};
+      if (L) layout(canvas.clientWidth, canvas.clientHeight);   // aspect may differ
+      prefetchNextOutfit();
+    });
+  }
+
+  function cycleOutfit() {
+    wearOutfit((outfitIndex + 1) % OUTFITS.length);
+    say(OUTFITS[outfitIndex].label);
+  }
+
+  // Resolves an upright pose to whatever art is actually available, so a
+  // missing or still-loading file degrades to a sensible neighbour rather than
+  // nothing. Deliberately excludes `sleep`, which is drawn lying down and would
+  // look broken standing on the grass.
+  function poseFor(kind) {
+    return images[kind] || images.stand || images.walk || images.jump || null;
   }
 
   function cycleWeather() {
@@ -336,7 +491,10 @@ function start(ctx) {
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
-    if (activity === 'wardrobe' && t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
+    if (activity === 'wardrobe') {
+      if (changeOutfitAt && t >= changeOutfitAt) { changeOutfitAt = 0; cycleOutfit(); }
+      if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
+    }
     if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
       activity = 'idle';
     }
@@ -582,13 +740,6 @@ function start(ctx) {
     const pr = b.h * 0.07;
     roundRect(b.x + b.w * 0.10, b.y + b.h * 0.30, b.w * 0.24, b.h * 0.14, pr);
     g.fill();
-    // Sleeping lump under the blanket — stands in for the sleep pose (phase 2).
-    if (activity === 'sleeping') {
-      g.fillStyle = c.blanket;
-      g.beginPath();
-      g.ellipse(b.x + b.w * 0.58, b.y + b.h * 0.30, b.w * 0.20, b.h * 0.12, 0, 0, Math.PI * 2);
-      g.fill();
-    }
     // Legs
     g.fillStyle = c.bedFrame;
     g.fillRect(b.x + b.w * 0.02, b.y + b.h - legH, b.w * 0.06, legH);
@@ -704,10 +855,16 @@ function start(ctx) {
     }
   }
 
+  // Top of the trampoline mat: where a bouncing child's feet actually leave.
+  // Matches the mat ellipse drawn in drawTrampoline: rimY + ry * 0.35.
+  function matY() {
+    return L.tram.y + L.tram.h * 0.37;
+  }
+
   function mascotBox() {
     const x = mascotX * L.w;
     let y = L.groundY;
-    if (activity === 'jumping') y -= jumpOffset(now());
+    if (activity === 'jumping') y = matY() - jumpOffset(now());
     return { x: x - L.mascotW / 2, y: y - L.mascotH, w: L.mascotW, h: L.mascotH };
   }
 
@@ -716,36 +873,60 @@ function start(ctx) {
     return Math.sin(p * Math.PI) * L.mascotH * CONFIG.jump.heightFrac;
   }
 
-  function drawMascot(t) {
-    // Asleep: he is under the blanket, so nothing to draw but the Zzz.
-    if (activity === 'sleeping') { drawZzz(t); return; }
+  // Asleep he lies on the bed rather than standing on the ground, so this pose
+  // is placed against the mattress instead of the usual walking baseline. All
+  // three sleep poses face head-left, matching the pillow.
+  function drawSleeping(t) {
+    // No upright fallback here — if the sleep pose is missing he is simply
+    // tucked out of sight and only the Zzz shows, as in phase 1.
+    const img = images.sleep || null;
+    const b = L.bed;
+    if (img) {
+      const bb = boundsOf(img);
+      const drawW = (b.w * CONFIG.sleep.widthFrac) / (bb.x1 - bb.x0);
+      const drawH = drawW * (img.naturalHeight / img.naturalWidth);
+      // Sunk slightly into the bedding rather than balanced on the very top
+      // edge of it, so he reads as lying in the bed and not above it.
+      const restY = b.y + b.h * (0.36 + CONFIG.sleep.sinkFrac);
+      const breathe = Math.sin(t / 1400) * L.unit * 0.004;
+      g.drawImage(img,
+        b.x + b.w * CONFIG.sleep.headFrac - bb.x0 * drawW,
+        restY - bb.y1 * drawH + breathe,
+        drawW, drawH);
+    }
+    drawZzz(t);
+  }
 
-    let img = images.idle || images.walk;
-    if (activity === 'walking') img = images.walk || images.idle;
-    if (activity === 'waving') img = images.wave || images.idle;
-    if (activity === 'jumping') img = images.walk || images.idle;   // phase 2: real jump pose
+  function drawMascot(t) {
+    if (activity === 'sleeping') { drawSleeping(t); return; }
+
+    let img = poseFor('stand');
+    if (activity === 'walking') img = poseFor('walk');
+    if (activity === 'waving') img = poseFor('wave');
+    if (activity === 'jumping') img = poseFor('jump');
     if (!img) return;
 
-    const aspect = img.naturalWidth && img.naturalHeight
-      ? img.naturalWidth / img.naturalHeight : L.mascotW / L.mascotH;
+    // Every pose is framed differently inside its file — some fill it, some
+    // leave a wide margin — so scale by the boy himself, not by the PNG. That
+    // keeps him the same size and standing on the same line in every pose.
+    const bb = boundsOf(img);
+    const drawH = L.mascotH / (bb.y1 - bb.y0);
+    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
     const h = L.mascotH;
-    const w = h * aspect;
 
     let x = mascotX * L.w;
     let y = L.groundY;
     let rot = 0;
-    let squashY = 1;
 
     if (activity === 'walking') {
       const swing = Math.sin(walkPhase * Math.PI * 2);
       y -= Math.abs(swing) * h * CONFIG.mascot.bobFrac;
       rot = swing * CONFIG.mascot.tiltDegrees * (Math.PI / 180);
     } else if (activity === 'jumping') {
-      const lift = jumpOffset(t);
-      y -= lift;
-      // Squash on the mat, stretch in the air — reads as a jump without a pose.
-      const p = ((t - activityStart) % CONFIG.jump.durationMs) / CONFIG.jump.durationMs;
-      squashY = 1 + Math.sin(p * Math.PI) * CONFIG.jump.squash - (p < 0.08 ? CONFIG.jump.squash : 0);
+      // The pose is already airborne, so the arc alone carries the bounce — no
+      // squash-and-stretch, which would only distort the artwork. He bounces
+      // off the mat surface rather than the ground line the legs stand on.
+      y = matY() - jumpOffset(t);
     } else if (activity === 'waving') {
       const p = (t - activityStart) / CONFIG.waveMs;
       rot = Math.sin(p * Math.PI * 4) * 2 * (Math.PI / 180);
@@ -759,17 +940,24 @@ function start(ctx) {
         + CONFIG.mascot.windLeanDegrees * (Math.PI / 180) * 0.5;
     }
 
+    // Pivot at mid-body so the walk tilt swings from the waist, then place the
+    // art so his feet land on `y` and his middle sits on `x`.
     g.save();
-    g.translate(x, y - (h * squashY) / 2);
+    g.translate(x, y - h / 2);
     if (rot) g.rotate(rot);
     if (facing < 0) g.scale(-1, 1);
-    g.drawImage(img, -w / 2, -(h * squashY) / 2, w, h * squashY);
+    g.drawImage(img,
+      -((bb.x0 + bb.x1) / 2) * drawW,
+      h / 2 - bb.y1 * drawH,
+      drawW, drawH);
     g.restore();
   }
 
   function drawZzz(t) {
     const b = L.bed;
-    const x = b.x + b.w * 0.62, y = b.y + b.h * 0.24;
+    // Above and behind his head rather than on top of him, now that the sleep
+    // pose actually occupies the bed.
+    const x = b.x + b.w * 0.34, y = b.y - b.h * 0.06;
     g.save();
     g.fillStyle = CONFIG.colors.ink;
     g.font = `700 ${Math.max(12, L.unit * 0.05)}px ${getComputedStyle(document.body).fontFamily}`;
@@ -924,11 +1112,7 @@ function start(ctx) {
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', resize);
 
-  preloadMascots().then(loaded => {
-    if (!alive) return;
-    images = loaded || {};
-    layout(canvas.clientWidth, canvas.clientHeight);   // aspect from the real art
-  });
+  wearOutfit(0);
 
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
