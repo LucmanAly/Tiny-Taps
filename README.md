@@ -23,7 +23,7 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, and open the wardrobe to pick his outfit
+19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, and tap him for a burst of wand magic
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -84,6 +84,10 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.5** — Play House mascot magic: tapping the mascot now uses the existing
+  wand pose and creates a colorful, no-wrong-answer sparkle burst; other outfits
+  stay on the child instead of switching back to the winter costume.
 
 - **v3.4** — Play House weather and wardrobe: the wardrobe now opens a picker
   showing the three outfits as garment cards, so the child chooses rather than
