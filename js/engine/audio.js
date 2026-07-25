@@ -312,3 +312,111 @@ export function softFanfare() {
   [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
     tone(f, i * 0.055, 0.8, { type: 'triangle', vol: 0.12 }));
 }
+
+/* ---------------- weather ambience ----------------
+   Everything above is a one-shot earcon. Weather needs the opposite: a quiet
+   bed that runs for as long as the weather lasts. It is synthesized from
+   looping white noise rather than a recording, so it costs no download and
+   works offline like the rest of the app.
+
+   The chain is noise -> filter -> gain -> master, and `master` already feeds
+   `muteGain`, so the per-game mute button silences the bed for free. */
+
+const BED_FADE_IN = 0.8;
+const BED_FADE_OUT = 0.6;
+
+const BEDS = {
+  // Rain is mostly high frequencies; a highpass leaves the hiss of falling
+  // water without the rumble that makes small speakers sound broken.
+  rain: { filter: 'highpass', freq: 900, q: 0.6, gain: 0.05 },
+  // Wind is the opposite: low and hollow, and it has to breathe rather than
+  // hiss, so gustAt() below keeps moving the cutoff and the level.
+  wind: { filter: 'lowpass', freq: 420, q: 0.9, gain: 0.06 },
+};
+
+let noiseBuffer = null;
+let bed = null;           // { kind, src, filter, gain, gustTimer }
+
+function ensureNoise() {
+  if (noiseBuffer) return noiseBuffer;
+  // Two seconds is long enough that the loop point is not audible as a pulse.
+  const len = Math.floor(ctx.sampleRate * 2);
+  noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuffer;
+}
+
+// Wind gusts: nudge the cutoff and level every couple of seconds so it swells
+// and falls instead of sitting on one note.
+function gustAt(b) {
+  if (!bed || bed !== b) return;
+  const spec = BEDS.wind;
+  const now = ctx.currentTime;
+  const span = 1.6 + Math.random() * 1.8;
+  b.filter.frequency.cancelScheduledValues(now);
+  b.filter.frequency.linearRampToValueAtTime(spec.freq * (0.6 + Math.random() * 0.9), now + span);
+  b.gain.gain.cancelScheduledValues(now);
+  b.gain.gain.linearRampToValueAtTime(spec.gain * (0.45 + Math.random() * 0.75), now + span);
+  b.gustTimer = setTimeout(() => gustAt(b), span * 1000);
+}
+
+function tearDownBed(b) {
+  if (!b) return;
+  clearTimeout(b.gustTimer);
+  const now = ctx.currentTime;
+  b.gain.gain.cancelScheduledValues(now);
+  b.gain.gain.setValueAtTime(b.gain.gain.value, now);
+  b.gain.gain.linearRampToValueAtTime(0.0001, now + BED_FADE_OUT);
+  try { b.src.stop(now + BED_FADE_OUT + 0.05); } catch (e) { /* already stopped */ }
+}
+
+// kind: 'rain' | 'wind' | null. Safe to call with the kind already playing —
+// it is a no-op rather than a restart, so a redraw can never stack two beds.
+export function setWeatherBed(kind) {
+  // Never schedule into a context browsers will not run: without a user
+  // gesture the nodes would play silently and then be audible later at the
+  // wrong moment. Callers re-invoke after the first tap.
+  if (!isRunning()) {
+    // Stopping still has to work even in a suspended context, so a bed left
+    // over from before cannot come back when the context resumes.
+    if (!kind) stopWeatherBed();
+    return;
+  }
+  if (bed && bed.kind === kind) return;
+
+  tearDownBed(bed);
+  bed = null;
+  if (!kind || !BEDS[kind]) return;
+
+  const spec = BEDS[kind];
+  const src = ctx.createBufferSource();
+  src.buffer = ensureNoise();
+  src.loop = true;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = spec.filter;
+  filter.frequency.value = spec.freq;
+  filter.Q.value = spec.q;
+
+  const gain = ctx.createGain();
+  const t0 = ctx.currentTime;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(spec.gain, t0 + BED_FADE_IN);
+
+  src.connect(filter).connect(gain).connect(master);
+  src.start(t0);
+
+  bed = { kind, src, filter, gain, gustTimer: 0 };
+  if (kind === 'wind') bed.gustTimer = setTimeout(() => gustAt(bed), BED_FADE_IN * 1000);
+}
+
+// Called from a game's teardown so leaving it can never leave audio running.
+export function stopWeatherBed() {
+  tearDownBed(bed);
+  bed = null;
+}
+
+export function weatherBed() {
+  return bed ? bed.kind : null;
+}

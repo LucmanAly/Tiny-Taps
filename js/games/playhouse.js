@@ -65,23 +65,40 @@ const CONFIG = {
   jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
   sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
   wardrobeOpenMs: 1500,
-  outfitChangeAtFrac: 0.55,       // through the door-opening animation
+  outfitOpenAtFrac: 0.5,          // through the door-opening animation
+  picker: {
+    openMs: 260,                  // cards scale up as the panel appears
+    cardWidthFrac: 0.26,          // of canvas width, per card
+    cardGapFrac: 0.03,
+    cardHeightFrac: 0.80,         // of canvas height
+    scrimAlpha: 0.55,
+  },
   waveMs: 1400,
 
   weather: {
-    order: ['sunny', 'rainy', 'windy'],
+    order: ['sunny', 'rainy', 'windy', 'snowy'],
     rainDrops: 90,
     rainSpeedFrac: 1.5,          // of canvas height per second
     leafCount: 14,
     windSpeedFrac: 0.55,         // of canvas width per second
     cloudCountSunny: 2,
     cloudCountElse: 5,
+    snowFlakes: 110,
+    snowSpeedFrac: 0.16,         // of canvas height per second: much slower than rain
+    snowDriftFrac: 0.05,         // sideways wander, of canvas width per second
+    // Settling and thawing are deliberately unequal: snow arrives gradually
+    // and goes away a little faster, so cycling the weather never feels stuck.
+    snowSettleMs: 4000,
+    snowThawMs: 2500,
+    snowCapFrac: 0.022,          // depth of a full covering, of unit
   },
 
   colors: {
     skyDayTop: '#8ed6ff', skyDayBottom: '#eafaff',
     skyNightTop: '#2b3570', skyNightBottom: '#5a6bab',
     skyRainTop: '#9fb4c4', skyRainBottom: '#d6e2e8',
+    skySnowTop: '#b9c6d4', skySnowBottom: '#eef3f7',
+    snow: '#ffffff', snowShade: '#dfe9f2',
     grassDay: '#7ed67e', grassNight: '#3f6b52',
     sun: '#ffd54a', sunGlow: '#fff3b0',
     moon: '#fdf6d8',
@@ -99,6 +116,8 @@ const CONFIG = {
     ink: '#3a3357',
   },
 };
+
+const WEATHER_WORD = { sunny: 'Sunny!', rainy: 'Rain!', windy: 'Windy!', snowy: 'Snow!' };
 
 const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -131,6 +150,7 @@ const ICON = `
 const OUTFITS = [
   {
     id: 'winter', label: 'Winter coat',
+    card: 'assets/mascot_outfit_winter.PNG', tint: '#a9713f',
     poses: {
       stand: 'assets/mascot_idle.PNG',
       walk: 'assets/mascot_walking.PNG',
@@ -141,6 +161,7 @@ const OUTFITS = [
   },
   {
     id: 'rain', label: 'Rain coat',
+    card: 'assets/mascot_outfit_rain.PNG', tint: '#f2c318',
     poses: {
       stand: 'assets/mascot_rain_stand.PNG',
       walk: 'assets/mascot_rain_walk.PNG',
@@ -150,6 +171,7 @@ const OUTFITS = [
   },
   {
     id: 'summer', label: 'T-shirt',
+    card: 'assets/mascot_outfit_summer.PNG', tint: '#d8c6a4',
     poses: {
       stand: 'assets/mascot_summer_stand.PNG',
       walk: 'assets/mascot_summer_walk.PNG',
@@ -187,10 +209,14 @@ function start(ctx) {
   let pending = null;             // what to do once the walk finishes
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
-  let changeOutfitAt = 0;         // when the pending wardrobe change lands (0 = none)
+  let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
+  let picker = null;              // { openedAt } while the child is choosing
+  let cards = {};                 // outfit id -> garment image (or missing)
   let stepAt = 0;                 // next footstep sound
 
   let drops = [];
+  let flakes = [];
+  let snowDepth = 0;              // 0 = bare, 1 = fully covered
   let leaves = [];
   let clouds = [];
   let stars = [];
@@ -270,6 +296,20 @@ function start(ctx) {
       w: inW * 0.34, h: houseH * 0.62,
     };
     L.tram = { x: tramX - L.tramW / 2, y: groundY - L.tramH, w: L.tramW, h: L.tramH };
+
+    // Roof geometry, shared by the drawing and by roofYAt().
+    L.wallT = Math.max(5, unit * 0.022);
+    const overhang = L.wallT * 3.2;
+    L.eaveLeft = houseLeft - overhang;
+    L.eaveRight = houseRight + overhang;
+    L.eaveY = wallTop + unit * 0.018;      // eaves hang a little below the wall top
+    L.chimney = {
+      x: houseLeft + inW * 0.70,
+      w: inW * 0.10,
+      // Stands proud of the ridge, but never so high that it — or its smoke —
+      // runs off the top of a short landscape canvas.
+      top: Math.max(unit * 0.14, roofPeak - unit * 0.075),
+    };
   }
 
   /* ---- scenery seeding ---- */
@@ -285,21 +325,25 @@ function start(ctx) {
     }));
     drops = [];
     leaves = [];
+    flakes = [];
   }
 
-  /* ---- roof line, so rain lands on the house instead of inside it ---- */
+  /* ---- roof line, so rain lands on the house instead of inside it ----
+     Measured to the eaves, not the walls. The roof overhangs, and weather
+     falling through the overhang would undo the one piece of cause and effect
+     this world has. Both this and drawRoof() read L.eaveLeft/L.eaveRight. */
   function roofYAt(x) {
-    if (x < L.houseLeft || x > L.houseRight) return Infinity;
-    const half = (L.houseRight - L.houseLeft) / 2;
+    if (x < L.eaveLeft || x > L.eaveRight) return Infinity;
+    const half = (L.eaveRight - L.eaveLeft) / 2;
     const d = Math.abs(x - L.houseMidX) / half;      // 0 at the peak, 1 at the eaves
-    return lerp(L.roofPeak, L.wallTop, clamp01(d));
+    return lerp(L.roofPeak, L.eaveY, clamp01(d));
   }
 
   /* ---- interactions ---- */
   function say(word) { speech.speak(word, { interrupt: true }); }
 
   function walkTo(frac, then) {
-    changeOutfitAt = 0;          // any pending wardrobe change is abandoned
+    openPickerAt = 0;            // any pending wardrobe opening is abandoned
     targetX = frac;
     pending = then || null;
     if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
@@ -320,7 +364,7 @@ function start(ctx) {
       audio.pop();
       // Change once the doors have swung most of the way open, so the new
       // outfit appears to come out of the wardrobe rather than through it.
-      changeOutfitAt = activityStart + CONFIG.wardrobeOpenMs * CONFIG.outfitChangeAtFrac;
+      openPickerAt = activityStart + CONFIG.wardrobeOpenMs * CONFIG.outfitOpenAtFrac;
     }
   }
 
@@ -403,9 +447,46 @@ function start(ctx) {
     });
   }
 
-  function cycleOutfit() {
-    wearOutfit((outfitIndex + 1) % OUTFITS.length);
-    say(OUTFITS[outfitIndex].label);
+  // Card rectangles, recomputed each time rather than cached, so a rotation
+  // mid-choice can never leave the hit boxes pointing at the old layout.
+  function pickerCards() {
+    const cfg = CONFIG.picker;
+    const cw = L.w * cfg.cardWidthFrac;
+    const gap = L.w * cfg.cardGapFrac;
+    const chh = L.h * cfg.cardHeightFrac;
+    const total = cw * OUTFITS.length + gap * (OUTFITS.length - 1);
+    const x0 = (L.w - total) / 2;
+    const y = (L.h - chh) / 2;
+    return OUTFITS.map((o, i) => ({
+      outfit: o, index: i,
+      x: x0 + i * (cw + gap), y, w: cw, h: chh,
+    }));
+  }
+
+  function pickerHit(px, py) {
+    const pad = L.unit * 0.02;
+    for (const card of pickerCards()) {
+      if (px >= card.x - pad && px <= card.x + card.w + pad
+          && py >= card.y - pad && py <= card.y + card.h + pad) return card.index;
+    }
+    return -1;
+  }
+
+  function openPicker() {
+    picker = { openedAt: now() };
+    audio.chime();
+  }
+
+  function closePicker() {
+    picker = null;
+  }
+
+  function choose(index) {
+    closePicker();
+    if (index === outfitIndex) { audio.pop(); return; }   // already wearing it
+    wearOutfit(index);
+    audio.pop();
+    say(OUTFITS[index].label);
   }
 
   // Resolves an upright pose to whatever art is actually available, so a
@@ -416,12 +497,21 @@ function start(ctx) {
     return images[kind] || images.stand || images.walk || images.jump || null;
   }
 
+  // Rain and wind get a quiet looping bed; sunny and snow are deliberately
+  // silent, snow because falling snow makes no sound.
+  const WEATHER_BED = { rainy: 'rain', windy: 'wind' };
+
+  function applyWeatherBed() {
+    audio.setWeatherBed(WEATHER_BED[weather] || null);
+  }
+
   function cycleWeather() {
     const order = CONFIG.weather.order;
     weather = order[(order.indexOf(weather) + 1) % order.length];
     seedScenery();
     audio.pop();
-    say(weather === 'sunny' ? 'Sunny!' : weather === 'rainy' ? 'Rain!' : 'Windy!');
+    applyWeatherBed();
+    say(WEATHER_WORD[weather] || '');
   }
 
   function toggleNight() {
@@ -431,14 +521,16 @@ function start(ctx) {
   }
 
   function hit(px, py) {
-    // Specific objects first; the sky is the catch-all underneath them.
-    // Every box is generously padded: these are small pieces of furniture on a
-    // phone screen, and a toddler aiming near one clearly means it.
+    // Furniture is tested before the mascot, and deliberately so: he stands in
+    // front of whatever he has walked to, and checking him first meant that
+    // tapping the wardrobe he was standing at only ever got you a wave. The
+    // fixed thing you aimed at should be the thing that answers; he stays
+    // tappable everywhere he is not covering a station.
+    // Every box is generously padded, because these are small pieces of
+    // furniture on a phone and a toddler aiming near one clearly means it.
     const pad = L.unit * 0.05;
     const inBox = (b) => px >= b.x - pad && px <= b.x + b.w + pad
                       && py >= b.y - pad && py <= b.y + b.h + pad;
-    const m = mascotBox();
-    if (inBox(m)) return 'mascot';
     if (Math.hypot(px - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
     if (inBox(L.bed)) return 'bed';
     if (inBox(L.wardrobe)) return 'wardrobe';
@@ -448,6 +540,7 @@ function start(ctx) {
         && py >= L.tram.y - L.mascotH * 0.7 && py <= L.tram.y + L.tram.h + pad) {
       return 'trampoline';
     }
+    if (inBox(mascotBox())) return 'mascot';
     if (py < L.horizonY) return 'sky';
     return 'ground';
   }
@@ -455,8 +548,32 @@ function start(ctx) {
   function onPointerDown(e) {
     if (!alive || !L) return;
     if (L.portrait) return;        // the rotate screen is not interactive
+    // Any tap is a user gesture, which is the only thing that can start audio.
+    // Re-asserting the bed here covers a weather change made while the context
+    // was still suspended, which would otherwise stay silent forever.
+    if (audio.tryResume()) applyWeatherBed();
+
     const r = canvas.getBoundingClientRect();
     const px = e.clientX - r.left, py = e.clientY - r.top;
+
+    // While the wardrobe is open it takes every tap: a card is a choice,
+    // anywhere else closes without changing anything. Nothing in the world
+    // behind it can be triggered by accident.
+    if (picker) {
+      const i = pickerHit(px, py);
+      if (i >= 0) choose(i);
+      else closePicker();
+      return;
+    }
+
+    // Asleep, every tap simply wakes him. A child who wants him up should not
+    // have to find him under the covers to do it.
+    if (activity === 'sleeping') {
+      activity = 'idle';
+      audio.pop();
+      return;
+    }
+
     switch (hit(px, py)) {
       case 'sun': toggleNight(); break;
       case 'sky': cycleWeather(); break;
@@ -464,13 +581,12 @@ function start(ctx) {
       case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
       case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
       case 'mascot':
-        if (activity === 'sleeping') { activity = 'idle'; audio.pop(); }
-        else { activity = 'waving'; activityStart = now(); audio.greet(); }
+        activity = 'waving';
+        activityStart = now();
+        audio.greet();
         break;
       default:
-        // Tapping open ground wakes him and brings him back outside.
-        if (activity === 'sleeping') { activity = 'idle'; audio.pop(); }
-        else walkTo(L.station.home);
+        walkTo(L.station.home);       // tapping open ground brings him outside
     }
   }
   canvas.addEventListener('pointerdown', onPointerDown);
@@ -492,7 +608,7 @@ function start(ctx) {
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
     if (activity === 'wardrobe') {
-      if (changeOutfitAt && t >= changeOutfitAt) { changeOutfitAt = 0; cycleOutfit(); }
+      if (openPickerAt && t >= openPickerAt) { openPickerAt = 0; openPicker(); }
       if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
     }
     if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
@@ -523,6 +639,34 @@ function start(ctx) {
       }
     } else if (drops.length) {
       drops = [];
+    }
+
+    // Snow: falls slowly, wanders sideways, and settles on what it lands on.
+    if (weather === 'snowy') {
+      while (flakes.length < CONFIG.weather.snowFlakes) {
+        flakes.push({
+          x: Math.random() * L.w, y: Math.random() * -L.h,
+          v: 0.6 + Math.random() * 0.8,
+          r: L.unit * (0.004 + Math.random() * 0.007),
+          wob: Math.random() * Math.PI * 2,
+        });
+      }
+      const fall = CONFIG.weather.snowSpeedFrac * L.h * dt;
+      for (const f of flakes) {
+        f.y += fall * f.v;
+        f.wob += dt * 1.4;
+        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.w * dt;
+        // Like rain, snow stops at the roof rather than falling through it.
+        const roof = roofYAt(f.x);
+        if (f.y >= Math.min(roof, L.groundY)) {
+          f.y = Math.random() * -L.h * 0.3;
+          f.x = Math.random() * L.w;
+        }
+      }
+      snowDepth = Math.min(1, snowDepth + dt * 1000 / CONFIG.weather.snowSettleMs);
+    } else {
+      if (flakes.length) flakes = [];
+      snowDepth = Math.max(0, snowDepth - dt * 1000 / CONFIG.weather.snowThawMs);
     }
 
     // Wind-blown leaves
@@ -563,6 +707,7 @@ function start(ctx) {
   function skyColors() {
     if (night) return [CONFIG.colors.skyNightTop, CONFIG.colors.skyNightBottom];
     if (weather === 'rainy') return [CONFIG.colors.skyRainTop, CONFIG.colors.skyRainBottom];
+    if (weather === 'snowy') return [CONFIG.colors.skySnowTop, CONFIG.colors.skySnowBottom];
     return [CONFIG.colors.skyDayTop, CONFIG.colors.skyDayBottom];
   }
 
@@ -624,7 +769,7 @@ function start(ctx) {
     } else {
       // In rain the sun sits behind the weather: dimmed so the grey sky reads
       // honestly, but never hidden, because it is also the day/night control.
-      if (weather === 'rainy') g.globalAlpha = 0.45;
+      if (weather === 'rainy' || weather === 'snowy') g.globalAlpha = 0.45;
       const glow = g.createRadialGradient(x, y, r * 0.2, x, y, r * 2.1);
       glow.addColorStop(0, 'rgba(255,243,176,0.55)');
       glow.addColorStop(1, 'rgba(255,243,176,0)');
@@ -671,54 +816,258 @@ function start(ctx) {
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
     g.fillRect(0, L.horizonY, L.w, L.groundY - L.horizonY);
+    drawSnowOnGround();
+  }
+
+  // Full width of the world, from the horizon down, with a gently undulating
+  // top edge so the covering reads as settled snow and not a painted stripe.
+  function drawSnowOnGround() {
+    if (snowDepth <= 0.001) return;
+    // Creeps up from the foreground and reaches the horizon when fully settled,
+    // so a covered world is genuinely white rather than white with a green
+    // field still showing behind it.
+    // Overshoot the horizon a little so the undulating edge cannot leave a
+    // sliver of green showing along it at full depth.
+    const topY = lerp(L.h, L.horizonY - L.unit * 0.02, clamp01(snowDepth));
+    g.save();
+    g.fillStyle = night ? CONFIG.colors.snowShade : CONFIG.colors.snow;
+    g.beginPath();
+    g.moveTo(0, L.h);
+    g.lineTo(0, topY);
+    const bumps = 7;
+    for (let i = 0; i <= bumps; i++) {
+      const x = (i / bumps) * L.w;
+      const wave = Math.sin(i * 1.7) * L.unit * 0.012 * snowDepth;
+      g.lineTo(x, topY + wave);
+    }
+    g.lineTo(L.w, L.h);
+    g.closePath();
+    g.fill();
+    g.restore();
   }
 
   function drawHouse(t) {
     const c = CONFIG.colors;
     const left = L.houseLeft, right = L.houseRight;
     const w = right - left;
+    const wallH = L.groundY - L.wallTop;
 
     // Interior: warm light at night so the house reads as somewhere to go.
     g.fillStyle = night ? c.interiorNight : c.interiorDay;
-    g.fillRect(left, L.wallTop, w, L.groundY - L.wallTop);
+    g.fillRect(left, L.wallTop, w, wallH);
     if (night) {
-      const glow = g.createRadialGradient(L.houseMidX, L.wallTop + (L.groundY - L.wallTop) * 0.4,
-        w * 0.05, L.houseMidX, L.wallTop + (L.groundY - L.wallTop) * 0.4, w * 0.8);
+      const glow = g.createRadialGradient(L.houseMidX, L.wallTop + wallH * 0.4,
+        w * 0.05, L.houseMidX, L.wallTop + wallH * 0.4, w * 0.8);
       glow.addColorStop(0, 'rgba(255,214,120,0.55)');
       glow.addColorStop(1, 'rgba(255,214,120,0)');
       g.fillStyle = glow;
-      g.fillRect(left, L.wallTop, w, L.groundY - L.wallTop);
+      g.fillRect(left, L.wallTop, w, wallH);
     }
 
-    // Floor
+    // A window high on the back wall, above the bed rather than between the
+    // furniture, where there is barely a tenth of the interior to spare. It is
+    // filled with the live sky, so the weather is visible from indoors too.
+    drawWindow();
+
+    // Floor, with a few board seams so it is not a flat slab.
+    const floorH = wallH * 0.07;
+    const floorY = L.groundY - floorH;
     g.fillStyle = c.floor;
-    g.fillRect(left, L.groundY - (L.groundY - L.wallTop) * 0.07, w, (L.groundY - L.wallTop) * 0.07);
+    g.fillRect(left, floorY, w, floorH);
+    g.strokeStyle = 'rgba(0,0,0,0.13)';
+    g.lineWidth = Math.max(1, L.unit * 0.003);
+    for (let i = 1; i < 6; i++) {
+      const x = left + (w * i) / 6;
+      g.beginPath();
+      g.moveTo(x, floorY);
+      g.lineTo(x - w * 0.012, L.groundY);
+      g.stroke();
+    }
+    // Skirting board where the wall meets the floor.
+    g.fillStyle = 'rgba(0,0,0,0.10)';
+    g.fillRect(left, floorY - wallH * 0.035, w, wallH * 0.035);
+
+    // A rug under the bed, so that corner of the room is not bare.
+    g.fillStyle = 'rgba(224,104,90,0.22)';
+    g.beginPath();
+    roundRect(L.bed.x + L.bed.w * 0.06, floorY + floorH * 0.15,
+      L.bed.w * 0.88, floorH * 0.6, floorH * 0.3);
+    g.fill();
 
     drawBed();
     drawWardrobe(t);
 
     // Side walls, drawn after the contents so they frame the cutaway.
-    const wallT = Math.max(5, L.unit * 0.022);
+    const wallT = L.wallT;
     g.fillStyle = night ? c.wallNight : c.wallDay;
-    g.fillRect(left - wallT, L.wallTop, wallT, L.groundY - L.wallTop);
-    g.fillRect(right, L.wallTop, wallT, L.groundY - L.wallTop);
+    g.fillRect(left - wallT, L.wallTop, wallT, wallH);
+    g.fillRect(right, L.wallTop, wallT, wallH);
 
-    // Roof
-    g.fillStyle = c.roof;
+    // Stone foundation the walls stand on.
+    g.fillStyle = '#9d9384';
+    g.fillRect(left - wallT, L.groundY - wallH * 0.045, w + wallT * 2, wallH * 0.045);
+    g.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let i = 0; i < 9; i++) {
+      const x = left - wallT + ((w + wallT * 2) * i) / 9;
+      g.fillRect(x, L.groundY - wallH * 0.045, Math.max(1, L.unit * 0.003), wallH * 0.045);
+    }
+
+    drawChimney(t);
+    drawRoof();
+  }
+
+  function drawWindow() {
+    const wallH = L.groundY - L.wallTop;
+    const wx = L.bed.x + L.bed.w * 0.12;
+    const ww = L.bed.w * 0.62;
+    const wy = L.wallTop + wallH * 0.10;
+    const wh = wallH * 0.24;
+    const frame = Math.max(2, L.unit * 0.008);
+
+    // Panes show the current sky, so the weather reads from inside.
+    const [top, bottom] = skyColors();
+    const grad = g.createLinearGradient(0, wy, 0, wy + wh);
+    grad.addColorStop(0, top);
+    grad.addColorStop(1, bottom);
+    g.fillStyle = grad;
+    g.fillRect(wx, wy, ww, wh);
+
+    // Snow piles on the outside of the sill, visible through the glass.
+    if (snowDepth > 0.001) {
+      g.fillStyle = CONFIG.colors.snow;
+      g.fillRect(wx, wy + wh - wh * 0.16 * snowDepth, ww, wh * 0.16 * snowDepth);
+    }
+
+    g.strokeStyle = '#8a5a3c';
+    g.lineWidth = frame;
+    g.strokeRect(wx, wy, ww, wh);
     g.beginPath();
-    g.moveTo(left - wallT * 2.2, L.wallTop);
-    g.lineTo(L.houseMidX, L.roofPeak);
-    g.lineTo(right + wallT * 2.2, L.wallTop);
-    g.closePath();
-    g.fill();
+    g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
+    g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2);
+    g.stroke();
+    // Sill
+    g.fillStyle = '#8a5a3c';
+    g.fillRect(wx - frame * 1.6, wy + wh, ww + frame * 3.2, frame * 1.4);
+  }
+
+  function drawChimney(t) {
+    const ch = L.chimney;
+    const c = CONFIG.colors;
+    // Base sits on the roof slope; roofYAt gives the exact height there.
+    const baseY = roofYAt(ch.x + ch.w / 2);
     g.fillStyle = c.roofDark;
+    g.fillRect(ch.x, ch.top, ch.w, baseY - ch.top);
+    g.fillStyle = 'rgba(0,0,0,0.15)';
+    for (let i = 1; i < 4; i++) {
+      const y = ch.top + ((baseY - ch.top) * i) / 4;
+      g.fillRect(ch.x, y, ch.w, Math.max(1, L.unit * 0.003));
+    }
+    // Cap
+    g.fillStyle = '#7a6a60';
+    g.fillRect(ch.x - ch.w * 0.14, ch.top - ch.w * 0.16, ch.w * 1.28, ch.w * 0.16);
+
+    if (snowDepth > 0.001) {
+      g.fillStyle = CONFIG.colors.snow;
+      g.fillRect(ch.x - ch.w * 0.14, ch.top - ch.w * (0.16 + 0.20 * snowDepth),
+        ch.w * 1.28, ch.w * 0.20 * snowDepth);
+    }
+
+    // Smoke, when the fire would be lit: after dark or in the cold.
+    if (night || weather === 'snowy') {
+      const cx = ch.x + ch.w / 2;
+      g.save();
+      g.fillStyle = 'rgba(226,226,232,0.42)';
+      for (let i = 0; i < 4; i++) {
+        const p = ((t / 2600) + i / 4) % 1;
+        const r = ch.w * (0.28 + p * 0.7);
+        g.globalAlpha = 0.42 * (1 - p);
+        g.beginPath();
+        g.arc(cx + Math.sin(p * 3.4 + i) * ch.w * 0.7,
+          ch.top - ch.w * 0.3 - p * L.unit * 0.15, r, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+    }
+  }
+
+  function drawRoof() {
+    const c = CONFIG.colors;
+    const L_ = L.eaveLeft, R_ = L.eaveRight, peakY = L.roofPeak, eaveY = L.eaveY;
+
+    g.save();
+    // Clip to the roof triangle so the shingle rows and the snow cap can be
+    // drawn as plain bands without any per-row trigonometry.
     g.beginPath();
-    g.moveTo(left - wallT * 2.2, L.wallTop);
-    g.lineTo(L.houseMidX, L.roofPeak);
-    g.lineTo(L.houseMidX, L.roofPeak + wallT * 0.7);
-    g.lineTo(left - wallT * 2.2, L.wallTop + wallT * 0.7);
+    g.moveTo(L_, eaveY);
+    g.lineTo(L.houseMidX, peakY);
+    g.lineTo(R_, eaveY);
+    g.closePath();
+    g.clip();
+
+    g.fillStyle = c.roof;
+    g.fillRect(L_, peakY, R_ - L_, eaveY - peakY);
+
+    // Shingle rows.
+    g.strokeStyle = 'rgba(0,0,0,0.16)';
+    g.lineWidth = Math.max(1.5, L.unit * 0.005);
+    const rows = 5;
+    for (let i = 1; i <= rows; i++) {
+      const y = peakY + ((eaveY - peakY) * i) / (rows + 1);
+      g.beginPath();
+      g.moveTo(L_, y);
+      g.lineTo(R_, y);
+      g.stroke();
+    }
+    // The left slope is turned away from the light.
+    g.fillStyle = 'rgba(0,0,0,0.12)';
+    g.beginPath();
+    g.moveTo(L_, eaveY);
+    g.lineTo(L.houseMidX, peakY);
+    g.lineTo(L.houseMidX, eaveY);
     g.closePath();
     g.fill();
+
+    // Settled snow: fill the (clipped) roof white, then paint the roof back
+    // over it shifted down by the depth. What is left is a clean band lying
+    // along both slopes — no per-slope trigonometry needed.
+    if (snowDepth > 0.001) {
+      const cap = L.unit * CONFIG.weather.snowCapFrac * snowDepth;
+      g.fillStyle = CONFIG.colors.snow;
+      g.fillRect(L_, peakY, R_ - L_, eaveY - peakY);
+      g.fillStyle = c.roof;
+      g.beginPath();
+      g.moveTo(L_, eaveY + cap);
+      g.lineTo(L.houseMidX, peakY + cap);
+      g.lineTo(R_, eaveY + cap);
+      g.lineTo(R_, eaveY + cap * 40);
+      g.lineTo(L_, eaveY + cap * 40);
+      g.closePath();
+      g.fill();
+      // Redraw the shading on the left slope so it survives the repaint.
+      g.fillStyle = 'rgba(0,0,0,0.12)';
+      g.beginPath();
+      g.moveTo(L_, eaveY + cap);
+      g.lineTo(L.houseMidX, peakY + cap);
+      g.lineTo(L.houseMidX, eaveY + cap * 40);
+      g.lineTo(L_, eaveY + cap * 40);
+      g.closePath();
+      g.fill();
+    }
+    g.restore();
+
+    // Ridge cap along the peak, outside the clip so it reads as a raised edge.
+    g.strokeStyle = c.roofDark;
+    g.lineWidth = Math.max(2.5, L.unit * 0.010);
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(L.houseMidX, peakY + L.unit * 0.004);
+    g.lineTo(L.houseMidX, peakY - L.unit * 0.004);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(L_, eaveY);
+    g.lineTo(L.houseMidX, peakY);
+    g.lineTo(R_, eaveY);
+    g.stroke();
   }
 
   function drawBed() {
@@ -853,6 +1202,17 @@ function start(ctx) {
       g.lineTo(cx + Math.cos(a) * rx * 1.02, rimY + Math.sin(a) * ry * 1.02);
       g.stroke();
     }
+
+    // Snow gathers along the far half of the rim, where it would actually
+    // rest — capping the whole ellipse would read as a white ring.
+    if (snowDepth > 0.001) {
+      g.strokeStyle = CONFIG.colors.snow;
+      g.lineWidth = Math.max(1.5, tr.h * 0.10 * snowDepth);
+      g.lineCap = 'round';
+      g.beginPath();
+      g.ellipse(cx, rimY, rx, ry, 0, Math.PI, Math.PI * 2);
+      g.stroke();
+    }
   }
 
   // Top of the trampoline mat: where a bouncing child's feet actually leave.
@@ -953,6 +1313,65 @@ function start(ctx) {
     g.restore();
   }
 
+  function drawPicker(t) {
+    if (!picker) return;
+    const cfg = CONFIG.picker;
+    const c = CONFIG.colors;
+    // Cards scale up from the middle as the panel appears.
+    const p = clamp01((t - picker.openedAt) / cfg.openMs);
+    const grow = 0.86 + 0.14 * easeOutCubic(p);
+
+    g.save();
+    g.fillStyle = `rgba(24,20,44,${cfg.scrimAlpha * p})`;
+    g.fillRect(0, 0, L.w, L.h);
+
+    for (const card of pickerCards()) {
+      const cx = card.x + card.w / 2, cy = card.y + card.h / 2;
+      const w = card.w * grow, h = card.h * grow;
+      const x = cx - w / 2, y = cy - h / 2;
+      const worn = card.index === outfitIndex;
+      const radius = Math.min(w, h) * 0.10;
+
+      g.globalAlpha = p;
+      g.fillStyle = '#fffaf0';
+      g.beginPath();
+      roundRect(x, y, w, h, radius);
+      g.fill();
+
+      // The outfit he has on is ringed, so the choice has some context.
+      g.strokeStyle = worn ? '#ffb300' : 'rgba(0,0,0,0.12)';
+      g.lineWidth = Math.max(2, L.unit * (worn ? 0.016 : 0.005));
+      g.beginPath();
+      roundRect(x, y, w, h, radius);
+      g.stroke();
+
+      const labelH = h * 0.16;
+      const img = cards[card.outfit.id];
+      const padX = w * 0.08, padY = h * 0.06;
+      const boxW = w - padX * 2, boxH = h - labelH - padY * 2;
+      if (img && img.naturalWidth) {
+        // Contain, so a garment is never cropped or stretched.
+        const scale = Math.min(boxW / img.naturalWidth, boxH / img.naturalHeight);
+        const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+        g.drawImage(img, cx - dw / 2, y + padY + (boxH - dh) / 2, dw, dh);
+      } else {
+        // A card whose art failed to load still reads as that outfit rather
+        // than as an empty box.
+        g.fillStyle = card.outfit.tint;
+        g.beginPath();
+        roundRect(cx - boxW / 2, y + padY, boxW, boxH, radius * 0.6);
+        g.fill();
+      }
+
+      g.fillStyle = c.ink;
+      g.font = `700 ${Math.max(13, L.unit * 0.055)}px ${getComputedStyle(document.body).fontFamily}`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(card.outfit.label, cx, y + h - labelH / 2);
+    }
+    g.restore();
+  }
+
   function drawZzz(t) {
     const b = L.bed;
     // Above and behind his head rather than on top of him, now that the sleep
@@ -967,6 +1386,19 @@ function start(ctx) {
       g.globalAlpha = (1 - p) * 0.9;
       g.fillText('z', x + p * L.unit * 0.06, y - p * L.unit * 0.16);
     });
+    g.restore();
+  }
+
+  function drawSnowfall() {
+    if (weather !== 'snowy' || !flakes.length) return;
+    g.save();
+    g.fillStyle = CONFIG.colors.snow;
+    g.globalAlpha = 0.9;
+    for (const f of flakes) {
+      g.beginPath();
+      g.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      g.fill();
+    }
     g.restore();
   }
 
@@ -1101,7 +1533,9 @@ function start(ctx) {
     drawHouse(t);
     drawMascot(t);
     drawRain();
+    drawSnowfall();
     drawLeaves();
+    drawPicker(t);
 
     raf = requestAnimationFrame(frame);
   }
@@ -1114,12 +1548,19 @@ function start(ctx) {
 
   wearOutfit(0);
 
+  // The garment cards are small and the picker must never open empty, so they
+  // load once up front rather than when the wardrobe is first tapped.
+  preloadImages(Object.fromEntries(OUTFITS.map(o => [o.id, o.card])), 0)
+    .then(loaded => { if (alive) cards = loaded || {}; });
+
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
 
   return () => {
     alive = false;
+    picker = null;
     cancelAnimationFrame(raf);
+    audio.stopWeatherBed();  // leaving must never leave weather playing
     unlockOrientation();     // leave the rest of the app free to rotate
     canvas.removeEventListener('pointerdown', onPointerDown);
     window.removeEventListener('resize', resize);
