@@ -25,11 +25,11 @@ const LS_MIX = 'tinytaps-mix';
 const PROFILES = {
   little: {
     label: 'Little Explorer', age: '18–30 months',
-    games: ['peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
+    games: ['playhouse', 'peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
   },
   early: {
     label: 'Early Learner', age: '2½–3½ years',
-    games: ['sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
+    games: ['playhouse', 'sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
   },
   growing: {
     label: 'Growing Thinker', age: '3½–4½ years',
@@ -59,7 +59,7 @@ const ACCENTS = {
   counting: '#fff1d6', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
   shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',
-  wash: '#dcf0fa', trace: '#fff4d6',
+  wash: '#dcf0fa', trace: '#fff4d6', playhouse: '#dbefff',
 };
 
 /* ---------------- idle re-prompt ----------------
@@ -302,6 +302,41 @@ function makeMixButton(parent) {
 
 let activeRecorder = null;
 
+function formatBytes(n) {
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// How much room Tiny Taps takes up on this device. Prefers the browser's own
+// storage estimate, which covers the offline cache plus saved drawings and
+// voice recordings. Falls back to adding up the cached files by hand where
+// that API is missing (older iOS), and stays quiet if neither works — this is
+// a nice-to-know line, never something worth showing an error for.
+async function appSize() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const { usage } = await navigator.storage.estimate();
+      const s = formatBytes(usage);
+      if (s) return s;
+    }
+  } catch (e) { /* fall through to counting the cache */ }
+  try {
+    if (!window.caches) return null;
+    let total = 0;
+    for (const name of await caches.keys()) {
+      const c = await caches.open(name);
+      for (const req of await c.keys()) {
+        const res = await c.match(req);
+        if (!res) continue;
+        const len = res.headers.get('content-length');
+        total += len ? Number(len) : (await res.clone().blob()).size;
+      }
+    }
+    return formatBytes(total);
+  } catch (e) { return null; }
+}
+
 function showSettings() {
   const overlay = el('div', 'credits-overlay', document.body);
   const panel = el('div', 'credits-panel settings-panel', overlay);
@@ -337,7 +372,13 @@ function showSettings() {
     <div id="rec-rows"></div>
     <h3>Games on the menu</h3>
     <div class="set-games" id="set-games"></div>
-    <div class="settings-version">Tiny Taps v${VERSION}</div>`;
+    <div class="settings-version">Tiny Taps v${VERSION} · <span id="set-size">measuring…</span></div>`;
+
+  // Filled in asynchronously; the panel is usable either way.
+  appSize().then(size => {
+    const el2 = panel.querySelector('#set-size');
+    if (el2) el2.textContent = size ? `${size} on this device` : 'size unavailable';
+  });
 
   panel.querySelector('#set-vol').addEventListener('input', e => {
     const v = Number(e.target.value);

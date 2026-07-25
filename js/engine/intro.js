@@ -201,14 +201,19 @@ function loadImage(src) {
 // Resolves with whatever finished inside the budget. Late arrivals still land
 // in the map afterwards, so a slow connection simply means the first run has
 // fewer poses rather than a frozen screen.
-export function preloadMascots(budgetMs = CONFIG.preloadBudgetMs) {
+export function preloadImages(sources, budgetMs = CONFIG.preloadBudgetMs) {
   const images = {};
-  const jobs = Object.entries(MASCOT_SOURCES).map(([key, src]) =>
+  const jobs = Object.entries(sources).map(([key, src]) =>
     loadImage(src).then(img => { images[key] = img; return img; }));
 
   const everything = Promise.all(jobs).then(() => images);
+  if (!(budgetMs > 0)) return everything;              // no budget: wait for all
   const budget = new Promise(resolve => setTimeout(() => resolve(images), budgetMs));
   return Promise.race([everything, budget]);
+}
+
+export function preloadMascots(budgetMs = CONFIG.preloadBudgetMs) {
+  return preloadImages(MASCOT_SOURCES, budgetMs);
 }
 
 /* ---------------- first-launch gating ----------------

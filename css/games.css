@@ -444,6 +444,16 @@
   touch-action: none;
 }
 
+/* ---------- play house ---------- */
+.playhouse-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
 /* ---------- shared round transition ---------- */
 .fade-out {
   opacity: 0;

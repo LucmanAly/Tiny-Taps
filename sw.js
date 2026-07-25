@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.2-intro';
+const VERSION = 'tiny-taps-v3.3';
 
 const ASSETS = [
   '.',
@@ -48,6 +48,7 @@ const ASSETS = [
   'js/games/sort.js',
   'js/games/wash.js',
   'js/games/trace.js',
+  'js/games/playhouse.js',
   'assets/art/dog.svg', 'assets/art/cat.svg', 'assets/art/cow.svg',
   'assets/art/duck.svg', 'assets/art/sheep.svg', 'assets/art/horse.svg',
   'assets/art/rooster.svg', 'assets/art/pig.svg', 'assets/art/lion.svg',
@@ -73,6 +74,12 @@ const ASSETS = [
   // slow or failed mascot download can still never block the PWA installing.
   'assets/mascot_walking.PNG', 'assets/mascot_waving.PNG',
   'assets/mascot_magic.PNG', 'assets/mascot_idle.PNG',
+  // Play House outfits. Winter reuses the four above and adds these two.
+  'assets/mascot_winter_jump.PNG', 'assets/mascot_winter_sleep.PNG',
+  'assets/mascot_rain_stand.PNG', 'assets/mascot_rain_walk.PNG',
+  'assets/mascot_rain_jump.PNG', 'assets/mascot_rain_sleep.PNG',
+  'assets/mascot_summer_stand.PNG', 'assets/mascot_summer_walk.PNG',
+  'assets/mascot_summer_jump.PNG', 'assets/mascot_summer_sleep.PNG',
 ];
 
 self.addEventListener('install', e => {
