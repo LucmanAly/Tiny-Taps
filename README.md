@@ -85,7 +85,7 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
-- **Unreleased** — Play House: a nineteenth game that is a small sandbox
+- **v3.3** — Play House: a nineteenth game that is a small sandbox
   rather than a round-based quiz. Tapping the sky cycles sunny/rainy/windy,
   tapping the sun toggles day and night, and the mascot walks to the bed, the
   trampoline or the wardrobe on request. The whole world is drawn on canvas;
