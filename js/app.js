@@ -302,6 +302,41 @@ function makeMixButton(parent) {
 
 let activeRecorder = null;
 
+function formatBytes(n) {
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// How much room Tiny Taps takes up on this device. Prefers the browser's own
+// storage estimate, which covers the offline cache plus saved drawings and
+// voice recordings. Falls back to adding up the cached files by hand where
+// that API is missing (older iOS), and stays quiet if neither works — this is
+// a nice-to-know line, never something worth showing an error for.
+async function appSize() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const { usage } = await navigator.storage.estimate();
+      const s = formatBytes(usage);
+      if (s) return s;
+    }
+  } catch (e) { /* fall through to counting the cache */ }
+  try {
+    if (!window.caches) return null;
+    let total = 0;
+    for (const name of await caches.keys()) {
+      const c = await caches.open(name);
+      for (const req of await c.keys()) {
+        const res = await c.match(req);
+        if (!res) continue;
+        const len = res.headers.get('content-length');
+        total += len ? Number(len) : (await res.clone().blob()).size;
+      }
+    }
+    return formatBytes(total);
+  } catch (e) { return null; }
+}
+
 function showSettings() {
   const overlay = el('div', 'credits-overlay', document.body);
   const panel = el('div', 'credits-panel settings-panel', overlay);
@@ -337,7 +372,13 @@ function showSettings() {
     <div id="rec-rows"></div>
     <h3>Games on the menu</h3>
     <div class="set-games" id="set-games"></div>
-    <div class="settings-version">Tiny Taps v${VERSION}</div>`;
+    <div class="settings-version">Tiny Taps v${VERSION} · <span id="set-size">measuring…</span></div>`;
+
+  // Filled in asynchronously; the panel is usable either way.
+  appSize().then(size => {
+    const el2 = panel.querySelector('#set-size');
+    if (el2) el2.textContent = size ? `${size} on this device` : 'size unavailable';
+  });
 
   panel.querySelector('#set-vol').addEventListener('input', e => {
     const v = Number(e.target.value);

@@ -16,26 +16,33 @@ const CONFIG = {
   // `unit` (= the smaller edge) for anything whose size should feel the same
   // in portrait and landscape.
   layout: {
+    // This world is landscape-only (see the rotate gate below): a phone held
+    // upright cannot fit a house, a wardrobe and a playground side by side
+    // without everything becoming cramped. The portrait numbers remain only
+    // as a safety net for the brief moment during an orientation change.
     horizonYPortrait: 0.56,
     horizonYLandscape: 0.50,
     groundLineYPortrait: 0.86,   // feet, house floor and trampoline base
     groundLineYLandscape: 0.88,
     houseLeftPortrait: 0.03,
     houseRightPortrait: 0.52,
-    houseLeftLandscape: 0.06,
-    houseRightLandscape: 0.46,
-    houseHeightFrac: 0.52,       // of unit
+    houseLeftLandscape: 0.035,
+    houseRightLandscape: 0.44,
+    houseHeightFrac: 0.52,       // of unit (portrait)
+    houseHeightFracLandscape: 0.62,
     roofPeakFrac: 0.15,          // of unit, above the wall top
     trampolineXPortrait: 0.855,
-    trampolineXLandscape: 0.78,
-    trampolineWidthFrac: 0.23,   // of unit
+    trampolineXLandscape: 0.80,
+    trampolineWidthFrac: 0.23,   // of unit (portrait)
+    trampolineWidthFracLandscape: 0.31,
     sunXPortrait: 0.82, sunYPortrait: 0.13,
     sunXLandscape: 0.84, sunYLandscape: 0.23,
     sunRadiusFrac: 0.075,        // of unit
   },
 
   mascot: {
-    heightFrac: 0.34,            // of unit
+    heightFrac: 0.34,            // of unit (portrait)
+    heightFracLandscape: 0.40,
     minHeight: 104,
     maxHeight: 240,
     walkSpeedFrac: 0.55,         // of canvas width per second
@@ -48,7 +55,7 @@ const CONFIG = {
   // Where the mascot stands for each station, as a fraction of canvas width.
   stations: {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855, homePortrait: 0.615,
-    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.78, homeLandscape: 0.60,
+    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80, homeLandscape: 0.60,
   },
 
   jump: { count: 3, heightFrac: 0.55, durationMs: 620, squash: 0.22 },
@@ -161,16 +168,17 @@ function start(ctx) {
     const groundY = h * (portrait ? cfg.groundLineYPortrait : cfg.groundLineYLandscape);
     const houseLeft = w * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
     const houseRight = w * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
-    const houseH = unit * cfg.houseHeightFrac;
+    const houseH = unit * (portrait ? cfg.houseHeightFrac : cfg.houseHeightFracLandscape);
     const wallTop = groundY - houseH;
     const roofPeak = wallTop - unit * cfg.roofPeakFrac;
 
     const mascotH = Math.max(CONFIG.mascot.minHeight,
-      Math.min(CONFIG.mascot.maxHeight, unit * CONFIG.mascot.heightFrac));
+      Math.min(CONFIG.mascot.maxHeight,
+        unit * (portrait ? CONFIG.mascot.heightFrac : CONFIG.mascot.heightFracLandscape)));
     const ref = images.idle || images.walk || images.wave;
     const aspect = ref && ref.naturalWidth ? ref.naturalWidth / ref.naturalHeight : 1024 / 1536;
 
-    const tramW = unit * cfg.trampolineWidthFrac;
+    const tramW = unit * (portrait ? cfg.trampolineWidthFrac : cfg.trampolineWidthFracLandscape);
     const tramX = w * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
 
     L = {
@@ -291,6 +299,7 @@ function start(ctx) {
 
   function onPointerDown(e) {
     if (!alive || !L) return;
+    if (L.portrait) return;        // the rotate screen is not interactive
     const r = canvas.getBoundingClientRect();
     const px = e.clientX - r.left, py = e.clientY - r.top;
     switch (hit(px, py)) {
@@ -817,12 +826,83 @@ function start(ctx) {
     g.closePath();
   }
 
+  /* ---- rotate gate ----
+     A phone held upright cannot fit a house, a wardrobe and a playground side
+     by side. Where the browser lets us we simply lock to landscape; everywhere
+     else (notably iOS, which has no orientation lock at all) we ask, with a
+     tilting phone the parent can read at a glance. */
+
+  function drawRotatePrompt(t) {
+    const w = L.w, h = L.h, u = L.unit;
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = '#fffaf2';
+    g.fillRect(0, 0, w, h);
+
+    const cx = w / 2, cy = h * 0.44;
+    const tilt = -Math.PI / 2 * easeInOutCubic(clamp01((Math.sin(t / 900) + 1) / 2));
+    const pw = u * 0.30, ph = pw * 1.85, r = pw * 0.14;
+
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(tilt);
+    g.fillStyle = '#3a3357';
+    roundRect(-pw / 2, -ph / 2, pw, ph, r); g.fill();
+    g.fillStyle = '#8ed6ff';
+    roundRect(-pw / 2 + pw * 0.07, -ph / 2 + pw * 0.16, pw * 0.86, ph - pw * 0.32, r * 0.6);
+    g.fill();
+    g.restore();
+
+    // Curved arrow hinting at the turn.
+    g.strokeStyle = '#ffb627';
+    g.lineWidth = Math.max(4, u * 0.022);
+    g.lineCap = 'round';
+    const ar = u * 0.30;
+    g.beginPath();
+    g.arc(cx, cy, ar, Math.PI * 1.15, Math.PI * 1.75);
+    g.stroke();
+    const ae = Math.PI * 1.75;
+    const ax = cx + Math.cos(ae) * ar, ay = cy + Math.sin(ae) * ar;
+    g.beginPath();
+    g.moveTo(ax, ay);
+    g.lineTo(ax - u * 0.045, ay - u * 0.035);
+    g.moveTo(ax, ay);
+    g.lineTo(ax - u * 0.012, ay + u * 0.052);
+    g.stroke();
+
+    g.fillStyle = '#2f3557';
+    g.textAlign = 'center';
+    g.font = `800 ${Math.max(16, u * 0.075)}px ${getComputedStyle(document.body).fontFamily}`;
+    g.fillText('Turn me sideways!', cx, h * 0.80);
+  }
+
+  // Best effort: succeeds on installed Android PWAs, silently refused
+  // elsewhere. Never awaited, never allowed to throw.
+  function tryLockLandscape() {
+    try {
+      const o = screen.orientation;
+      if (o && typeof o.lock === 'function') o.lock('landscape').catch(() => {});
+    } catch (e) { /* unsupported: the prompt covers it */ }
+  }
+
+  function unlockOrientation() {
+    try {
+      const o = screen.orientation;
+      if (o && typeof o.unlock === 'function') o.unlock();
+    } catch (e) { /* nothing to undo */ }
+  }
+
   /* ---- loop ---- */
   let last = 0;
   function frame(t) {
     if (!alive) return;
     const dt = last ? Math.min((t - last) / 1000, 0.05) : 0.016;
     last = t;
+
+    if (L.portrait) {
+      drawRotatePrompt(t);
+      raf = requestAnimationFrame(frame);
+      return;
+    }
 
     update(dt, t);
 
@@ -840,6 +920,7 @@ function start(ctx) {
 
   /* ---- boot ---- */
   resize();
+  tryLockLandscape();
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', resize);
 
@@ -855,6 +936,7 @@ function start(ctx) {
   return () => {
     alive = false;
     cancelAnimationFrame(raf);
+    unlockOrientation();     // leave the rest of the app free to rotate
     canvas.removeEventListener('pointerdown', onPointerDown);
     window.removeEventListener('resize', resize);
     window.removeEventListener('orientationchange', resize);
