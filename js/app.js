@@ -25,11 +25,11 @@ const LS_MIX = 'tinytaps-mix';
 const PROFILES = {
   little: {
     label: 'Little Explorer', age: '18–30 months',
-    games: ['peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
+    games: ['playhouse', 'peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
   },
   early: {
     label: 'Early Learner', age: '2½–3½ years',
-    games: ['sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
+    games: ['playhouse', 'sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
   },
   growing: {
     label: 'Growing Thinker', age: '3½–4½ years',
@@ -59,7 +59,7 @@ const ACCENTS = {
   counting: '#fff1d6', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
   shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',
-  wash: '#dcf0fa', trace: '#fff4d6',
+  wash: '#dcf0fa', trace: '#fff4d6', playhouse: '#dbefff',
 };
 
 /* ---------------- idle re-prompt ----------------

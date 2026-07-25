@@ -18,6 +18,7 @@ import pattern from './pattern.js';
 import sort from './sort.js';
 import wash from './wash.js';
 import trace from './trace.js';
+import playhouse from './playhouse.js';
 
 export const games = [
   peekaboo,
@@ -38,4 +39,5 @@ export const games = [
   sort,
   wash,
   trace,
+  playhouse,
 ];
