@@ -23,7 +23,7 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather and the time of day, send the mascot to bed, bounce him on the trampoline, and tap the wardrobe to change his outfit
+19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, and open the wardrobe to pick his outfit
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -84,6 +84,18 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.4** — Play House weather and wardrobe: the wardrobe now opens a picker
+  showing the three outfits as garment cards, so the child chooses rather than
+  cycling through them. Added snow as a fourth weather — it falls slowly and
+  settles, covering the grass, both roof slopes, the chimney and the
+  trampoline, then thaws when the weather changes. Rebuilt the house with
+  overhanging eaves, shingle rows, a ridge cap, a chimney that smokes after
+  dark, a window showing the live sky, floorboards, skirting and a stone
+  foundation. Rain and wind now have quiet looping ambience, synthesized from
+  filtered noise so it costs no download and works offline. Tapping furniture
+  now takes priority over tapping the mascot, so the wardrobe he is standing in
+  front of still opens.
 
 - **v3.3** — Play House: a nineteenth game that is a small sandbox
   rather than a round-based quiz. Tapping the sky cycles sunny/rainy/windy,

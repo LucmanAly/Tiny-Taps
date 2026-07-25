@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.3';
+const VERSION = 'tiny-taps-v3.4';
 
 const ASSETS = [
   '.',
@@ -80,6 +80,9 @@ const ASSETS = [
   'assets/mascot_rain_jump.PNG', 'assets/mascot_rain_sleep.PNG',
   'assets/mascot_summer_stand.PNG', 'assets/mascot_summer_walk.PNG',
   'assets/mascot_summer_jump.PNG', 'assets/mascot_summer_sleep.PNG',
+  // Flat-lay garment cards for the wardrobe picker.
+  'assets/mascot_outfit_winter.PNG', 'assets/mascot_outfit_rain.PNG',
+  'assets/mascot_outfit_summer.PNG',
 ];
 
 self.addEventListener('install', e => {
