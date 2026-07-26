@@ -292,6 +292,19 @@ export function greet() {
 }
 
 // Airy rising sweep as the wand comes down — the wind-up before the magic.
+// The baby, tapped. Three quick rising blips with a little pitch jitter so
+// repeated taps are not identical — a happy babble rather than a literal
+// giggle, which oscillators cannot honestly manage.
+export function babble() {
+  ensureCtx();
+  const base = 620 + Math.random() * 90;
+  [0, 1, 2].forEach(i => {
+    const jitter = 0.94 + Math.random() * 0.12;
+    tone(base * (1 + i * 0.22) * jitter, i * 0.085, 0.14,
+      { type: 'triangle', vol: 0.15 - i * 0.015 });
+  });
+}
+
 export function whoosh() {
   ensureCtx();
   tone(300, 0, 0.30, { type: 'sine', vol: 0.09, glide: 1250 });

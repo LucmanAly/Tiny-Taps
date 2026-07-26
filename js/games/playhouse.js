@@ -57,9 +57,33 @@ const CONFIG = {
   },
 
   // Where the mascot stands for each station, as a fraction of canvas width.
+  // Where the mascot stands for each station, as a fraction of canvas width.
+  // `home` doubles as the playpen station: the old 0.60 sat exactly where the
+  // playpen now goes, and standing beside his brother is a nicer neutral spot
+  // than a cramped gap between the pen and the trampoline.
   stations: {
-    bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855, homePortrait: 0.615,
-    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80, homeLandscape: 0.60,
+    bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
+    playpenPortrait: 0.60, homePortrait: 0.60,
+    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80,
+    playpenLandscape: 0.47, homeLandscape: 0.47,
+  },
+
+  // The playpen sits on the one genuinely empty patch of grass, between the
+  // house wall (ends ~0.45) and the trampoline (starts ~0.73).
+  playpen: {
+    xPortrait: 0.62, xLandscape: 0.625,
+    widthFracPortrait: 0.22, widthFracLandscape: 0.165,   // of canvas width
+    heightFrac: 0.17,                                      // of unit
+  },
+
+  baby: {
+    heightFrac: 0.46,          // of the boy's drawn height
+    bobHz: 0.6,
+    happyMs: 1600,
+    // Idle wandering: sits still for a while, crawls a little, sits again.
+    sitMinMs: 6000, sitMaxMs: 10000,
+    crawlMs: 2200,
+    crawlRangeFrac: 0.26,      // of playpen width, either side of centre
   },
 
   jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
@@ -113,6 +137,7 @@ const CONFIG = {
     bedFrame: '#8a5a3c', bedSheet: '#ffffff', blanket: '#7fb3ff', pillow: '#fffaf0',
     wardrobe: '#a3714a', wardrobeDark: '#7d5334', wardrobeDoor: '#b98352',
     tramFrame: '#8a8098', tramMat: '#5aa8e0', tramSpring: '#c9c3d6',
+    penRail: '#e08a5a', penRailDark: '#bd6a3e', penBar: '#f6c177', penMat: '#8fd9c4',
     ink: '#3a3357',
   },
 };
@@ -181,6 +206,18 @@ const OUTFITS = [
   },
 ];
 
+/* ---------------- the baby ----------------
+   One look only, unlike his brother: four poses, no outfits. Sliced from a
+   single sprite sheet at import, so at runtime these are ordinary images and
+   boundsOf() places them exactly as it places the boy's. */
+
+const BABY_POSES = {
+  sit: 'assets/baby_sit.PNG',
+  happy: 'assets/baby_happy.PNG',
+  crawl: 'assets/baby_crawl.PNG',
+  sleep: 'assets/baby_sleep.PNG',
+};
+
 function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
@@ -202,14 +239,21 @@ function start(ctx) {
   /* ---- world state ---- */
   let night = false;
   let weather = 'sunny';
-  let mascotX = 0.66;            // fraction of width
+  let mascotX = 0.66;            // fraction of width; seeded properly in layout()
   let targetX = 0.66;
+  let placed = false;             // has his opening position been set yet
   let facing = 1;                 // 1 = right, -1 = left
   let activity = 'idle';          // idle | walking | sleeping | jumping | waving
   let pending = null;             // what to do once the walk finishes
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
   let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
+  let baby = {};                  // pose id -> image, empty until loaded
+  let babyPose = 'sit';           // sit | crawl | happy  (sleep is derived from night)
+  let babyUntil = 0;              // when the current baby pose gives way
+  let babyX = 0.5;                // position across the pen, 0..1
+  let babyTargetX = 0.5;
+  let babyFacing = 1;
   let picker = null;              // { openedAt } while the child is choosing
   let cards = {};                 // outfit id -> garment image (or missing)
   let stepAt = 0;                 // next footstep sound
@@ -279,6 +323,7 @@ function start(ctx) {
         bed: portrait ? CONFIG.stations.bedPortrait : CONFIG.stations.bedLandscape,
         wardrobe: portrait ? CONFIG.stations.wardrobePortrait : CONFIG.stations.wardrobeLandscape,
         trampoline: portrait ? CONFIG.stations.trampolinePortrait : CONFIG.stations.trampolineLandscape,
+        playpen: portrait ? CONFIG.stations.playpenPortrait : CONFIG.stations.playpenLandscape,
         home: portrait ? CONFIG.stations.homePortrait : CONFIG.stations.homeLandscape,
       },
     };
@@ -296,6 +341,19 @@ function start(ctx) {
       w: inW * 0.34, h: houseH * 0.62,
     };
     L.tram = { x: tramX - L.tramW / 2, y: groundY - L.tramH, w: L.tramW, h: L.tramH };
+
+    const penW = w * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
+    const penH = unit * CONFIG.playpen.heightFrac;
+    const penCx = w * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
+    L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
+    L.babyH = mascotH * CONFIG.baby.heightFrac;
+
+    // Open beside the playpen rather than at a hard-coded fraction, which
+    // otherwise leaves him standing inside it.
+    if (!placed) {
+      mascotX = targetX = L.station.home;
+      placed = true;
+    }
 
     // Roof geometry, shared by the drawing and by roofYAt().
     L.wallT = Math.max(5, unit * 0.022);
@@ -505,6 +563,47 @@ function start(ctx) {
     audio.setWeatherBed(WEATHER_BED[weather] || null);
   }
 
+  /* ---- the baby ---- */
+
+  function babyImage() {
+    if (night && babyPose !== 'happy') return baby.sleep || baby.sit || null;
+    return baby[babyPose] || baby.sit || null;
+  }
+
+  // Delighted to be noticed. Also wakes him at night, which is the one bit of
+  // mischief the game allows.
+  function delightBaby() {
+    babyPose = 'happy';
+    babyUntil = now() + CONFIG.baby.happyMs;
+    audio.babble();
+  }
+
+  function updateBaby(dt, t) {
+    if (night && babyPose !== 'happy') return;      // asleep: no wandering
+    if (t < babyUntil) {
+      if (babyPose === 'crawl') {
+        const speed = dt * 0.32;
+        const dx = babyTargetX - babyX;
+        if (Math.abs(dx) > speed) {
+          babyX += Math.sign(dx) * speed;
+          babyFacing = dx > 0 ? 1 : -1;
+        }
+      }
+      return;
+    }
+    // Alternate between sitting still and a short crawl to somewhere else in
+    // the pen, so he is never quite a static prop.
+    const cfg = CONFIG.baby;
+    if (babyPose === 'crawl') {
+      babyPose = 'sit';
+      babyUntil = t + cfg.sitMinMs + Math.random() * (cfg.sitMaxMs - cfg.sitMinMs);
+    } else {
+      babyPose = 'crawl';
+      babyUntil = t + cfg.crawlMs;
+      babyTargetX = 0.5 + (Math.random() * 2 - 1) * cfg.crawlRangeFrac;
+    }
+  }
+
   function cycleWeather() {
     const order = CONFIG.weather.order;
     weather = order[(order.indexOf(weather) + 1) % order.length];
@@ -539,6 +638,10 @@ function start(ctx) {
     if (px >= L.tram.x - pad && px <= L.tram.x + L.tram.w + pad
         && py >= L.tram.y - L.mascotH * 0.7 && py <= L.tram.y + L.tram.h + pad) {
       return 'trampoline';
+    }
+    if (px >= L.pen.x - pad && px <= L.pen.x + L.pen.w + pad
+        && py >= L.pen.y - L.babyH * 0.8 && py <= L.pen.y + L.pen.h + pad) {
+      return 'playpen';
     }
     if (inBox(mascotBox())) return 'mascot';
     if (py < L.horizonY) return 'sky';
@@ -580,6 +683,11 @@ function start(ctx) {
       case 'bed': walkTo(L.station.bed, 'sleeping'); break;
       case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
       case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
+      case 'playpen':
+        // The baby reacts straight away; his brother comes over to join in.
+        delightBaby();
+        walkTo(L.station.playpen, 'waving');
+        break;
       case 'mascot':
         activity = 'waving';
         activityStart = now();
@@ -604,6 +712,8 @@ function start(ctx) {
         if (t > stepAt) { audio.footstep(); stepAt = t + 300; }
       }
     }
+
+    updateBaby(dt, t);
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
@@ -1221,6 +1331,112 @@ function start(ctx) {
     return L.tram.y + L.tram.h * 0.37;
   }
 
+  // Drawn in two halves around the baby: the mat and back rail behind him, the
+  // front rail and bars in front, so he genuinely sits inside the pen.
+  function drawPenBack() {
+    const c = CONFIG.colors, pen = L.pen;
+    const rail = Math.max(3, pen.h * 0.13);
+    // Mat
+    g.fillStyle = c.penMat;
+    g.beginPath();
+    g.ellipse(pen.x + pen.w / 2, pen.y + pen.h * 0.92, pen.w * 0.48, pen.h * 0.20, 0, 0, Math.PI * 2);
+    g.fill();
+    // Back wall: bars first, then its rail on top, both in the shaded tone so
+    // the pen reads as something you see through rather than a flat panel.
+    g.strokeStyle = c.penRailDark;
+    g.lineWidth = Math.max(1.5, pen.w * 0.011);
+    g.lineCap = 'round';
+    const bars = 8;
+    for (let i = 0; i <= bars; i++) {
+      const x = pen.x + (pen.w * i) / bars;
+      g.beginPath();
+      g.moveTo(x, pen.y + rail * 0.5);
+      g.lineTo(x, pen.y + pen.h * 0.72);
+      g.stroke();
+    }
+    g.fillStyle = c.penRailDark;
+    g.beginPath();
+    roundRect(pen.x, pen.y, pen.w, rail, rail * 0.5);
+    g.fill();
+  }
+
+  function drawPenFront(t) {
+    const c = CONFIG.colors, pen = L.pen;
+    const rail = Math.max(3, pen.h * 0.13);
+    const frontY = pen.y + pen.h * 0.34;
+
+    // Bars
+    g.strokeStyle = c.penBar;
+    g.lineWidth = Math.max(2, pen.w * 0.016);
+    g.lineCap = 'round';
+    const bars = 8;
+    for (let i = 0; i <= bars; i++) {
+      const x = pen.x + (pen.w * i) / bars;
+      g.beginPath();
+      g.moveTo(x, frontY + rail * 0.5);
+      g.lineTo(x, pen.y + pen.h);
+      g.stroke();
+    }
+    // Front rail, and the feet it stands on
+    g.fillStyle = c.penRail;
+    g.beginPath();
+    roundRect(pen.x - pen.w * 0.02, frontY, pen.w * 1.04, rail, rail * 0.5);
+    g.fill();
+    g.fillStyle = c.penRailDark;
+    g.fillRect(pen.x + pen.w * 0.02, pen.y + pen.h, pen.w * 0.05, pen.h * 0.07);
+    g.fillRect(pen.x + pen.w * 0.93, pen.y + pen.h, pen.w * 0.05, pen.h * 0.07);
+
+    // Snow gathers along the top rail, as it does on the trampoline.
+    if (snowDepth > 0.001) {
+      g.fillStyle = CONFIG.colors.snow;
+      g.beginPath();
+      roundRect(pen.x - pen.w * 0.02, frontY - rail * 0.55 * snowDepth,
+        pen.w * 1.04, rail * 0.7 * snowDepth, rail * 0.35);
+      g.fill();
+    }
+  }
+
+  function drawBaby(t) {
+    const img = babyImage();
+    if (!img) return;               // art missing: the pen simply stands empty
+    const pen = L.pen;
+    const bb = boundsOf(img);
+    const asleep = night && babyPose !== 'happy';
+
+    const h = L.babyH * (asleep ? 0.78 : 1);
+    const drawH = h / (bb.y1 - bb.y0);
+    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+
+    const x = pen.x + pen.w * (0.16 + babyX * 0.68);
+    // Sits on the mat, a little in front of the pen's back edge.
+    let y = pen.y + pen.h * 0.92;
+    if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * h * 0.03;
+
+    g.save();
+    g.translate(x, y - h / 2);
+    if (babyFacing < 0) g.scale(-1, 1);
+    g.drawImage(img,
+      -((bb.x0 + bb.x1) / 2) * drawW,
+      h / 2 - bb.y1 * drawH,
+      drawW, drawH);
+    g.restore();
+
+    if (asleep) drawBabyZzz(t, x, y - h);
+  }
+
+  function drawBabyZzz(t, x, y) {
+    g.save();
+    g.fillStyle = CONFIG.colors.ink;
+    g.font = `700 ${Math.max(10, L.unit * 0.035)}px ${getComputedStyle(document.body).fontFamily}`;
+    g.textAlign = 'center';
+    for (let i = 0; i < 3; i++) {
+      const p = ((t / 2400) + i / 3) % 1;
+      g.globalAlpha = (1 - p) * 0.75;
+      g.fillText('z', x + p * L.unit * 0.05, y - p * L.unit * 0.11);
+    }
+    g.restore();
+  }
+
   function mascotBox() {
     const x = mascotX * L.w;
     let y = L.groundY;
@@ -1530,6 +1746,9 @@ function start(ctx) {
     drawSky(t);
     drawGround();
     drawTrampoline(t);
+    drawPenBack();
+    drawBaby(t);
+    drawPenFront(t);
     drawHouse(t);
     drawMascot(t);
     drawRain();
@@ -1552,6 +1771,12 @@ function start(ctx) {
   // load once up front rather than when the wardrobe is first tapped.
   preloadImages(Object.fromEntries(OUTFITS.map(o => [o.id, o.card])), 0)
     .then(loaded => { if (alive) cards = loaded || {}; });
+
+  preloadImages(BABY_POSES, 0).then(loaded => {
+    if (!alive) return;
+    baby = loaded || {};
+    if (L) layout(canvas.clientWidth, canvas.clientHeight);
+  });
 
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
