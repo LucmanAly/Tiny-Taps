@@ -295,14 +295,40 @@ export function greet() {
 // The baby, tapped. Three quick rising blips with a little pitch jitter so
 // repeated taps are not identical — a happy babble rather than a literal
 // giggle, which oscillators cannot honestly manage.
+// Four shapes rather than one, picked at random and never twice in a row. A
+// baby noise repeated identically stops sounding like a baby within about
+// three plays; the shape is what varies, not just the pitch.
+const BABBLE_SHAPES = [
+  [0, 0.22, 0.44],        // rising, the original
+  [0, -0.16, -0.30],      // falling, a grumble
+  [0, 0.26, 0.04],        // up and back down, a question
+  [0, 0.10, 0.10, 0.32],  // four syllables, a little chatter
+];
+let lastBabble = -1;
+
 export function babble() {
   ensureCtx();
+  let pick = lastBabble;
+  while (pick === lastBabble) pick = (Math.random() * BABBLE_SHAPES.length) | 0;
+  lastBabble = pick;
+  const shape = BABBLE_SHAPES[pick];
   const base = 620 + Math.random() * 90;
-  [0, 1, 2].forEach(i => {
+  shape.forEach((step, i) => {
     const jitter = 0.94 + Math.random() * 0.12;
-    tone(base * (1 + i * 0.22) * jitter, i * 0.085, 0.14,
+    tone(base * (1 + step) * jitter, i * 0.085, 0.14,
       { type: 'triangle', vol: 0.15 - i * 0.015 });
   });
+}
+
+// Brighter and faster than babble: what she does when she is watching
+// something rather than asking for something.
+export function giggle() {
+  ensureCtx();
+  const base = 780 + Math.random() * 120;
+  for (let i = 0; i < 4; i++) {
+    tone(base * (1 + (i % 2) * 0.18), i * 0.062, 0.075,
+      { type: 'triangle', vol: 0.13 - i * 0.012 });
+  }
 }
 
 export function whoosh() {

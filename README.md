@@ -85,6 +85,41 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v4.0** — Play House becomes a place to play *in* rather than a panel of
+  buttons. A cold playthrough found eleven things to tap and no reason to tap
+  any of them, so the control inverts: the child's finger is now the third
+  character. Five toys lie on the grass and any of them can be picked up and
+  given away. Drop one on the baby and she takes it and **keeps** it — she is
+  still holding it after her brother has been to bed, changed clothes and
+  bounced on the trampoline. Drop one on the boy and he carries it; tap the cot
+  and he walks over, kneels and offers it to her. Drop one anywhere else and it
+  stays there. There is no wrong place to put a toy down.
+
+  She drifts content → wants-something → sleepy and signals it with her body,
+  reaching toward the toys or rubbing her eyes. Every gift is received warmly,
+  but answering what she was actually asking for is *more* than warm — the
+  blanket when she is sleepy tucks her in properly. When the child leaves the
+  boy alone for a few seconds while she wants something, he goes and does it
+  himself, so the game demonstrates the thing it is asking for.
+
+  The world widens to 1.42 screen-widths with two camera rest positions,
+  indoors and outdoors. There is no navigation control: the camera moves only
+  as a consequence of something the child just did. The cot sits at the
+  threshold, inside both rests, so the baby is always on screen. All positions
+  became fractions of world width, which also fixed a 6px playpen/trampoline
+  overlap on tablet.
+
+  Physicality pass: contact shadows under both children and every toy (a toy's
+  shadow shrinks as it lifts, so dragging reads as carrying); the jump drops
+  from 55% to 30% of body height with a landing puff, and he no longer stands
+  *through* the trampoline; his sister laughs at every bounce; and `babble()`
+  gains four different contours, never repeating back to back.
+
+  The ten "Play Together" illustrations are removed — the game now lets those
+  moments happen instead of showing pictures of them — which takes 5.4 MB out
+  of the install and, with it, the 1.43:1 cue-text contrast bug that overlay
+  carried.
+
 - **v3.7** — "Play Together" sibling moments: tapping the playpen now opens
   one of ten illustrated moments of brother and sister playing together —
   sharing a teddy bear, crawling face to face, a hug, a rattle, peekaboo

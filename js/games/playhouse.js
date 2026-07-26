@@ -1,15 +1,27 @@
 // Play House: an open-ended little world rather than a round-based game.
-// The child controls the weather and the time of day, and sends the mascot to
-// the bed, the wardrobe or the trampoline. Nothing can be answered wrongly.
+// Nothing here can be answered wrongly, and nothing keeps score.
 //
-// The world itself is entirely procedural: the house, furniture, trampoline,
-// sky, sun, moon, rain, wind and grass are all drawn on canvas, so the only
-// artwork this game costs is the mascot himself.
+// The organising idea, since v4.0: the child's finger is the third character.
+// Everything else in this world is a request the boy carries out on their
+// behalf — but a toy is a thing you pick up yourself and give to somebody. The
+// baby drifts through moods, signals them with her body, and *keeps* whatever
+// she is given. Giving is the verb, and the reason to give is that it visibly
+// changes how his little sister is.
 //
-// The mascot now has three outfits (winter / rain / summer), each with its own
-// stand, walk, jump and sleep poses. Tapping the wardrobe cycles them. Poses
-// are loaded per outfit rather than all at once, and the next outfit is
-// prefetched quietly in the background so a change never shows a gap.
+// The world is 1.42 screen-widths wide with two camera rest positions, indoors
+// and outdoors. The camera never moves because the child asked it to, only ever
+// as a consequence of something they just did — a toddler does not navigate.
+// The cot sits at the threshold, inside both rests, so the baby is always on
+// screen and never has to teleport between scenes.
+//
+// The scenery is entirely procedural: house, furniture, trampoline, sky, sun,
+// moon, rain, wind and grass are all drawn on canvas. Only the two children,
+// the toys and two props cost any artwork.
+//
+// The boy has three outfits (winter / rain / summer), each with its own stand,
+// walk, jump, sleep, carry and kneeling-offer poses. Poses load per outfit
+// rather than all at once, and the next outfit is prefetched quietly in the
+// background so a change never shows a gap.
 
 import { preloadImages } from '../engine/intro.js';
 
@@ -19,6 +31,25 @@ const CONFIG = {
   // Everything is a fraction: of canvas width (x), canvas height (y), or of
   // `unit` (= the smaller edge) for anything whose size should feel the same
   // in portrait and landscape.
+  // The world is wider than the screen and the camera rests in one of two
+  // places. Everything horizontal below is a fraction of WORLD width, not
+  // screen width — which is also what stops object spacing drifting against
+  // unit-based sizing, the bug that made the playpen and trampoline collide
+  // on tablet.
+  world: {
+    // 1.42 rather than a rounder 1.5+: the world is exactly as wide as it
+    // needs to be to hold the house, the cot, the bin, open grass and the
+    // trampoline without either rest showing a band of nothing. Any wider and
+    // the outdoor rest ends in empty sky.
+    scale: 1.42,                 // world width, in screen widths
+    camIndoor: 0.0,              // camera left edge, in screen widths
+    // Chosen so the cot (world 0.39, i.e. 0.55 screen-widths in) sits a
+    // comfortable 15% from the left edge and the house wall still shows as a
+    // sliver — the child can see the room he just came out of.
+    camOutdoor: 0.40,
+    easeMs: 500,
+  },
+
   layout: {
     // This world is landscape-only (see the rotate gate below): a phone held
     // upright cannot fit a house, a wardrobe and a playground side by side
@@ -30,17 +61,21 @@ const CONFIG = {
     groundLineYLandscape: 0.88,
     houseLeftPortrait: 0.03,
     houseRightPortrait: 0.52,
-    houseLeftLandscape: 0.035,
-    houseRightLandscape: 0.44,
+    houseLeftLandscape: 0.028,
+    houseRightLandscape: 0.310,
     houseHeightFrac: 0.52,       // of unit (portrait)
-    houseHeightFracLandscape: 0.62,
+    // Lowered from 0.62: with the roof peak on top the old value put the house
+    // through 77% of the canvas height for two pieces of furniture.
+    houseHeightFracLandscape: 0.56,
     roofPeakFrac: 0.15,          // of unit, above the wall top
     trampolineXPortrait: 0.855,
-    trampolineXLandscape: 0.80,
+    trampolineXLandscape: 0.860,
     trampolineWidthFrac: 0.23,   // of unit (portrait)
     trampolineWidthFracLandscape: 0.31,
+    // The sun is screen-anchored, not world-anchored: it is the day/night
+    // control, so it must stay reachable from either camera rest.
     sunXPortrait: 0.82, sunYPortrait: 0.13,
-    sunXLandscape: 0.84, sunYLandscape: 0.23,
+    sunXLandscape: 0.86, sunYLandscape: 0.20,
     sunRadiusFrac: 0.075,        // of unit
   },
 
@@ -49,7 +84,9 @@ const CONFIG = {
     heightFracLandscape: 0.40,
     minHeight: 104,
     maxHeight: 240,
-    walkSpeedFrac: 0.55,         // of canvas width per second
+    // Of WORLD width per second. Lowered from 0.55 when positions moved from
+    // screen fractions to world fractions, so his on-screen pace is unchanged.
+    walkSpeedFrac: 0.39,
     bobFrac: 0.03,               // of mascot height
     bobHz: 3.2,
     tiltDegrees: 2.4,
@@ -64,16 +101,50 @@ const CONFIG = {
   stations: {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
     playpenPortrait: 0.60, homePortrait: 0.60,
-    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80,
-    playpenLandscape: 0.47, homeLandscape: 0.47,
+    bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.788,
+    playpenLandscape: 0.500, homeLandscape: 0.480,
   },
 
   // The playpen sits on the one genuinely empty patch of grass, between the
   // house wall (ends ~0.45) and the trampoline (starts ~0.73).
   playpen: {
-    xPortrait: 0.62, xLandscape: 0.625,
-    widthFracPortrait: 0.20, widthFracLandscape: 0.145,   // of canvas width
+    // At the threshold, under the eave — inside the indoor rest AND inside the
+    // outdoor rest, so she is always on screen and never teleports.
+    xPortrait: 0.62, xLandscape: 0.387,
+    widthFracPortrait: 0.20, widthFracLandscape: 0.125,   // of WORLD width
     heightFrac: 0.17,                                      // of unit
+  },
+
+  // Toys are the one thing in this world the child moves directly, rather than
+  // by asking the boy to. They lie loose on the grass rather than inside the
+  // bin: a container is one more idea to understand, and spreading them along
+  // the open yard is what makes each one a finger-sized target instead of a
+  // 30px sliver of a shared shelf. The bin stays as the scenery that explains
+  // why they are all in one place.
+  toys: {
+    // The row starts clear of where the boy stands and ends clear of the
+    // trampoline: the first layout had him permanently covering the teddy.
+    rowStart: 0.535,           // world fraction of the leftmost toy
+    rowStep: 0.050,            // and the gap to the next
+    heightFrac: 0.105,         // of unit
+    binX: 0.610, binHeightFrac: 0.15,
+    // One bush only. The second sat between the cot and the toy row, which is
+    // exactly where the boy walks, and read as clutter rather than scenery.
+    bushLargeX: 0.962, bushLargeHeightFrac: 0.21,
+    // Drop leniency. Deliberately large: a toddler dragging with a whole
+    // fingertip is aiming at a person, not at a pixel.
+    snapBabyFrac: 0.24,        // of unit
+    snapBoyFrac: 0.19,
+    tapSlopFrac: 0.035,        // movement below this counts as a tap, not a drag
+    // Measured against the carry pose's hands, not guessed. 0.62 put the toy
+    // squarely over his face.
+    carryFrac: 0.46,           // height up the boy where a carried toy rides
+    giveMs: 900,               // kneeling, before the toy changes hands
+    givePoseScale: 0.84,       // the kneeling art is genuinely shorter
+    // How long the boy waits, doing nothing, before he goes and does it
+    // himself. Long enough that he never races the child to a toy, short
+    // enough that a child who has not worked out what to do gets shown.
+    modelDelayMs: 7000,
   },
 
   baby: {
@@ -84,9 +155,18 @@ const CONFIG = {
     sitMinMs: 6000, sitMaxMs: 10000,
     crawlMs: 2200,
     crawlRangeFrac: 0.26,      // of playpen width, either side of centre
+    // She drifts through moods and signals them with her body rather than with
+    // any kind of prompt. There is no timer she can lose and no wrong answer:
+    // a mood is a reason to give her something, never a demand.
+    contentMs: 14000,
+    wantsMs: 22000,
+    sleepyMs: 26000,
   },
 
-  jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
+  // heightFrac was 0.55 — more than half his own body above the mat, which
+  // reads as flight rather than as a bounce. A real toddler on a real
+  // trampoline clears a fraction of that.
+  jump: { count: 3, heightFrac: 0.30, durationMs: 620 },
   sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
   wardrobeOpenMs: 1500,
   outfitOpenAtFrac: 0.5,          // through the door-opening animation
@@ -96,21 +176,6 @@ const CONFIG = {
     cardGapFrac: 0.03,
     cardHeightFrac: 0.80,         // of canvas height
     scrimAlpha: 0.55,
-  },
-  // A "Play Together" moment: fades in, holds long enough to actually look
-  // at, fades out and clears itself — nothing to tap, nothing to get wrong.
-  moment: {
-    openMs: 320,
-    holdMs: 1900,
-    closeMs: 380,
-    // Much darker than the wardrobe picker's scrim: the world behind it
-    // includes the boy still finishing his walk toward the pen, and a
-    // half-see-through scrim let him (and the baby's own in-pen sprite) show
-    // through, doubling up oddly against the illustration of the same two
-    // characters. Near-opaque hides that completely.
-    scrimAlpha: 0.94,
-    maxWidthFrac: 0.55,           // of canvas width, contain-fit within this box
-    maxHeightFrac: 0.80,          // of canvas height
   },
   waveMs: 1400,
   magicMs: 1500,
@@ -198,6 +263,8 @@ const OUTFITS = [
       wave: 'assets/mascot_waving.PNG',
       magic: 'assets/mascot_magic.PNG',
       jump: 'assets/mascot_winter_jump.PNG',
+      carry: 'assets/mascot_winter_carry.PNG',
+      give: 'assets/mascot_winter_give.PNG',
       sleep: 'assets/mascot_winter_sleep.PNG',
     },
   },
@@ -208,6 +275,8 @@ const OUTFITS = [
       stand: 'assets/mascot_rain_stand.PNG',
       walk: 'assets/mascot_rain_walk.PNG',
       jump: 'assets/mascot_rain_jump.PNG',
+      carry: 'assets/mascot_rain_carry.PNG',
+      give: 'assets/mascot_rain_give.PNG',
       sleep: 'assets/mascot_rain_sleep.PNG',
     },
   },
@@ -218,6 +287,8 @@ const OUTFITS = [
       stand: 'assets/mascot_summer_stand.PNG',
       walk: 'assets/mascot_summer_walk.PNG',
       jump: 'assets/mascot_summer_jump.PNG',
+      carry: 'assets/mascot_summer_carry.PNG',
+      give: 'assets/mascot_summer_give.PNG',
       sleep: 'assets/mascot_summer_sleep.PNG',
     },
   },
@@ -233,30 +304,31 @@ const BABY_POSES = {
   happy: 'assets/baby_happy.PNG',
   crawl: 'assets/baby_crawl.PNG',
   sleep: 'assets/baby_sleep.PNG',
+  // From the second sheet: reactions rather than idle states.
+  reach: 'assets/baby_reach.PNG',
+  hugteddy: 'assets/baby_hugteddy.PNG',
+  sleepy: 'assets/baby_sleepy.PNG',
+  content: 'assets/baby_content.PNG',
 };
 
-/* ---------------- "Play Together" moments ----------------
-   Ten composite illustrations of the two of them playing, sliced from a 3x3
-   grid plus one standalone image. Unlike every other pose in this file, each
-   one shows both children together at a fixed relative pose — there is no
-   independent boy-sprite/baby-sprite positioning to be done, so these are
-   used whole, as a big illustrated moment that appears over the sandbox,
-   plays a sound and a one-word cue, and fades back on its own. Triggered by
-   tapping the playpen; cycled through in shuffled order so all ten are seen
-   before any repeats. */
+/* ---------------- toys and props ----------------
+   Five toys, each one a thing the child picks up with a finger and gives to
+   somebody. The word and the sound are what the giving *means* — they play
+   when a toy changes hands, never when it is merely touched, so the reward is
+   attached to the generous act rather than to the poking. */
 
-const MOMENTS = [
-  { id: 'teddy', file: 'assets/moment_teddy.PNG', cue: 'Share!', sound: a => a.gentleGift() },
-  { id: 'crawl', file: 'assets/moment_crawl.PNG', cue: 'Crawl!', sound: a => { a.footstep(); setTimeout(() => a.footstep(), 140); } },
-  { id: 'hug', file: 'assets/moment_hug.PNG', cue: 'Cuddle!', sound: a => a.chime() },
-  { id: 'rattle', file: 'assets/moment_rattle.PNG', cue: 'Shake!', sound: a => a.rattleShake() },
-  { id: 'peekaboo', file: 'assets/moment_peekaboo.PNG', cue: 'Peekaboo!', sound: a => { a.pop(); setTimeout(() => a.chime(), 160); } },
-  { id: 'clap', file: 'assets/moment_clap.PNG', cue: 'Clap!', sound: a => a.clapClap() },
-  { id: 'duck', file: 'assets/moment_duck.PNG', cue: 'Duck!', sound: a => a.quack() },
-  { id: 'bubbles', file: 'assets/moment_bubbles.PNG', cue: 'Bubbles!', sound: a => a.shimmer(783.99) },
-  { id: 'ride', file: 'assets/moment_ride.PNG', cue: 'Ride!', sound: a => a.whoosh() },
-  { id: 'lift', file: 'assets/moment_lift.PNG', cue: 'Up!', sound: a => { a.boing(); setTimeout(() => a.chime(), 180); } },
+const TOYS = [
+  { id: 'teddy', file: 'assets/toy_teddy.PNG', word: 'Teddy!', sound: a => a.gentleGift() },
+  { id: 'ball', file: 'assets/toy_ball.PNG', word: 'Ball!', sound: a => a.boing() },
+  { id: 'duck', file: 'assets/toy_duck.PNG', word: 'Duck!', sound: a => a.quack() },
+  { id: 'rattle', file: 'assets/toy_rattle.PNG', word: 'Rattle!', sound: a => a.rattleShake() },
+  { id: 'blanket', file: 'assets/toy_blanket.PNG', word: 'Cosy!', sound: a => a.chime() },
 ];
+
+const PROPS = {
+  bin: 'assets/prop_bin_open.PNG',
+  bushLarge: 'assets/prop_bush_large.PNG',
+};
 
 function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
@@ -288,17 +360,36 @@ function start(ctx) {
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
   let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
+  let camX = 0;                   // camera left edge, world pixels
+  let camTarget = 0;              // where it is easing to
+  let camFrom = 0;                // where the current ease started
+  let camAt = 0;                  // when the current ease started (0 = settled)
   let baby = {};                  // pose id -> image, empty until loaded
   let babyPose = 'sit';           // sit | crawl | happy  (sleep is derived from night)
   let babyUntil = 0;              // when the current baby pose gives way
   let babyX = 0.5;                // position across the pen, 0..1
   let babyTargetX = 0.5;
   let babyFacing = 1;
+  let mood = 'content';           // content | wants | sleepy
+  let moodAt = 0;                 // when it next drifts (0 = not yet scheduled)
+  let tucked = false;             // she has her blanket and has settled down
+  let idleSince = 0;              // how long the boy has had nothing to do
+  let modelling = false;          // ...and is now fetching something himself
+  let bounceIndex = -1;           // which bounce of the current jump he is on
+  let landedAt = 0;               // when he last hit the mat, for the puff
+  // Toys. `owner` is the whole model: 'ground' (lying where it was left),
+  // 'boy' (being carried), 'baby' (hers, and she keeps it), or 'hand' (under
+  // the child's finger right now). x is a world fraction; lift is how far off
+  // the ground it currently is, in pixels.
+  let toyImages = {};
+  let props = {};
+  let toys = [];
+  let drag = null;                // { toy, grabX, grabY, moved } while a finger is down
+  let held = null;                // the toy the boy is carrying, or null
+  let fetchToy = null;            // the toy he is walking over to pick up
+  let giveAt = 0;                 // when the kneeling offer completes (0 = none)
   let picker = null;              // { openedAt } while the child is choosing
   let cards = {};                 // outfit id -> garment image (or missing)
-  let moments = {};                // moment id -> illustration (or missing)
-  let momentBag = [];              // shuffled ids still to show before a repeat
-  let moment = null;                // { id, openedAt } while a moment is on screen
   let stepAt = 0;                 // next footstep sound
 
   let drops = [];
@@ -330,9 +421,12 @@ function start(ctx) {
     const cfg = CONFIG.layout;
     const unit = Math.min(w, h);
     const portrait = h >= w;
+    // In portrait the rotate gate covers the screen, so the world collapses to
+    // one screen width and the camera is irrelevant.
+    const worldW = portrait ? w : w * CONFIG.world.scale;
     const groundY = h * (portrait ? cfg.groundLineYPortrait : cfg.groundLineYLandscape);
-    const houseLeft = w * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
-    const houseRight = w * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
+    const houseLeft = worldW * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
+    const houseRight = worldW * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
     const houseH = unit * (portrait ? cfg.houseHeightFrac : cfg.houseHeightFracLandscape);
     const wallTop = groundY - houseH;
     const roofPeak = wallTop - unit * cfg.roofPeakFrac;
@@ -350,17 +444,18 @@ function start(ctx) {
     }
 
     const tramW = unit * (portrait ? cfg.trampolineWidthFrac : cfg.trampolineWidthFracLandscape);
-    const tramX = w * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
+    const tramX = worldW * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
 
     L = {
-      w, h, unit, portrait,
+      w, h, unit, portrait, worldW,
+      maxCam: Math.max(0, worldW - w),
       horizonY: h * (portrait ? cfg.horizonYPortrait : cfg.horizonYLandscape),
       groundY,
       houseLeft, houseRight, wallTop, roofPeak,
       houseMidX: (houseLeft + houseRight) / 2,
       mascotH, mascotW: mascotH * aspect,
       tramX, tramW, tramH: tramW * 0.62,
-      sunX: w * (portrait ? cfg.sunXPortrait : cfg.sunXLandscape),
+      sunX: w * (portrait ? cfg.sunXPortrait : cfg.sunXLandscape),   // screen space
       sunY: h * (portrait ? cfg.sunYPortrait : cfg.sunYLandscape),
       sunR: unit * cfg.sunRadiusFrac,
       station: {
@@ -386,18 +481,41 @@ function start(ctx) {
     };
     L.tram = { x: tramX - L.tramW / 2, y: groundY - L.tramH, w: L.tramW, h: L.tramH };
 
-    const penW = w * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
+    const penW = worldW * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
     const penH = unit * CONFIG.playpen.heightFrac;
-    const penCx = w * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
+    const penCx = worldW * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
     L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
     L.babyH = mascotH * CONFIG.baby.heightFrac;
+
+    const tcfg = CONFIG.toys;
+    L.toyH = unit * tcfg.heightFrac;
+    L.binH = unit * tcfg.binHeightFrac;
+    L.binX = worldW * tcfg.binX;
+    L.bushes = [
+      { key: 'bushLarge', x: worldW * tcfg.bushLargeX, h: unit * tcfg.bushLargeHeightFrac },
+    ];
+    // Seeded once, then left alone: a resize must never sweep toys the child
+    // has already given away back into their opening row.
+    if (!toys.length) {
+      toys = TOYS.map((t, i) => ({
+        id: t.id, owner: 'ground', lift: 0,
+        x: tcfg.rowStart + i * tcfg.rowStep,
+      }));
+    }
 
     // Open beside the playpen rather than at a hard-coded fraction, which
     // otherwise leaves him standing inside it.
     if (!placed) {
       mascotX = targetX = L.station.home;
+      // Open on the outdoor rest: that is where the yard, the cot and the
+      // trampoline are, and where he starts.
+      camX = camTarget = camRest('outdoor');
       placed = true;
     }
+    // Re-clamp after a resize, so a rotation can never leave the camera
+    // outside the new world bounds.
+    camX = Math.min(camX, L.maxCam);
+    camTarget = Math.min(camTarget, L.maxCam);
 
     // Roof geometry, shared by the drawing and by roofYAt().
     L.wallT = Math.max(5, unit * 0.022);
@@ -441,16 +559,50 @@ function start(ctx) {
     return lerp(L.roofPeak, L.eaveY, clamp01(d));
   }
 
-  /* ---- interactions ---- */
-  // speech.speak() is a permanent no-op app-wide (how every other game's
-  // descriptive narration was silenced); speech.speakWord() is the one real
-  // channel, reserved for essential single-word cues. Weather words and these
-  // moment cues are exactly that, so this calls the real one.
+  /* ---- camera ----
+     Two rest positions, and no control the child has to learn: the camera
+     moves because of what they just did, never because they asked it to.
+     A toddler does not navigate, so nothing here is a door or a swipe. */
+
+  function camRest(which) {
+    if (L.portrait) return 0;
+    const c = CONFIG.world;
+    return Math.min(L.maxCam, (which === 'indoor' ? c.camIndoor : c.camOutdoor) * L.w);
+  }
+
+  function lookAt(which) {
+    const to = camRest(which);
+    if (Math.abs(to - camTarget) < 1) return;
+    camFrom = camX;
+    camTarget = to;
+    camAt = now();
+  }
+
+  // Which rest a world x belongs to, so an interaction can pull the camera
+  // toward whatever it just touched.
+  function restFor(worldX) {
+    return worldX < L.houseRight + (L.pen ? L.pen.w : 0) ? 'indoor' : 'outdoor';
+  }
+
+  function updateCamera(t) {
+    if (!camAt) { camX = camTarget; return; }
+    const p = clamp01((t - camAt) / CONFIG.world.easeMs);
+    camX = camFrom + (camTarget - camFrom) * easeInOutCubic(p);
+    if (p >= 1) { camX = camTarget; camAt = 0; }
+  }
+
+  // speech.speak() is a permanent no-op app-wide (it is how every other game's
+  // descriptive narration was silenced); speakWord() is the one real channel,
+  // reserved for essential single-word cues. A weather word and the name of a
+  // toy changing hands are exactly that, so this calls the real one.
   function say(word) { speech.speakWord(word, { interrupt: true }); }
+
+  const WALK_MIN = 0.06, WALK_MAX = 0.94;
 
   function walkTo(frac, then) {
     openPickerAt = 0;            // any pending wardrobe opening is abandoned
-    targetX = frac;
+    giveAt = 0;                  // and any offer that had not yet completed
+    targetX = Math.max(WALK_MIN, Math.min(WALK_MAX, frac));
     pending = then || null;
     if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
     facing = targetX > mascotX ? 1 : -1;
@@ -466,6 +618,20 @@ function start(ctx) {
     activityStart = now();
     if (next === 'sleeping') zzz = [];
     if (next === 'jumping') audio.boing();
+    if (next === 'pickup') {
+      activity = 'idle';
+      if (fetchToy) { boyTakes(fetchToy); fetchToy = null; }
+      // Fetching it was only half of what he set out to do.
+      if (modelling) { modelling = false; giveHeldToBaby(); return; }
+    }
+    // Kneeling to offer it. The toy changes hands partway through, not on
+    // arrival, so the child sees the offer before the taking. He turns to face
+    // her first: walking there set his facing from the direction of travel,
+    // which had him kneeling and holding the toy out into empty grass.
+    if (next === 'giving') {
+      giveAt = activityStart + CONFIG.toys.giveMs * 0.55;
+      facing = (L.pen.x + L.pen.w / 2) < mascotX * L.worldW ? -1 : 1;
+    }
     if (next === 'wardrobe') {
       audio.pop();
       // Change once the doors have swung most of the way open, so the new
@@ -613,8 +779,36 @@ function start(ctx) {
 
   /* ---- the baby ---- */
 
+  // Her arms come up as a toy nears her — proximity, not a trigger. It is the
+  // only feedback in the game that happens *during* a gesture rather than
+  // after it, and it is what tells a child mid-drag that this is going to work.
+  function babyReaching() {
+    if (!drag || night || !L.pen) return false;
+    const a = toyAnchor(drag.toy);
+    const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+    const cy = L.pen.y + L.pen.h * 0.55;
+    return Math.hypot(a.x - cx, a.y - cy) <= L.unit * CONFIG.toys.snapBabyFrac * 1.7;
+  }
+
   function babyImage() {
+    if (tucked && babyPose !== 'happy') return baby.sleep || baby.sleepy || baby.sit || null;
     if (night && babyPose !== 'happy') return baby.sleep || baby.sit || null;
+    if (babyReaching() && baby.reach) return baby.reach;
+    // A mood is worn, not announced. Wanting is a reach toward the toys;
+    // sleepy is rubbing her eyes. Neither is a prompt and neither expires.
+    if (babyPose !== 'happy' && babyPose !== 'crawl') {
+      if (mood === 'wants' && baby.reach) return baby.reach;
+      if (mood === 'sleepy' && baby.sleepy) return baby.sleepy;
+    }
+    // What she has been given changes how she sits. The teddy has its own
+    // hugging pose, and anything else settles her into the content one — so a
+    // gift visibly leaves her different from how she was before it, which is
+    // the entire reward for giving.
+    if (babyPose === 'sit' && toys.length) {
+      const owned = babyToys();
+      if (owned.some(t => t.id === 'teddy') && baby.hugteddy) return baby.hugteddy;
+      if (owned.length && baby.content) return baby.content;
+    }
     return baby[babyPose] || baby.sit || null;
   }
 
@@ -626,36 +820,196 @@ function start(ctx) {
     audio.babble();
   }
 
-  /* ---- "Play Together" moments ---- */
+  /* ---- toys ----
+     The one part of this world the child's finger touches directly. Everything
+     else is a request the boy carries out; a toy is a thing you actually pick
+     up and hand to somebody. That is the whole point: the finger becomes the
+     third character, and giving is the verb. */
 
-  // A shuffle bag rather than plain random: guarantees every one of the ten
-  // is seen once before any of them repeats, instead of the same handful
-  // showing up again and again by chance.
-  function nextMomentId() {
-    if (!momentBag.length) {
-      momentBag = MOMENTS.map(m => m.id);
-      for (let i = momentBag.length - 1; i > 0; i--) {
-        const j = (Math.random() * (i + 1)) | 0;
-        [momentBag[i], momentBag[j]] = [momentBag[j], momentBag[i]];
-      }
-    }
-    return momentBag.pop();
+  const toyEntry = id => TOYS.find(t => t.id === id);
+  const babyToys = () => toys.filter(t => t.owner === 'baby');
+
+  function toySize(toy) {
+    const img = toyImages[toy.id];
+    const h = L.toyH;
+    const w = img && img.naturalHeight ? h * (img.naturalWidth / img.naturalHeight) : h;
+    return { w, h };
   }
 
-  // Opens immediately on the pen tap, rather than waiting for the walk-over
-  // to finish: the illustration already shows the two of them together up
-  // close, so waiting would just mean he visibly walks over in the
-  // background while a static picture of the same thing plays in front.
-  function showMoment() {
-    const id = nextMomentId();
-    const entry = MOMENTS.find(m => m.id === id);
-    moment = { id, openedAt: now() };
-    entry.sound(audio);
-    say(entry.cue);
+  // Centre of a toy in world pixels, derived from whoever owns it rather than
+  // stored — so a toy she is holding follows her when she crawls, and one he
+  // is carrying follows him when he walks, with no bookkeeping either side.
+  function toyAnchor(toy) {
+    const s = toySize(toy);
+    if (toy.owner === 'boy') {
+      return {
+        x: mascotX * L.worldW + facing * L.mascotW * 0.12,
+        y: L.groundY - L.mascotH * CONFIG.toys.carryFrac,
+      };
+    }
+    if (toy.owner === 'baby') {
+      // Fanned along the mat in front of her, so a second and third gift are
+      // visibly still there rather than replacing the first.
+      const owned = babyToys();
+      const i = Math.max(0, owned.indexOf(toy));
+      const n = Math.max(1, owned.length);
+      const step = Math.min(s.w * 0.9, (L.pen.w * 0.62) / n);
+      const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+      return { x: cx + (i - (n - 1) / 2) * step, y: L.pen.y + L.pen.h * 0.86 - s.h / 2 };
+    }
+    return { x: toy.x * L.worldW, y: L.groundY - s.h / 2 - toy.lift };
+  }
+
+  // Generously padded, and hers are excluded on purpose: once a toy has been
+  // given away it is the baby's, and taking it back is not a move this game
+  // offers.
+  function hitToy(px, py) {
+    const pad = L.unit * 0.045;
+    let best = null, bestD = Infinity;
+    for (const toy of toys) {
+      if (toy.owner === 'baby') continue;
+      const a = toyAnchor(toy), s = toySize(toy);
+      if (px < a.x - s.w / 2 - pad || px > a.x + s.w / 2 + pad) continue;
+      if (py < a.y - s.h / 2 - pad || py > a.y + s.h / 2 + pad) continue;
+      const d = Math.hypot(px - a.x, py - a.y);
+      if (d < bestD) { bestD = d; best = toy; }
+    }
+    return best;
+  }
+
+  function babyTakes(toy) {
+    toy.owner = 'baby';
+    toy.lift = 0;
+    const entry = toyEntry(toy.id);
+    if (entry) { entry.sound(audio); say(entry.word); }
+
+    // Everything is received warmly — there is no wrong gift. But answering
+    // what she was actually asking for is *more* than warm, and that gap
+    // between fine and wonderful is the whole motivation engine.
+    const answered = mood === 'sleepy' ? toy.id === 'blanket' : mood === 'wants';
+    if (mood === 'sleepy' && toy.id === 'blanket') {
+      // The blanket is why sleepy exists as a mood at all: without it, sleepy
+      // would be a want with no possible response. Covering her up is also the
+      // most genuinely big-brotherly thing on offer here.
+      tucked = true;
+    } else {
+      tucked = false;
+      babyPose = 'happy';
+      babyUntil = now() + CONFIG.baby.happyMs;
+    }
+    if (answered) setTimeout(() => { if (alive) audio.chime(); }, 260);
+    mood = 'content';
+    moodAt = now() + CONFIG.baby.contentMs;
+  }
+
+  // Content for a while, then wanting something, then sleepy. Nothing here is
+  // a countdown: a mood she is left in simply carries on, and the world stays
+  // exactly as safe as it was.
+  function updateMood(t) {
+    if (night) { moodAt = 0; return; }        // moods resume in the morning
+    if (!moodAt) { moodAt = t + CONFIG.baby.contentMs; return; }
+    if (t < moodAt) return;
+    const cfg = CONFIG.baby;
+    if (mood === 'content') {
+      mood = 'wants';
+      moodAt = t + cfg.wantsMs;
+      audio.babble();
+    } else if (mood === 'wants') {
+      mood = 'sleepy';
+      moodAt = t + cfg.sleepyMs;
+    } else {
+      // Nobody answered, and that is allowed. She perks up again by herself.
+      mood = 'content';
+      tucked = false;
+      moodAt = t + cfg.contentMs;
+    }
+  }
+
+  // Demonstration, then the chance to imitate — which is how a toddler learns
+  // anything. When the child has left him alone long enough and his sister
+  // wants something, he goes and does it himself, through exactly the same
+  // code path a tap would have used.
+  function maybeModel(t) {
+    const busy = activity !== 'idle' || held || drag || picker
+      || night || fetchToy || L.portrait;
+    if (busy || mood === 'content') { if (busy) idleSince = 0; return; }
+    if (!idleSince) { idleSince = t; return; }
+    if (t - idleSince < CONFIG.toys.modelDelayMs) return;
+    idleSince = t;                            // re-arm either way
+    // Sleepy has one right answer; wanting has five.
+    const loose = toys.filter(x => x.owner === 'ground');
+    if (!loose.length) return;
+    const toy = (mood === 'sleepy' && loose.find(x => x.id === 'blanket')) || loose[0];
+    modelling = true;
+    tapToy(toy);
+  }
+
+  function boyTakes(toy) {
+    // He has one pair of hands. Whatever he was already carrying goes down
+    // where he stands rather than silently vanishing.
+    if (held && held !== toy) {
+      held.owner = 'ground';
+      held.lift = 0;
+      held.x = clamp01(mascotX + 0.02);
+    }
+    toy.owner = 'boy';
+    toy.lift = 0;
+    held = toy;
+    audio.pop();
+  }
+
+  function dropToy(toy) {
+    const cfg = CONFIG.toys;
+    const a = toyAnchor(toy);          // measured before it settles
+    toy.owner = 'ground';
+    toy.lift = 0;
+
+    const babyPt = {
+      x: L.pen.x + L.pen.w * (0.16 + babyX * 0.68),
+      y: L.pen.y + L.pen.h * 0.55,
+    };
+    if (Math.hypot(a.x - babyPt.x, a.y - babyPt.y) <= L.unit * cfg.snapBabyFrac) {
+      babyTakes(toy);
+      return;
+    }
+    if (activity !== 'sleeping') {
+      const boyPt = { x: mascotX * L.worldW, y: L.groundY - L.mascotH * 0.5 };
+      if (Math.hypot(a.x - boyPt.x, a.y - boyPt.y) <= L.unit * cfg.snapBoyFrac) {
+        boyTakes(toy);
+        return;
+      }
+    }
+    // Anywhere else it simply stays where it was put. There is no wrong place.
+    toy.x = Math.max(0.02, Math.min(0.98, a.x / L.worldW));
+    audio.pop();
+  }
+
+  // A tap rather than a drag: the boy goes and fetches it, which is the same
+  // journey the child could have made with a finger and teaches that the two
+  // are interchangeable.
+  function tapToy(toy) {
+    if (toy.owner === 'boy') { giveHeldToBaby(); return; }
+    toy.owner = 'ground';
+    toy.lift = 0;
+    fetchToy = toy;
+    lookAt(restFor(toy.x * L.worldW));
+    walkTo(toy.x, 'pickup');
+  }
+
+  function giveHeldToBaby() {
+    if (!held) return;
+    lookAt(restFor(L.station.playpen * L.worldW));
+    walkTo(L.station.playpen, 'giving');
   }
 
   function updateBaby(dt, t) {
     if (night && babyPose !== 'happy') return;      // asleep: no wandering
+    // While she is signalling something, she stays put and signals it. Idle
+    // wandering on top of a mood pose just made the mood unreadable.
+    if ((mood !== 'content' || tucked) && babyPose !== 'happy') {
+      if (babyPose === 'crawl') babyPose = 'sit';
+      return;
+    }
     if (t < babyUntil) {
       if (babyPose === 'crawl') {
         const speed = dt * 0.32;
@@ -695,7 +1049,7 @@ function start(ctx) {
     say(night ? 'Night time!' : 'Morning!');
   }
 
-  function hit(px, py) {
+  function hit(px, py, sx) {
     // Furniture is tested before the mascot, and deliberately so: he stands in
     // front of whatever he has walked to, and checking him first meant that
     // tapping the wardrobe he was standing at only ever got you a wave. The
@@ -706,7 +1060,7 @@ function start(ctx) {
     const pad = L.unit * 0.05;
     const inBox = (b) => px >= b.x - pad && px <= b.x + b.w + pad
                       && py >= b.y - pad && py <= b.y + b.h + pad;
-    if (Math.hypot(px - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
+    if (Math.hypot(sx - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
     if (inBox(L.bed)) return 'bed';
     if (inBox(L.wardrobe)) return 'wardrobe';
     // The trampoline is short, so it also claims the space above its mat —
@@ -731,9 +1085,14 @@ function start(ctx) {
     // Re-asserting the bed here covers a weather change made while the context
     // was still suspended, which would otherwise stay silent forever.
     if (audio.tryResume()) applyWeatherBed();
+    // The child acting is always the point. Anything he was about to do off
+    // his own bat waits until they have gone quiet again.
+    idleSince = 0;
+    modelling = false;
 
     const r = canvas.getBoundingClientRect();
-    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const sx = e.clientX - r.left, py = e.clientY - r.top;
+    const px = sx + camX;          // world space; sx stays screen space
 
     // While the wardrobe is open it takes every tap: a card is a choice,
     // anywhere else closes without changing anything. Nothing in the world
@@ -745,10 +1104,6 @@ function start(ctx) {
       return;
     }
 
-    // A moment is a beat to watch, not a choice to make — it clears itself,
-    // and nothing else can trigger underneath it while it's showing.
-    if (moment) return;
-
     // Asleep, every tap simply wakes him. A child who wants him up should not
     // have to find him under the covers to do it.
     if (activity === 'sleeping') {
@@ -757,18 +1112,35 @@ function start(ctx) {
       return;
     }
 
-    switch (hit(px, py)) {
+    // Toys are tested before everything else, and are the only thing here that
+    // can begin a drag. A toy lying at the boy's feet must belong to the
+    // finger, not to the furniture behind it.
+    const grabbed = hitToy(px, py);
+    if (grabbed) {
+      const a = toyAnchor(grabbed);
+      const wasHeld = grabbed === held;
+      if (wasHeld) held = null;
+      fetchToy = null;
+      grabbed.owner = 'hand';
+      drag = { toy: grabbed, ox: px, oy: py, dx: a.x - px, dy: a.y - py, moved: false, wasHeld };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not fatal */ }
+      return;
+    }
+
+    switch (hit(px, py, sx)) {
       case 'sun': toggleNight(); break;
       case 'sky': cycleWeather(); break;
-      case 'bed': walkTo(L.station.bed, 'sleeping'); break;
-      case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
-      case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
+      case 'bed': lookAt('indoor'); walkTo(L.station.bed, 'sleeping'); break;
+      case 'wardrobe': lookAt('indoor'); walkTo(L.station.wardrobe, 'wardrobe'); break;
+      case 'trampoline': lookAt('outdoor'); walkTo(L.station.trampoline, 'jumping'); break;
       case 'playpen':
-        // The baby reacts straight away; her brother comes over to join in,
-        // and the moment overlay opens immediately alongside both.
+        // The cot straddles the threshold, so looking at it works from either
+        // side; keep whichever rest the child is already in.
+        // Carrying something turns the tap into an errand: this is the second
+        // route to giving, for a child who would rather point than drag.
+        if (held) { giveHeldToBaby(); break; }
         delightBaby();
         walkTo(L.station.playpen, 'waving');
-        showMoment();
         break;
       case 'mascot':
         // The winter set includes the wand pose used by the opening sequence.
@@ -785,10 +1157,53 @@ function start(ctx) {
         audio.chime();
         break;
       default:
-        walkTo(L.station.home);       // tapping open ground brings him outside
+        // Tapping open ground brings him there, and the camera follows to
+        // whichever half of the world was touched.
+        lookAt(restFor(px));
+        walkTo(clamp01(px / L.worldW));
     }
   }
+  function onPointerMove(e) {
+    if (!drag || !L) return;
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, py = e.clientY - r.top;
+    const px = sx + camX;
+    if (!drag.moved
+        && Math.hypot(px - drag.ox, py - drag.oy) > L.unit * CONFIG.toys.tapSlopFrac) {
+      drag.moved = true;
+    }
+    const s = toySize(drag.toy);
+    drag.toy.x = (px + drag.dx) / L.worldW;
+    drag.toy.lift = Math.max(0, L.groundY - (py + drag.dy) - s.h / 2);
+    // Carrying a toy toward an edge of the screen brings the rest of the world
+    // into view — the one time the camera moves during a gesture rather than
+    // after it, because otherwise a toy can be dragged somewhere unreachable.
+    // Only at the genuine edge. An earlier 16% trigger fired while the child
+    // was dragging toward the cot, which is already on screen near the left of
+    // the outdoor rest — so aiming at the baby scrolled the baby away.
+    if (sx < L.w * 0.06) lookAt('indoor');
+    else if (sx > L.w * 0.94) lookAt('outdoor');
+  }
+
+  function onPointerUp() {
+    if (!drag) return;
+    const { toy, moved, wasHeld } = drag;
+    drag = null;
+    if (moved) { dropToy(toy); return; }
+    // A tap, not a drag. Tapping what he is already carrying is the request to
+    // hand it over; tapping a toy on the grass sends him to fetch it.
+    toy.lift = 0;
+    if (wasHeld) { toy.owner = 'boy'; held = toy; giveHeldToBaby(); }
+    else { toy.owner = 'ground'; tapToy(toy); }
+  }
+
   canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  // A cancelled pointer (a phone call, a second finger, the browser taking
+  // over) must still put the toy down. Losing one mid-air would leave it
+  // hovering forever with nothing able to grab it.
+  canvas.addEventListener('pointercancel', onPointerUp);
 
   /* ---- update ---- */
   function update(dt, t) {
@@ -804,7 +1219,10 @@ function start(ctx) {
       }
     }
 
+    updateCamera(t);
+    updateMood(t);
     updateBaby(dt, t);
+    maybeModel(t);
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
@@ -816,8 +1234,33 @@ function start(ctx) {
       if (openPickerAt && t >= openPickerAt) { openPickerAt = 0; openPicker(); }
       if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
     }
+    // Each landing gets its own boing, its own puff, and — the point of the
+    // whole trampoline — a laugh from his sister. This reframes bouncing from
+    // "a thing to make him do" into "how you make her laugh".
+    if (activity === 'jumping') {
+      const n = Math.floor((t - activityStart) / CONFIG.jump.durationMs);
+      if (n !== bounceIndex) {
+        bounceIndex = n;
+        landedAt = t;
+        if (n > 0) audio.boing();
+        if (!night) {
+          babyPose = 'happy';
+          babyUntil = t + CONFIG.baby.happyMs;
+          babyFacing = 1;                 // she turns to watch him
+          audio.giggle();
+        }
+      }
+    }
     if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
       activity = 'idle';
+      bounceIndex = -1;
+    }
+    if (activity === 'giving') {
+      if (giveAt && t >= giveAt) {
+        giveAt = 0;
+        if (held) { const toy = held; held = null; babyTakes(toy); }
+      }
+      if (t - activityStart > CONFIG.toys.giveMs) activity = 'idle';
     }
 
     // Clouds drift; wind pushes them along.
@@ -830,7 +1273,7 @@ function start(ctx) {
     // Rain
     if (weather === 'rainy') {
       while (drops.length < CONFIG.weather.rainDrops) {
-        drops.push({ x: Math.random() * L.w, y: Math.random() * -L.h, v: 0.8 + Math.random() * 0.5 });
+        drops.push({ x: Math.random() * L.worldW, y: Math.random() * -L.h, v: 0.8 + Math.random() * 0.5 });
       }
       const fall = CONFIG.weather.rainSpeedFrac * L.h * dt;
       for (const d of drops) {
@@ -839,7 +1282,7 @@ function start(ctx) {
         const roof = roofYAt(d.x);
         if (d.y >= Math.min(roof, L.groundY)) {
           d.y = Math.random() * -L.h * 0.4;
-          d.x = Math.random() * L.w;
+          d.x = Math.random() * L.worldW;
         }
       }
     } else if (drops.length) {
@@ -850,7 +1293,7 @@ function start(ctx) {
     if (weather === 'snowy') {
       while (flakes.length < CONFIG.weather.snowFlakes) {
         flakes.push({
-          x: Math.random() * L.w, y: Math.random() * -L.h,
+          x: Math.random() * L.worldW, y: Math.random() * -L.h,
           v: 0.6 + Math.random() * 0.8,
           r: L.unit * (0.004 + Math.random() * 0.007),
           wob: Math.random() * Math.PI * 2,
@@ -860,12 +1303,12 @@ function start(ctx) {
       for (const f of flakes) {
         f.y += fall * f.v;
         f.wob += dt * 1.4;
-        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.w * dt;
+        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.worldW * dt;
         // Like rain, snow stops at the roof rather than falling through it.
         const roof = roofYAt(f.x);
         if (f.y >= Math.min(roof, L.groundY)) {
           f.y = Math.random() * -L.h * 0.3;
-          f.x = Math.random() * L.w;
+          f.x = Math.random() * L.worldW;
         }
       }
       snowDepth = Math.min(1, snowDepth + dt * 1000 / CONFIG.weather.snowSettleMs);
@@ -922,7 +1365,7 @@ function start(ctx) {
     grad.addColorStop(0, top);
     grad.addColorStop(1, bottom);
     g.fillStyle = grad;
-    g.fillRect(0, 0, L.w, L.horizonY + 1);
+    g.fillRect(0, 0, L.worldW, L.horizonY + 1);
 
     if (night) {
       for (const s of stars) {
@@ -930,12 +1373,13 @@ function start(ctx) {
         g.globalAlpha = a;
         g.fillStyle = CONFIG.colors.star;
         g.beginPath();
-        g.arc(s.x * L.w, s.y * L.horizonY, s.r, 0, Math.PI * 2);
+        g.arc(s.x * L.worldW, s.y * L.horizonY, s.r, 0, Math.PI * 2);
         g.fill();
       }
       g.globalAlpha = 1;
     }
-    drawSunOrMoon(t);
+    // The sun/moon is drawn later, in screen space, so it stays reachable
+    // from either camera rest.
     for (const c of clouds) drawCloud(c);
   }
 
@@ -1000,7 +1444,7 @@ function start(ctx) {
   }
 
   function drawCloud(c) {
-    const x = c.x * L.w, y = c.y * L.horizonY, s = c.s * L.unit * 0.07;
+    const x = c.x * L.worldW, y = c.y * L.horizonY, s = c.s * L.unit * 0.07;
     g.fillStyle = night ? CONFIG.colors.cloudNight : CONFIG.colors.cloudDay;
     g.globalAlpha = weather === 'rainy' ? 0.95 : 0.85;
     g.beginPath();
@@ -1014,13 +1458,13 @@ function start(ctx) {
 
   function drawGround() {
     g.fillStyle = night ? CONFIG.colors.grassNight : CONFIG.colors.grassDay;
-    g.fillRect(0, L.horizonY, L.w, L.h - L.horizonY);
+    g.fillRect(0, L.horizonY, L.worldW, L.h - L.horizonY);
     // A soft band of lighter grass at the horizon gives the ground some depth.
     const grad = g.createLinearGradient(0, L.horizonY, 0, L.groundY);
     grad.addColorStop(0, night ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.28)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
-    g.fillRect(0, L.horizonY, L.w, L.groundY - L.horizonY);
+    g.fillRect(0, L.horizonY, L.worldW, L.groundY - L.horizonY);
     drawSnowOnGround();
   }
 
@@ -1041,11 +1485,11 @@ function start(ctx) {
     g.lineTo(0, topY);
     const bumps = 7;
     for (let i = 0; i <= bumps; i++) {
-      const x = (i / bumps) * L.w;
+      const x = (i / bumps) * L.worldW;
       const wave = Math.sin(i * 1.7) * L.unit * 0.012 * snowDepth;
       g.lineTo(x, topY + wave);
     }
-    g.lineTo(L.w, L.h);
+    g.lineTo(L.worldW, L.h);
     g.closePath();
     g.fill();
     g.restore();
@@ -1512,6 +1956,7 @@ function start(ctx) {
     let y = pen.y + pen.h * 0.92;
     if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * drawH * 0.03;
 
+    contactShadow(x, pen.y + pen.h * 0.92, drawW * 0.72, 0.16);
     g.save();
     g.translate(x, y);
     if (babyFacing < 0) g.scale(-1, 1);
@@ -1519,6 +1964,83 @@ function start(ctx) {
     g.restore();
 
     if (asleep) drawBabyZzz(t, x, y - drawH);
+  }
+
+  /* ---- toys and the props around them ---- */
+
+  // A soft ellipse under anything standing on the grass. Cheap, and the single
+  // biggest thing separating a sprite that sits in the world from one that
+  // floats above a photograph of it.
+  function contactShadow(x, y, w, alpha) {
+    g.save();
+    g.globalAlpha = alpha;
+    g.fillStyle = night ? '#1c2b3a' : '#4e7a4e';
+    g.beginPath();
+    g.ellipse(x, y, w * 0.5, w * 0.16, 0, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+  }
+
+  function drawProp(key, x, h) {
+    const img = props[key];
+    if (!img || !img.naturalHeight) return;
+    const w = h * (img.naturalWidth / img.naturalHeight);
+    contactShadow(x, L.groundY, w * 0.8, 0.14);
+    g.drawImage(img, x - w / 2, L.groundY - h, w, h);
+  }
+
+  function drawScenery() {
+    for (const bush of L.bushes) drawProp(bush.key, bush.x, bush.h);
+    drawProp('bin', L.binX, L.binH);
+  }
+
+  function drawToy(toy, shadow) {
+    const img = toyImages[toy.id];
+    if (!img) return;
+    const a = toyAnchor(toy), s = toySize(toy);
+    if (shadow) {
+      // The shadow stays on the ground and shrinks as the toy is lifted, which
+      // is what makes a dragged toy read as held up rather than slid along.
+      const k = 1 / (1 + toy.lift / (L.unit * 0.35));
+      contactShadow(a.x, L.groundY, s.w * 0.85 * k, 0.20 * k);
+    }
+    g.drawImage(img, a.x - s.w / 2, a.y - s.h / 2, s.w, s.h);
+  }
+
+  // Loose on the grass, behind whoever is walking past them.
+  function drawLooseToys() {
+    for (const toy of toys) if (toy.owner === 'ground') drawToy(toy, true);
+  }
+
+  function drawCarriedToy() {
+    if (held) drawToy(held, false);
+  }
+
+  function drawBabyToys() {
+    // The teddy is baked into her hugging pose, so drawing it again would give
+    // her two of them.
+    const hugging = babyImage() === baby.hugteddy;
+    for (const toy of babyToys()) {
+      if (hugging && toy.id === 'teddy') continue;
+      // Tucked in, the blanket stops being a folded thing beside her and
+      // becomes a thing over her — which is the only visible difference
+      // between owning it and being covered by it.
+      if (tucked && toy.id === 'blanket') { drawBlanketOver(); continue; }
+      drawToy(toy, false);
+    }
+  }
+
+  function drawBlanketOver() {
+    const img = toyImages.blanket;
+    if (!img || !img.naturalHeight) return;
+    const w = L.babyH * 1.15;
+    const h = w * (img.naturalHeight / img.naturalWidth);
+    const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+    g.drawImage(img, cx - w / 2, L.pen.y + L.pen.h * 0.9 - h, w, h);
+  }
+
+  function drawDraggedToy() {
+    if (drag) drawToy(drag.toy, true);
   }
 
   function drawBabyZzz(t, x, y) {
@@ -1535,10 +2057,17 @@ function start(ctx) {
   }
 
   function mascotBox() {
-    const x = mascotX * L.w;
+    const x = bodyX();
     let y = L.groundY;
     if (activity === 'jumping') y = matY() - jumpOffset(now());
     return { x: x - L.mascotW / 2, y: y - L.mascotH, w: L.mascotW, h: L.mascotH };
+  }
+
+  // Bouncing happens on the mat, not wherever the walk happened to stop. The
+  // station is beside the trampoline so he steps up onto it rather than
+  // standing through the middle of it while idle.
+  function bodyX() {
+    return activity === 'jumping' ? L.tram.x + L.tram.w / 2 : mascotX * L.worldW;
   }
 
   function jumpOffset(t) {
@@ -1578,19 +2107,38 @@ function start(ctx) {
     if (activity === 'waving') img = poseFor('wave');
     if (activity === 'magic') img = images.magic || poseFor('stand');
     if (activity === 'jumping') img = poseFor('jump');
+    // Carrying overrides the neutral poses but not the ones that are about
+    // something else: he keeps bouncing on the trampoline with the toy in hand.
+    if (held && (activity === 'idle' || activity === 'walking')) {
+      img = images.carry || img;
+    }
+    if (activity === 'giving') img = poseFor('give');
     if (!img) return;
 
     // Every pose is framed differently inside its file — some fill it, some
     // leave a wide margin — so scale by the boy himself, not by the PNG. That
     // keeps him the same size and standing on the same line in every pose.
     const bb = boundsOf(img);
-    const drawH = L.mascotH / (bb.y1 - bb.y0);
+    // Kneeling really is shorter than standing — measured at 0.84x off the
+    // sliced sheet — and normalising every pose to one height would have stood
+    // him back up again.
+    const h = L.mascotH * (activity === 'giving' ? CONFIG.toys.givePoseScale : 1);
+    const drawH = h / (bb.y1 - bb.y0);
     const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-    const h = L.mascotH;
 
-    let x = mascotX * L.w;
+    let x = bodyX();
     let y = L.groundY;
     let rot = 0;
+
+    // Grounding shadow, cast before he is drawn. In the air it stays on the
+    // mat and shrinks, which is the cheapest possible way to make height read
+    // as height rather than as the sprite simply moving up the screen.
+    if (activity === 'jumping') {
+      const lift = jumpOffset(t) / (L.mascotH * CONFIG.jump.heightFrac || 1);
+      contactShadow(x, matY(), L.mascotW * (0.78 - lift * 0.34), 0.22 - lift * 0.12);
+    } else {
+      contactShadow(x, L.groundY, L.mascotW * 0.78, 0.20);
+    }
 
     if (activity === 'walking') {
       const swing = Math.sin(walkPhase * Math.PI * 2);
@@ -1627,10 +2175,32 @@ function start(ctx) {
     g.restore();
   }
 
+  // A ring of dust flicking outward from the mat on each landing. Short enough
+  // that it never becomes an effect in its own right — it exists only so the
+  // landing has a moment of impact instead of the arc simply reversing.
+  function drawLandingPuff(t) {
+    if (activity !== 'jumping' || !landedAt) return;
+    const age = t - landedAt;
+    const life = 260;
+    if (age > life) return;
+    const p = age / life;
+    const cx = bodyX();
+    const cy = matY();
+    g.save();
+    g.globalAlpha = (1 - p) * 0.5;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = Math.max(1.5, L.unit * 0.006);
+    g.beginPath();
+    g.ellipse(cx, cy, L.mascotW * (0.30 + p * 0.55), L.mascotW * (0.09 + p * 0.16),
+      0, 0, Math.PI * 2);
+    g.stroke();
+    g.restore();
+  }
+
   function drawMagic(t) {
     if (activity !== 'magic' || !sparkles.length) return;
     const p = clamp01((t - activityStart) / CONFIG.magicMs);
-    const cx = mascotX * L.w;
+    const cx = mascotX * L.worldW;
     const cy = L.groundY - L.mascotH * 0.62;
     g.save();
     for (const sparkle of sparkles) {
@@ -1653,57 +2223,6 @@ function start(ctx) {
       g.closePath();
       g.fill();
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    g.restore();
-  }
-
-  function drawMoment(t) {
-    if (!moment) return;
-    const cfg = CONFIG.moment;
-    const c = CONFIG.colors;
-    const age = t - moment.openedAt;
-
-    // Fades in, holds fully visible, fades out, then clears itself — no tap
-    // needed to dismiss it, since it's something to watch rather than choose.
-    let alpha;
-    if (age < cfg.openMs) {
-      alpha = easeOutCubic(clamp01(age / cfg.openMs));
-    } else if (age < cfg.openMs + cfg.holdMs) {
-      alpha = 1;
-    } else if (age < cfg.openMs + cfg.holdMs + cfg.closeMs) {
-      alpha = 1 - clamp01((age - cfg.openMs - cfg.holdMs) / cfg.closeMs);
-    } else {
-      moment = null;
-      return;
-    }
-
-    const entry = MOMENTS.find(m => m.id === moment.id);
-    const img = moments[moment.id];
-
-    g.save();
-    g.fillStyle = `rgba(24,20,44,${cfg.scrimAlpha * alpha})`;
-    g.fillRect(0, 0, L.w, L.h);
-    g.globalAlpha = alpha;
-
-    const maxW = L.w * cfg.maxWidthFrac, maxH = L.h * cfg.maxHeightFrac;
-    if (img && img.naturalWidth) {
-      // Contain-fit: these illustrations are native-resolution "hero" art,
-      // not a small in-world sprite, so they are never stretched larger than
-      // their own pixels warrant.
-      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
-      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-      const dx = (L.w - dw) / 2, dy = (L.h - dh) / 2 - L.h * 0.03;
-      g.drawImage(img, dx, dy, dw, dh);
-
-      g.fillStyle = c.ink;
-      g.font = `700 ${Math.max(16, L.unit * 0.07)}px ${getComputedStyle(document.body).fontFamily}`;
-      g.textAlign = 'center';
-      g.fillText(entry.cue, L.w / 2, dy + dh + L.unit * 0.08);
-    } else {
-      // A moment whose art failed to load still says its cue rather than
-      // showing nothing at all.
-      g.fillStyle = '#fffaf0';
-      g.fillText(entry.cue, L.w / 2, L.h / 2);
     }
     g.restore();
   }
@@ -1816,7 +2335,7 @@ function start(ctx) {
   function drawLeaves() {
     if (weather !== 'windy') return;
     for (const lf of leaves) {
-      const x = lf.x * L.w;
+      const x = lf.x * L.worldW;
       const y = (lf.y + Math.sin(lf.wob) * 0.03) * L.h;
       const s = L.unit * 0.018 * lf.s;
       g.save();
@@ -1922,20 +2441,41 @@ function start(ctx) {
     update(dt, t);
 
     g.clearRect(0, 0, L.w, L.h);
+
+    // Everything in the world is drawn through the camera. Only the sun/moon
+    // and the overlays live in screen space.
+    g.save();
+    g.translate(-camX, 0);
     drawSky(t);
     drawGround();
+    drawScenery();
     drawTrampoline(t);
+    // The house first: the cot stands on the grass just outside the wall,
+    // under the eave, so it has to draw in front of the house rather than
+    // behind it — otherwise the wall hides the baby from the outdoor rest,
+    // which is the one thing the threshold position exists to prevent.
+    drawHouse(t);
     drawPenBack();
     drawBaby(t);
+    drawBabyToys();
     drawPenFront(t);
-    drawHouse(t);
+    // Toys on the grass sit behind him: he walks in front of what is lying
+    // there, and what he is carrying is in his arms, so it draws in front.
+    drawLooseToys();
     drawMascot(t);
+    drawLandingPuff(t);
+    drawCarriedToy();
     drawMagic(t);
     drawRain();
     drawSnowfall();
     drawLeaves();
+    // Whatever is under the finger is above everything, including the weather:
+    // it is the one object the child is directly touching.
+    drawDraggedToy();
+    g.restore();
+
+    drawSunOrMoon(t);
     drawPicker(t);
-    drawMoment(t);
 
     raf = requestAnimationFrame(frame);
   }
@@ -1959,8 +2499,10 @@ function start(ctx) {
     if (L) layout(canvas.clientWidth, canvas.clientHeight);
   });
 
-  preloadImages(Object.fromEntries(MOMENTS.map(m => [m.id, m.file])), 0)
-    .then(loaded => { if (alive) moments = loaded || {}; });
+  preloadImages(Object.fromEntries(TOYS.map(t => [t.id, t.file])), 0)
+    .then(loaded => { if (alive) toyImages = loaded || {}; });
+
+  preloadImages(PROPS, 0).then(loaded => { if (alive) props = loaded || {}; });
 
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
@@ -1968,11 +2510,14 @@ function start(ctx) {
   return () => {
     alive = false;
     picker = null;
-    moment = null;
     cancelAnimationFrame(raf);
     audio.stopWeatherBed();  // leaving must never leave weather playing
     unlockOrientation();     // leave the rest of the app free to rotate
+    drag = null;
     canvas.removeEventListener('pointerdown', onPointerDown);
+    canvas.removeEventListener('pointermove', onPointerMove);
+    canvas.removeEventListener('pointerup', onPointerUp);
+    canvas.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('resize', resize);
     window.removeEventListener('orientationchange', resize);
   };
