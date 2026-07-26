@@ -23,7 +23,7 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen
+19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -84,6 +84,22 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.7** — "Play Together" sibling moments: tapping the playpen now opens
+  one of ten illustrated moments of brother and sister playing together —
+  sharing a teddy bear, crawling face to face, a hug, a rattle, peekaboo
+  through a cardboard house, clapping, a rubber duck, bubbles, a ride-on car,
+  and being lifted up for a cuddle — modelling gentle ways to play with a
+  baby sibling. Shown in shuffled order so all ten are seen before any
+  repeat, each with a one-word spoken cue and a matching sound, then fades
+  back to the sandbox on its own. Sliced from a 3x3 grid plus one standalone
+  image; despeckled per-cell so a stray fragment from a neighbouring scene
+  never survives into the wrong one. Four new earcons (`gentleGift`,
+  `rattleShake`, `clapClap`, `quack`). Also fixed: `speech.speak()` is a
+  permanent no-op elsewhere in the app (how other games' descriptive
+  narration was silenced); Play House's weather cues and outfit names were
+  silently going through it too and were never actually spoken — they, and
+  the new moment cues, now go through the real `speakWord()` channel.
 
 - **v3.6** — a second character in Play House: a baby sister in a playpen on
   the grass between the house and the trampoline. She sits, crawls a little

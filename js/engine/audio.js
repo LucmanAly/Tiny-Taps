@@ -433,3 +433,66 @@ export function stopWeatherBed() {
 export function weatherBed() {
   return bed ? bed.kind : null;
 }
+
+/* ---------------- sibling-moment earcons ----------------
+   Four more one-shot sounds, alongside the library above, for the "Play
+   Together" moments. Two (the rattle and the claps) want a percussive,
+   noise-based character that a pure oscillator can't honestly produce, so
+   they reuse the same white-noise buffer built for the weather beds
+   (`ensureNoise()`), played once through rather than looped. */
+
+// A single short, filtered, fast-decaying burst of noise — the building
+// block for both rattleShake() and clapClap() below.
+function noiseBurst(start, dur, { type = 'bandpass', freq = 2200, q = 1.2, vol = 0.22 } = {}) {
+  const t0 = ctx.currentTime + start;
+  const src = ctx.createBufferSource();
+  src.buffer = ensureNoise();
+  const filter = ctx.createBiquadFilter();
+  filter.type = type;
+  filter.frequency.value = freq;
+  filter.Q.value = q;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(filter).connect(g).connect(master);
+  src.start(t0, Math.random() * 1.5, dur + 0.02);
+}
+
+// Offering a toy. Warmer and slower than pop() — two soft rising notes
+// rather than one quick one.
+export function gentleGift() {
+  ensureCtx();
+  tone(440, 0, 0.22, { type: 'triangle', vol: 0.18 });
+  tone(587.33, 0.12, 0.3, { type: 'triangle', vol: 0.2 });
+}
+
+// Three short shaker-like bursts, close together.
+export function rattleShake() {
+  ensureCtx();
+  [0, 0.12, 0.24].forEach(t => noiseBurst(t, 0.09, { freq: 2600 + Math.random() * 600, vol: 0.2 }));
+}
+
+// Two sharp, close percussive clicks.
+export function clapClap() {
+  ensureCtx();
+  noiseBurst(0, 0.05, { type: 'highpass', freq: 1800, q: 0.7, vol: 0.28 });
+  noiseBurst(0.16, 0.05, { type: 'highpass', freq: 1800, q: 0.7, vol: 0.26 });
+}
+
+// A short duck-like blip: a fast down-then-up pitch bend on a square wave.
+export function quack() {
+  ensureCtx();
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(340, t0);
+  osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.07);
+  osc.frequency.exponentialRampToValueAtTime(260, t0 + 0.14);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+  osc.connect(g).connect(master);
+  osc.start(t0);
+  osc.stop(t0 + 0.2);
+}
