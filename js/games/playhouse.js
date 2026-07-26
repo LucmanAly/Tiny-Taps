@@ -89,7 +89,7 @@ const CONFIG = {
   stations: {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
     playpenPortrait: 0.60, homePortrait: 0.60,
-    bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.860,
+    bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.788,
     playpenLandscape: 0.500, homeLandscape: 0.480,
   },
 
@@ -112,10 +112,10 @@ const CONFIG = {
   toys: {
     // The row starts clear of where the boy stands and ends clear of the
     // trampoline: the first layout had him permanently covering the teddy.
-    rowStart: 0.540,           // world fraction of the leftmost toy
-    rowStep: 0.062,            // and the gap to the next
+    rowStart: 0.535,           // world fraction of the leftmost toy
+    rowStep: 0.050,            // and the gap to the next
     heightFrac: 0.105,         // of unit
-    binX: 0.655, binHeightFrac: 0.15,
+    binX: 0.610, binHeightFrac: 0.15,
     // One bush only. The second sat between the cot and the toy row, which is
     // exactly where the boy walks, and read as clutter rather than scenery.
     bushLargeX: 0.962, bushLargeHeightFrac: 0.21,
@@ -151,7 +151,10 @@ const CONFIG = {
     sleepyMs: 26000,
   },
 
-  jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
+  // heightFrac was 0.55 — more than half his own body above the mat, which
+  // reads as flight rather than as a bounce. A real toddler on a real
+  // trampoline clears a fraction of that.
+  jump: { count: 3, heightFrac: 0.30, durationMs: 620 },
   sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
   wardrobeOpenMs: 1500,
   outfitOpenAtFrac: 0.5,          // through the door-opening animation
@@ -398,6 +401,8 @@ function start(ctx) {
   let tucked = false;             // she has her blanket and has settled down
   let idleSince = 0;              // how long the boy has had nothing to do
   let modelling = false;          // ...and is now fetching something himself
+  let bounceIndex = -1;           // which bounce of the current jump he is on
+  let landedAt = 0;               // when he last hit the mat, for the puff
   // Toys. `owner` is the whole model: 'ground' (lying where it was left),
   // 'boy' (being carried), 'baby' (hers, and she keeps it), or 'hand' (under
   // the child's finger right now). x is a world fraction; lift is how far off
@@ -1291,8 +1296,26 @@ function start(ctx) {
       if (openPickerAt && t >= openPickerAt) { openPickerAt = 0; openPicker(); }
       if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
     }
+    // Each landing gets its own boing, its own puff, and — the point of the
+    // whole trampoline — a laugh from his sister. This reframes bouncing from
+    // "a thing to make him do" into "how you make her laugh".
+    if (activity === 'jumping') {
+      const n = Math.floor((t - activityStart) / CONFIG.jump.durationMs);
+      if (n !== bounceIndex) {
+        bounceIndex = n;
+        landedAt = t;
+        if (n > 0) audio.boing();
+        if (!night) {
+          babyPose = 'happy';
+          babyUntil = t + CONFIG.baby.happyMs;
+          babyFacing = 1;                 // she turns to watch him
+          audio.giggle();
+        }
+      }
+    }
     if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
       activity = 'idle';
+      bounceIndex = -1;
     }
     if (activity === 'giving') {
       if (giveAt && t >= giveAt) {
@@ -1995,6 +2018,7 @@ function start(ctx) {
     let y = pen.y + pen.h * 0.92;
     if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * drawH * 0.03;
 
+    contactShadow(x, pen.y + pen.h * 0.92, drawW * 0.72, 0.16);
     g.save();
     g.translate(x, y);
     if (babyFacing < 0) g.scale(-1, 1);
@@ -2095,10 +2119,17 @@ function start(ctx) {
   }
 
   function mascotBox() {
-    const x = mascotX * L.worldW;
+    const x = bodyX();
     let y = L.groundY;
     if (activity === 'jumping') y = matY() - jumpOffset(now());
     return { x: x - L.mascotW / 2, y: y - L.mascotH, w: L.mascotW, h: L.mascotH };
+  }
+
+  // Bouncing happens on the mat, not wherever the walk happened to stop. The
+  // station is beside the trampoline so he steps up onto it rather than
+  // standing through the middle of it while idle.
+  function bodyX() {
+    return activity === 'jumping' ? L.tram.x + L.tram.w / 2 : mascotX * L.worldW;
   }
 
   function jumpOffset(t) {
@@ -2157,9 +2188,19 @@ function start(ctx) {
     const drawH = h / (bb.y1 - bb.y0);
     const drawW = drawH * (img.naturalWidth / img.naturalHeight);
 
-    let x = mascotX * L.worldW;
+    let x = bodyX();
     let y = L.groundY;
     let rot = 0;
+
+    // Grounding shadow, cast before he is drawn. In the air it stays on the
+    // mat and shrinks, which is the cheapest possible way to make height read
+    // as height rather than as the sprite simply moving up the screen.
+    if (activity === 'jumping') {
+      const lift = jumpOffset(t) / (L.mascotH * CONFIG.jump.heightFrac || 1);
+      contactShadow(x, matY(), L.mascotW * (0.78 - lift * 0.34), 0.22 - lift * 0.12);
+    } else {
+      contactShadow(x, L.groundY, L.mascotW * 0.78, 0.20);
+    }
 
     if (activity === 'walking') {
       const swing = Math.sin(walkPhase * Math.PI * 2);
@@ -2193,6 +2234,28 @@ function start(ctx) {
       -((bb.x0 + bb.x1) / 2) * drawW,
       h / 2 - bb.y1 * drawH,
       drawW, drawH);
+    g.restore();
+  }
+
+  // A ring of dust flicking outward from the mat on each landing. Short enough
+  // that it never becomes an effect in its own right — it exists only so the
+  // landing has a moment of impact instead of the arc simply reversing.
+  function drawLandingPuff(t) {
+    if (activity !== 'jumping' || !landedAt) return;
+    const age = t - landedAt;
+    const life = 260;
+    if (age > life) return;
+    const p = age / life;
+    const cx = bodyX();
+    const cy = matY();
+    g.save();
+    g.globalAlpha = (1 - p) * 0.5;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = Math.max(1.5, L.unit * 0.006);
+    g.beginPath();
+    g.ellipse(cx, cy, L.mascotW * (0.30 + p * 0.55), L.mascotW * (0.09 + p * 0.16),
+      0, 0, Math.PI * 2);
+    g.stroke();
     g.restore();
   }
 
@@ -2513,6 +2576,7 @@ function start(ctx) {
     // there, and what he is carrying is in his arms, so it draws in front.
     drawLooseToys();
     drawMascot(t);
+    drawLandingPuff(t);
     drawCarriedToy();
     drawMagic(t);
     drawRain();
