@@ -23,7 +23,11 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
+19. **Play House** — one continuous home-and-yard playground: push the baby's
+    wheeled cot between inside and outside, drag toys to either sibling, carry
+    and share them, tuck the baby in with her blanket, bounce on the
+    trampoline, change the weather and time of day, choose an outfit, sleep,
+    and make wand magic
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -84,6 +88,21 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v4.0** — rebuilt Play House around direct, persistent play. The old
+  full-screen sibling illustrations are gone; the child now drags real toys
+  inside the world, gives them directly to the baby or hands them to her
+  brother to carry and offer. A single wheeled cot moves visibly between
+  indoor and outdoor parking spots while the camera follows, so the baby never
+  teleports. The 1.7-screen world settles at two predictable camera rests and
+  leaves real gaps between the bed, wardrobe, cot, toy bin and trampoline.
+  The baby reaches as toys approach, keeps what she receives, asks visually
+  for a toy, becomes sleepy, accepts a blanket, and laughs at trampoline
+  landings. Her brother occasionally models sharing when play has been idle.
+  Added contact shadows, forgiving hit areas, persistent dropped objects,
+  rapid-tap acknowledgement, lower jumps, mat compression, landing puffs and
+  non-repeating synthesized laugh variants. Weather, settling snow,
+  day/night, wardrobe, sleep and wand magic remain.
 
 - **v3.7** — "Play Together" sibling moments: tapping the playpen now opens
   one of ten illustrated moments of brother and sister playing together —

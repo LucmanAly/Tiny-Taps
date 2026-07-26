@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Toddler learning mini-games PWA",
   "scripts": {
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs && node scripts/playhouse-smoke.mjs",
+    "check:playhouse": "node scripts/playhouse-smoke.mjs"
   }
 }

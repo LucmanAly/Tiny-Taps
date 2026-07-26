@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.7';
+const VERSION = 'tiny-taps-v4.0';
 
 const ASSETS = [
   '.',
@@ -83,14 +83,24 @@ const ASSETS = [
   // Flat-lay garment cards for the wardrobe picker.
   'assets/mascot_outfit_winter.PNG', 'assets/mascot_outfit_rain.PNG',
   'assets/mascot_outfit_summer.PNG',
-  // The baby's four poses, sliced from one sprite sheet.
+  // Four original baby poses.
   'assets/baby_sit.PNG', 'assets/baby_happy.PNG',
   'assets/baby_crawl.PNG', 'assets/baby_sleep.PNG',
-  // "Play Together" sibling moments.
-  'assets/moment_teddy.PNG', 'assets/moment_crawl.PNG', 'assets/moment_hug.PNG',
-  'assets/moment_rattle.PNG', 'assets/moment_peekaboo.PNG', 'assets/moment_clap.PNG',
-  'assets/moment_duck.PNG', 'assets/moment_bubbles.PNG', 'assets/moment_ride.PNG',
-  'assets/moment_lift.PNG',
+  // Play House v4 baby reactions and draggable objects.
+  'assets/playhouse_baby_reach.png', 'assets/playhouse_baby_hug_teddy.png',
+  'assets/playhouse_baby_sleepy.png', 'assets/playhouse_baby_laugh.png',
+  'assets/playhouse_toy_teddy.png', 'assets/playhouse_toy_ball.png',
+  'assets/playhouse_toy_duck.png', 'assets/playhouse_toy_rattle.png',
+  'assets/playhouse_blanket.png', 'assets/playhouse_toy_bin_closed.png',
+  'assets/playhouse_toy_bin_open.png', 'assets/playhouse_bush.png',
+  // Play House v4 brother action poses.
+  'assets/playhouse_push_winter_a.png', 'assets/playhouse_push_winter_b.png',
+  'assets/playhouse_push_rain_a.png', 'assets/playhouse_push_rain_b.png',
+  'assets/playhouse_push_summer_a.png', 'assets/playhouse_push_summer_b.png',
+  'assets/playhouse_carry_winter.png', 'assets/playhouse_carry_rain.png',
+  'assets/playhouse_carry_summer.png',
+  'assets/playhouse_give_winter.png', 'assets/playhouse_give_rain.png',
+  'assets/playhouse_give_summer.png',
 ];
 
 self.addEventListener('install', e => {
