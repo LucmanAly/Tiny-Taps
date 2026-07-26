@@ -305,6 +305,27 @@ export function babble() {
   });
 }
 
+// A brighter, breathier response for the baby watching her brother bounce.
+// Three variants are kept distinct and never repeat back-to-back, so a run of
+// trampoline jumps does not sound like one sample being machine-gunned.
+let lastBabyLaugh = -1;
+export function babyLaugh() {
+  ensureCtx();
+  let variant = (Math.random() * 3) | 0;
+  if (variant === lastBabyLaugh) variant = (variant + 1 + ((Math.random() * 2) | 0)) % 3;
+  lastBabyLaugh = variant;
+
+  const patterns = [
+    [[760, 0], [930, 0.11], [820, 0.23]],
+    [[690, 0], [870, 0.09], [1040, 0.19], [900, 0.30]],
+    [[830, 0], [710, 0.10], [920, 0.21]],
+  ];
+  patterns[variant].forEach(([freq, start], index) => {
+    tone(freq * (0.97 + Math.random() * 0.06), start, 0.15,
+      { type: 'triangle', vol: 0.16 - index * 0.012, glide: freq * 1.08 });
+  });
+}
+
 export function whoosh() {
   ensureCtx();
   tone(300, 0, 0.30, { type: 'sine', vol: 0.09, glide: 1250 });

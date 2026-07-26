@@ -1,197 +1,139 @@
-// Play House: an open-ended little world rather than a round-based game.
-// The child controls the weather and the time of day, and sends the mascot to
-// the bed, the wardrobe or the trampoline. Nothing can be answered wrongly.
-//
-// The world itself is entirely procedural: the house, furniture, trampoline,
-// sky, sun, moon, rain, wind and grass are all drawn on canvas, so the only
-// artwork this game costs is the mascot himself.
-//
-// The mascot now has three outfits (winter / rain / summer), each with its own
-// stand, walk, jump and sleep poses. Tapping the wardrobe cycles them. Poses
-// are loaded per outfit rather than all at once, and the next outfit is
-// prefetched quietly in the background so a change never shows a gap.
+// Play House v4: one continuous home-and-yard world built around actions a
+// toddler performs directly. Toys can be dragged, carried, offered and kept;
+// the baby stays in one wheeled cot that her brother visibly pushes between
+// the indoor and outdoor parking spots. There are no cutaway "moment" cards.
 
 import { preloadImages } from '../engine/intro.js';
 
-/* ---------------- configuration ---------------- */
+const WORLD_SCREENS = 1.7;
 
 const CONFIG = {
-  // Everything is a fraction: of canvas width (x), canvas height (y), or of
-  // `unit` (= the smaller edge) for anything whose size should feel the same
-  // in portrait and landscape.
-  layout: {
-    // This world is landscape-only (see the rotate gate below): a phone held
-    // upright cannot fit a house, a wardrobe and a playground side by side
-    // without everything becoming cramped. The portrait numbers remain only
-    // as a safety net for the brief moment during an orientation change.
-    horizonYPortrait: 0.56,
-    horizonYLandscape: 0.50,
-    groundLineYPortrait: 0.86,   // feet, house floor and trampoline base
-    groundLineYLandscape: 0.88,
-    houseLeftPortrait: 0.03,
-    houseRightPortrait: 0.52,
-    houseLeftLandscape: 0.035,
-    houseRightLandscape: 0.44,
-    houseHeightFrac: 0.52,       // of unit (portrait)
-    houseHeightFracLandscape: 0.62,
-    roofPeakFrac: 0.15,          // of unit, above the wall top
-    trampolineXPortrait: 0.855,
-    trampolineXLandscape: 0.80,
-    trampolineWidthFrac: 0.23,   // of unit (portrait)
-    trampolineWidthFracLandscape: 0.31,
-    sunXPortrait: 0.82, sunYPortrait: 0.13,
-    sunXLandscape: 0.84, sunYLandscape: 0.23,
-    sunRadiusFrac: 0.075,        // of unit
+  camera: { ease: 7.5, edgeFrac: 0.12 },
+  boy: {
+    heightFrac: 0.39,
+    minHeight: 118,
+    maxHeight: 250,
+    walkSpeed: 0.48,
+    bobHz: 3.1,
   },
-
-  mascot: {
-    heightFrac: 0.34,            // of unit (portrait)
-    heightFracLandscape: 0.40,
-    minHeight: 104,
-    maxHeight: 240,
-    walkSpeedFrac: 0.55,         // of canvas width per second
-    bobFrac: 0.03,               // of mascot height
-    bobHz: 3.2,
-    tiltDegrees: 2.4,
-    windLeanDegrees: 5,
+  cot: {
+    indoorX: 0.675,
+    outdoorX: 1.075,
+    widthFrac: 0.30,
+    heightFrac: 0.19,
+    moveMs: 1650,
   },
-
-  // Where the mascot stands for each station, as a fraction of canvas width.
-  // Where the mascot stands for each station, as a fraction of canvas width.
-  // `home` doubles as the playpen station: the old 0.60 sat exactly where the
-  // playpen now goes, and standing beside his brother is a nicer neutral spot
-  // than a cramped gap between the pen and the trampoline.
   stations: {
-    bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
-    playpenPortrait: 0.60, homePortrait: 0.60,
-    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80,
-    playpenLandscape: 0.47, homeLandscape: 0.47,
+    bed: 0.205,
+    wardrobe: 0.445,
+    trampoline: 1.425,
+    yardHome: 1.185,
   },
-
-  // The playpen sits on the one genuinely empty patch of grass, between the
-  // house wall (ends ~0.45) and the trampoline (starts ~0.73).
-  playpen: {
-    xPortrait: 0.62, xLandscape: 0.625,
-    widthFracPortrait: 0.20, widthFracLandscape: 0.145,   // of canvas width
-    heightFrac: 0.17,                                      // of unit
+  jump: {
+    count: 3,
+    durationMs: 650,
+    heightFrac: 0.31,
   },
-
   baby: {
-    heightFrac: 0.58,          // of the boy's drawn height
-    bobHz: 0.6,
-    happyMs: 1600,
-    // Idle wandering: sits still for a while, crawls a little, sits again.
-    sitMinMs: 6000, sitMaxMs: 10000,
-    crawlMs: 2200,
-    crawlRangeFrac: 0.26,      // of playpen width, either side of centre
+    heightFrac: 0.255,
+    contentMs: 12000,
+    toyWantMs: 11000,
+    reactionMs: 1500,
+    laughMs: 950,
   },
-
-  jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
-  sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
-  wardrobeOpenMs: 1500,
-  outfitOpenAtFrac: 0.5,          // through the door-opening animation
-  picker: {
-    openMs: 260,                  // cards scale up as the panel appears
-    cardWidthFrac: 0.26,          // of canvas width, per card
-    cardGapFrac: 0.03,
-    cardHeightFrac: 0.80,         // of canvas height
-    scrimAlpha: 0.55,
+  toys: {
+    snapBabyFrac: 0.20,
+    snapBoyFrac: 0.15,
+    dragSizeFrac: 0.09,
   },
-  // A "Play Together" moment: fades in, holds long enough to actually look
-  // at, fades out and clears itself — nothing to tap, nothing to get wrong.
-  moment: {
-    openMs: 320,
-    holdMs: 1900,
-    closeMs: 380,
-    // Much darker than the wardrobe picker's scrim: the world behind it
-    // includes the boy still finishing his walk toward the pen, and a
-    // half-see-through scrim let him (and the baby's own in-pen sprite) show
-    // through, doubling up oddly against the illustration of the same two
-    // characters. Near-opaque hides that completely.
-    scrimAlpha: 0.94,
-    maxWidthFrac: 0.55,           // of canvas width, contain-fit within this box
-    maxHeightFrac: 0.80,          // of canvas height
-  },
-  waveMs: 1400,
-  magicMs: 1500,
-
+  idleDemoMs: 10000,
   weather: {
     order: ['sunny', 'rainy', 'windy', 'snowy'],
-    rainDrops: 90,
-    rainSpeedFrac: 1.5,          // of canvas height per second
-    leafCount: 14,
-    windSpeedFrac: 0.55,         // of canvas width per second
-    cloudCountSunny: 2,
-    cloudCountElse: 5,
-    snowFlakes: 110,
-    snowSpeedFrac: 0.16,         // of canvas height per second: much slower than rain
-    snowDriftFrac: 0.05,         // sideways wander, of canvas width per second
-    // Settling and thawing are deliberately unequal: snow arrives gradually
-    // and goes away a little faster, so cycling the weather never feels stuck.
-    snowSettleMs: 4000,
-    snowThawMs: 2500,
-    snowCapFrac: 0.022,          // depth of a full covering, of unit
+    rainDrops: 92,
+    snowFlakes: 105,
+    leafCount: 15,
+    snowSettleMs: 4200,
+    snowThawMs: 2600,
   },
-
+  picker: {
+    openMs: 260,
+    cardWidthFrac: 0.26,
+    cardGapFrac: 0.03,
+    cardHeightFrac: 0.80,
+  },
   colors: {
-    skyDayTop: '#8ed6ff', skyDayBottom: '#eafaff',
-    skyNightTop: '#2b3570', skyNightBottom: '#5a6bab',
-    skyRainTop: '#9fb4c4', skyRainBottom: '#d6e2e8',
-    skySnowTop: '#b9c6d4', skySnowBottom: '#eef3f7',
-    snow: '#ffffff', snowShade: '#dfe9f2',
-    grassDay: '#7ed67e', grassNight: '#3f6b52',
-    sun: '#ffd54a', sunGlow: '#fff3b0',
+    skyDayTop: '#8ed6ff',
+    skyDayBottom: '#eafaff',
+    skyNightTop: '#2b3570',
+    skyNightBottom: '#5a6bab',
+    skyRainTop: '#9fb4c4',
+    skyRainBottom: '#d6e2e8',
+    skySnowTop: '#b9c6d4',
+    skySnowBottom: '#eef3f7',
+    grassDay: '#7ed67e',
+    grassNight: '#3f6b52',
+    grassStripe: '#6ac66f',
+    sun: '#ffd54a',
+    sunGlow: '#fff3b0',
     moon: '#fdf6d8',
-    star: '#ffffff',
-    cloudDay: '#ffffff', cloudNight: '#8f9ccb',
+    wall: '#ffe6c4',
+    wallNight: '#c9a983',
+    interior: '#fff6e8',
+    interiorNight: '#f5d8ae',
+    roof: '#e0685a',
+    roofDark: '#c04a3e',
+    floor: '#c99a6a',
+    ink: '#3a3357',
+    bedFrame: '#8a5a3c',
+    bedSheet: '#fffaf0',
+    bedBlanket: '#7fb3ff',
+    wardrobe: '#a3714a',
+    wardrobeDark: '#7d5334',
+    wardrobeDoor: '#b98352',
+    cotFrame: '#e08a5a',
+    cotDark: '#bd6a3e',
+    cotRail: '#f6c177',
+    cotMat: '#8fd9c4',
+    tramFrame: '#8a8098',
+    tramMat: '#5aa8e0',
+    tramSpring: '#c9c3d6',
+    snow: '#ffffff',
+    snowShade: '#dfe9f2',
     rain: '#a9dcf5',
     leaf: ['#7ed67e', '#ffcf6f', '#ff9fce'],
-    wallDay: '#ffe6c4', wallNight: '#c9a983',
-    roof: '#e0685a', roofDark: '#c04a3e',
-    floor: '#c99a6a',
-    interiorDay: '#fff6e8', interiorNight: '#ffdda0',
-    bedFrame: '#8a5a3c', bedSheet: '#ffffff', blanket: '#7fb3ff', pillow: '#fffaf0',
-    wardrobe: '#a3714a', wardrobeDark: '#7d5334', wardrobeDoor: '#b98352',
-    tramFrame: '#8a8098', tramMat: '#5aa8e0', tramSpring: '#c9c3d6',
-    penRail: '#e08a5a', penRailDark: '#bd6a3e', penBar: '#f6c177', penMat: '#8fd9c4',
-    ink: '#3a3357',
   },
 };
 
-const WEATHER_WORD = { sunny: 'Sunny!', rainy: 'Rain!', windy: 'Windy!', snowy: 'Snow!' };
-
-const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const clamp01 = v => clamp(v, 0, 1);
 const lerp = (a, b, t) => a + (b - a) * t;
-const easeInOutCubic = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeInOutCubic = t => (t < 0.5
+  ? 4 * t * t * t
+  : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="ph-sky" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="ph4-sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#8ed6ff"/><stop offset="100%" stop-color="#eafaff"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="6" width="88" height="88" rx="18" fill="url(#ph-sky)"/>
-  <circle cx="74" cy="26" r="10" fill="#ffd54a"/>
-  <rect x="6" y="70" width="88" height="24" fill="#7ed67e"/>
-  <path d="M16 70 V44 L38 28 L60 44 V70 Z" fill="#ffe6c4" stroke="#c04a3e" stroke-width="0"/>
-  <path d="M12 46 L38 24 L64 46 L58 46 L38 31 L18 46 Z" fill="#e0685a"/>
-  <rect x="24" y="54" width="12" height="16" rx="2" fill="#7fb3ff"/>
-  <rect x="42" y="52" width="12" height="18" rx="2" fill="#a3714a"/>
+  <rect x="6" y="6" width="88" height="88" rx="18" fill="url(#ph4-sky)"/>
+  <circle cx="78" cy="24" r="9" fill="#ffd54a"/>
+  <rect x="6" y="69" width="88" height="25" fill="#7ed67e"/>
+  <path d="M11 70V45l23-17 24 17v25z" fill="#ffe6c4"/>
+  <path d="m8 47 26-22 27 22h-7L34 32 15 47z" fill="#e0685a"/>
+  <rect x="20" y="54" width="13" height="16" rx="2" fill="#7fb3ff"/>
+  <circle cx="70" cy="66" r="13" fill="#8fd9c4" stroke="#e08a5a" stroke-width="4"/>
+  <circle cx="65" cy="80" r="4" fill="#8a8098"/><circle cx="77" cy="80" r="4" fill="#8a8098"/>
 </svg>`;
-
-/* ---------------- outfits ----------------
-   One entry per outfit, each with the poses this world can show. The winter
-   set reuses the three poses the opening sequence already loads, so the first
-   outfit is normally warm in the browser cache before this game even opens.
-   Rain and summer have no dedicated wave pose; `poseFor` falls back to their
-   stand pose, which is already an arms-out greeting. */
 
 const OUTFITS = [
   {
-    id: 'winter', label: 'Winter coat',
-    card: 'assets/mascot_outfit_winter.PNG', tint: '#a9713f',
+    id: 'winter',
+    tint: '#a9713f',
+    card: 'assets/mascot_outfit_winter.PNG',
     poses: {
       stand: 'assets/mascot_idle.PNG',
       walk: 'assets/mascot_walking.PNG',
@@ -199,122 +141,315 @@ const OUTFITS = [
       magic: 'assets/mascot_magic.PNG',
       jump: 'assets/mascot_winter_jump.PNG',
       sleep: 'assets/mascot_winter_sleep.PNG',
+      pushA: 'assets/playhouse_push_winter_a.png',
+      pushB: 'assets/playhouse_push_winter_b.png',
+      carry: 'assets/playhouse_carry_winter.png',
+      give: 'assets/playhouse_give_winter.png',
     },
   },
   {
-    id: 'rain', label: 'Rain coat',
-    card: 'assets/mascot_outfit_rain.PNG', tint: '#f2c318',
+    id: 'rain',
+    tint: '#f2c318',
+    card: 'assets/mascot_outfit_rain.PNG',
     poses: {
       stand: 'assets/mascot_rain_stand.PNG',
       walk: 'assets/mascot_rain_walk.PNG',
       jump: 'assets/mascot_rain_jump.PNG',
       sleep: 'assets/mascot_rain_sleep.PNG',
+      pushA: 'assets/playhouse_push_rain_a.png',
+      pushB: 'assets/playhouse_push_rain_b.png',
+      carry: 'assets/playhouse_carry_rain.png',
+      give: 'assets/playhouse_give_rain.png',
     },
   },
   {
-    id: 'summer', label: 'T-shirt',
-    card: 'assets/mascot_outfit_summer.PNG', tint: '#d8c6a4',
+    id: 'summer',
+    tint: '#d8c6a4',
+    card: 'assets/mascot_outfit_summer.PNG',
     poses: {
       stand: 'assets/mascot_summer_stand.PNG',
       walk: 'assets/mascot_summer_walk.PNG',
       jump: 'assets/mascot_summer_jump.PNG',
       sleep: 'assets/mascot_summer_sleep.PNG',
+      pushA: 'assets/playhouse_push_summer_a.png',
+      pushB: 'assets/playhouse_push_summer_b.png',
+      carry: 'assets/playhouse_carry_summer.png',
+      give: 'assets/playhouse_give_summer.png',
     },
   },
 ];
 
-/* ---------------- the baby ----------------
-   One look only, unlike her brother: four poses, no outfits. Sliced from a
-   single sprite sheet at import, uniformly scaled and cropped tight to the
-   artwork, so at runtime they are ordinary images that need no measuring. */
-
-const BABY_POSES = {
+const BABY_ART = {
   sit: 'assets/baby_sit.PNG',
-  happy: 'assets/baby_happy.PNG',
-  crawl: 'assets/baby_crawl.PNG',
   sleep: 'assets/baby_sleep.PNG',
+  reach: 'assets/playhouse_baby_reach.png',
+  hugTeddy: 'assets/playhouse_baby_hug_teddy.png',
+  sleepy: 'assets/playhouse_baby_sleepy.png',
+  laugh: 'assets/playhouse_baby_laugh.png',
 };
 
-/* ---------------- "Play Together" moments ----------------
-   Ten composite illustrations of the two of them playing, sliced from a 3x3
-   grid plus one standalone image. Unlike every other pose in this file, each
-   one shows both children together at a fixed relative pose — there is no
-   independent boy-sprite/baby-sprite positioning to be done, so these are
-   used whole, as a big illustrated moment that appears over the sandbox,
-   plays a sound and a one-word cue, and fades back on its own. Triggered by
-   tapping the playpen; cycled through in shuffled order so all ten are seen
-   before any repeats. */
+const WORLD_ART = {
+  binClosed: 'assets/playhouse_toy_bin_closed.png',
+  binOpen: 'assets/playhouse_toy_bin_open.png',
+  bush: 'assets/playhouse_bush.png',
+};
 
-const MOMENTS = [
-  { id: 'teddy', file: 'assets/moment_teddy.PNG', cue: 'Share!', sound: a => a.gentleGift() },
-  { id: 'crawl', file: 'assets/moment_crawl.PNG', cue: 'Crawl!', sound: a => { a.footstep(); setTimeout(() => a.footstep(), 140); } },
-  { id: 'hug', file: 'assets/moment_hug.PNG', cue: 'Cuddle!', sound: a => a.chime() },
-  { id: 'rattle', file: 'assets/moment_rattle.PNG', cue: 'Shake!', sound: a => a.rattleShake() },
-  { id: 'peekaboo', file: 'assets/moment_peekaboo.PNG', cue: 'Peekaboo!', sound: a => { a.pop(); setTimeout(() => a.chime(), 160); } },
-  { id: 'clap', file: 'assets/moment_clap.PNG', cue: 'Clap!', sound: a => a.clapClap() },
-  { id: 'duck', file: 'assets/moment_duck.PNG', cue: 'Duck!', sound: a => a.quack() },
-  { id: 'bubbles', file: 'assets/moment_bubbles.PNG', cue: 'Bubbles!', sound: a => a.shimmer(783.99) },
-  { id: 'ride', file: 'assets/moment_ride.PNG', cue: 'Ride!', sound: a => a.whoosh() },
-  { id: 'lift', file: 'assets/moment_lift.PNG', cue: 'Up!', sound: a => { a.boing(); setTimeout(() => a.chime(), 180); } },
+const TOY_DEFS = [
+  { id: 'teddy', file: 'assets/playhouse_toy_teddy.png', size: 0.087, x: 1.495, y: 0.795 },
+  { id: 'ball', file: 'assets/playhouse_toy_ball.png', size: 0.078, x: 1.565, y: 0.815 },
+  { id: 'duck', file: 'assets/playhouse_toy_duck.png', size: 0.073, x: 1.625, y: 0.800 },
+  { id: 'rattle', file: 'assets/playhouse_toy_rattle.png', size: 0.080, x: 1.675, y: 0.785 },
+  { id: 'blanket', file: 'assets/playhouse_blanket.png', size: 0.105, x: 0.26, y: 0.76, care: true },
 ];
 
+const TOY_FILES = Object.fromEntries(TOY_DEFS.map(t => [t.id, t.file]));
+const BOUNDS = new WeakMap();
+const FULL_BOUNDS = { x0: 0, x1: 1, y0: 0, y1: 1 };
+
+// Kept pure so the exact phone/tablet spacing can be regression-tested without
+// standing up a browser or duplicating the layout formula in the test.
+export function playhouseLayout(w, h) {
+  const unit = Math.min(w, h);
+  const portrait = h >= w;
+  const groundY = h * 0.88;
+  const horizonY = h * 0.50;
+  const boyH = clamp(unit * CONFIG.boy.heightFrac, CONFIG.boy.minHeight, CONFIG.boy.maxHeight);
+  const cotW = unit * CONFIG.cot.widthFrac;
+  const cotH = unit * CONFIG.cot.heightFrac;
+  const house = {
+    x: w * 0.035,
+    right: w * 0.82,
+    interiorRight: w * 0.70,
+    wallTop: groundY - unit * 0.60,
+    roofPeak: groundY - unit * 0.77,
+  };
+
+  return {
+    w,
+    h,
+    unit,
+    portrait,
+    worldW: w * WORLD_SCREENS,
+    groundY,
+    horizonY,
+    boyH,
+    babyH: unit * CONFIG.baby.heightFrac,
+    cotW,
+    cotH,
+    cameraMax: WORLD_SCREENS - 1,
+    house,
+    bed: {
+      x: w * 0.075,
+      y: groundY - unit * 0.23,
+      w: w * 0.255,
+      h: unit * 0.23,
+    },
+    wardrobe: {
+      x: w * 0.365,
+      y: groundY - unit * 0.43,
+      w: w * 0.175,
+      h: unit * 0.43,
+    },
+    tram: {
+      x: w * CONFIG.stations.trampoline - unit * 0.155,
+      y: groundY - unit * 0.15,
+      w: unit * 0.31,
+      h: unit * 0.15,
+    },
+    bin: {
+      x: w * 1.625 - unit * 0.105,
+      y: groundY - unit * 0.18,
+      w: unit * 0.21,
+      h: unit * 0.18,
+    },
+    bush: {
+      x: w * 1.23 - unit * 0.10,
+      y: groundY - unit * 0.14,
+      w: unit * 0.20,
+      h: unit * 0.14,
+    },
+    sunX: w * 0.86,
+    sunY: h * 0.20,
+    sunR: unit * 0.065,
+  };
+}
+
 function start(ctx) {
-  const { stage, audio, speech, setReprompt } = ctx;
+  const { stage, audio, setReprompt } = ctx;
   let alive = true;
   let raf = 0;
-
-  // Loaded pose sets, keyed by outfit id. Only outfits actually worn get
-  // fetched, and a set that is still in flight simply isn't in here yet.
-  const wardrobeCache = new Map();
-  let outfitIndex = 0;
-  // Only ever reassigned to a set that has finished loading, so a slow switch
-  // keeps showing the previous outfit instead of blanking the mascot.
-  let images = {};
+  const now = () => performance.now();
 
   const canvas = document.createElement('canvas');
   canvas.className = 'playhouse-canvas';
+  canvas.style.touchAction = 'none';
   stage.appendChild(canvas);
   const g = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  /* ---- world state ---- */
+  let L = null;
+  let lastFrame = now();
+
   let night = false;
   let weather = 'sunny';
-  let mascotX = 0.66;            // fraction of width; seeded properly in layout()
-  let targetX = 0.66;
-  let placed = false;             // has his opening position been set yet
-  let facing = 1;                 // 1 = right, -1 = left
-  let activity = 'idle';          // idle | walking | sleeping | jumping | waving | magic
-  let pending = null;             // what to do once the walk finishes
-  let activityStart = 0;
-  let walkPhase = 0;              // drives the bob, only advances while moving
-  let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
-  let baby = {};                  // pose id -> image, empty until loaded
-  let babyPose = 'sit';           // sit | crawl | happy  (sleep is derived from night)
-  let babyUntil = 0;              // when the current baby pose gives way
-  let babyX = 0.5;                // position across the pen, 0..1
-  let babyTargetX = 0.5;
-  let babyFacing = 1;
-  let picker = null;              // { openedAt } while the child is choosing
-  let cards = {};                 // outfit id -> garment image (or missing)
-  let moments = {};                // moment id -> illustration (or missing)
-  let momentBag = [];              // shuffled ids still to show before a repeat
-  let moment = null;                // { id, openedAt } while a moment is on screen
-  let stepAt = 0;                 // next footstep sound
+  let cameraX = 0;
+  let cameraTarget = 0;
 
-  let drops = [];
-  let flakes = [];
-  let snowDepth = 0;              // 0 = bare, 1 = fully covered
-  let leaves = [];
-  let clouds = [];
-  let stars = [];
-  let zzz = [];
+  let outfitIndex = 0;
+  let images = {};
+  let babyArt = {};
+  let worldArt = {};
+  let toyArt = {};
+  let cards = {};
+  const outfitCache = new Map();
+
+  let boyX = 0.88;
+  let boyTarget = boyX;
+  let facing = 1;
+  let activity = 'idle';
+  let activityStart = 0;
+  let afterWalk = null;
+  let walkPhase = 0;
+  let stepAt = 0;
+  let picker = null;
+  let heldToyId = null;
+  let giveTransferred = false;
+  let demo = null;
+  let lastDemoAt = 0;
+
+  let cotSpot = 'inside';
+  let cotX = CONFIG.cot.indoorX;
+  let cotMove = null;
+  let wheelAngle = 0;
+  let cotNudgeUntil = 0;
+
+  let mood = 'content';
+  let moodSince = now();
+  let preferredToy = 'teddy';
+  let babyReaction = 'sit';
+  let reactionUntil = 0;
+  let blanketOn = false;
+  let lastLaughBounce = -1;
+
+  const toys = TOY_DEFS.map(t => ({
+    ...t,
+    owner: 'loose',
+    homeX: t.x,
+    homeY: t.y,
+  }));
+
+  let drag = null;
+  let lastInputAt = now();
+  let touchPulses = [];
+  let landingPuffs = [];
   let sparkles = [];
 
-  const now = () => performance.now();
+  let clouds = [];
+  let stars = [];
+  let drops = [];
+  let flakes = [];
+  let leaves = [];
+  let snowDepth = 0;
 
-  /* ---- sizing ---- */
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let L = null;
+  function boundsOf(img) {
+    if (!img || !img.naturalWidth) return FULL_BOUNDS;
+    const cached = BOUNDS.get(img);
+    if (cached) return cached;
+    let box = FULL_BOUNDS;
+    try {
+      const cw = 96;
+      const ch = Math.max(1, Math.round(cw * img.naturalHeight / img.naturalWidth));
+      const c = document.createElement('canvas');
+      c.width = cw;
+      c.height = ch;
+      const cg = c.getContext('2d', { willReadFrequently: true });
+      cg.drawImage(img, 0, 0, cw, ch);
+      const d = cg.getImageData(0, 0, cw, ch).data;
+      let x0 = cw;
+      let y0 = ch;
+      let x1 = -1;
+      let y1 = -1;
+      for (let y = 0; y < ch; y++) {
+        for (let x = 0; x < cw; x++) {
+          if (d[(y * cw + x) * 4 + 3] <= 20) continue;
+          x0 = Math.min(x0, x);
+          x1 = Math.max(x1, x);
+          y0 = Math.min(y0, y);
+          y1 = Math.max(y1, y);
+        }
+      }
+      if (x1 >= x0 && y1 >= y0) {
+        box = {
+          x0: x0 / cw,
+          x1: (x1 + 1) / cw,
+          y0: y0 / ch,
+          y1: (y1 + 1) / ch,
+        };
+      }
+    } catch (e) {
+      // Cross-origin or decode trouble should never stop the procedural world.
+    }
+    BOUNDS.set(img, box);
+    return box;
+  }
+
+  function drawGrounded(img, x, baseY, contentH, opts = {}) {
+    if (!img || !img.naturalWidth) return;
+    const bb = boundsOf(img);
+    const sourceH = img.naturalHeight * Math.max(0.01, bb.y1 - bb.y0);
+    const scale = contentH / sourceH;
+    const fw = img.naturalWidth * scale;
+    const fh = img.naturalHeight * scale;
+    const contentMid = (bb.x0 + bb.x1) * fw / 2;
+    g.save();
+    g.translate(x, baseY + (opts.bob || 0));
+    if (opts.rotation) g.rotate(opts.rotation);
+    g.scale(opts.facing || 1, 1);
+    g.drawImage(img, -contentMid, -bb.y1 * fh, fw, fh);
+    g.restore();
+  }
+
+  function drawContained(img, x, y, maxW, maxH, opts = {}) {
+    if (!img || !img.naturalWidth) return;
+    const bb = boundsOf(img);
+    const contentW = img.naturalWidth * Math.max(0.01, bb.x1 - bb.x0);
+    const contentH = img.naturalHeight * Math.max(0.01, bb.y1 - bb.y0);
+    const scale = Math.min(maxW / contentW, maxH / contentH);
+    const fw = img.naturalWidth * scale;
+    const fh = img.naturalHeight * scale;
+    const cx = (bb.x0 + bb.x1) * fw / 2;
+    const cy = (bb.y0 + bb.y1) * fh / 2;
+    g.save();
+    g.translate(x, y);
+    if (opts.rotation) g.rotate(opts.rotation);
+    g.scale(opts.facing || 1, 1);
+    g.globalAlpha = opts.alpha == null ? 1 : opts.alpha;
+    g.drawImage(img, -cx, -cy, fw, fh);
+    g.restore();
+  }
+
+  function loadOutfit(index) {
+    const outfit = OUTFITS[index];
+    if (!outfitCache.has(outfit.id)) {
+      outfitCache.set(outfit.id, preloadImages(outfit.poses, 0));
+    }
+    return outfitCache.get(outfit.id);
+  }
+
+  function wearOutfit(index) {
+    outfitIndex = index;
+    const expected = OUTFITS[index].id;
+    loadOutfit(index).then(loaded => {
+      if (!alive || OUTFITS[outfitIndex].id !== expected) return;
+      images = loaded || {};
+      const next = (outfitIndex + 1) % OUTFITS.length;
+      if (!outfitCache.has(OUTFITS[next].id)) loadOutfit(next);
+    });
+  }
+
+  function pose(kind) {
+    return images[kind] || images.stand || images.walk || images.jump || null;
+  }
 
   function resize() {
     const w = canvas.clientWidth || stage.clientWidth;
@@ -327,587 +462,742 @@ function start(ctx) {
   }
 
   function layout(w, h) {
-    const cfg = CONFIG.layout;
-    const unit = Math.min(w, h);
-    const portrait = h >= w;
-    const groundY = h * (portrait ? cfg.groundLineYPortrait : cfg.groundLineYLandscape);
-    const houseLeft = w * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
-    const houseRight = w * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
-    const houseH = unit * (portrait ? cfg.houseHeightFrac : cfg.houseHeightFracLandscape);
-    const wallTop = groundY - houseH;
-    const roofPeak = wallTop - unit * cfg.roofPeakFrac;
+    L = playhouseLayout(w, h);
+    cameraX = clamp(cameraX, 0, L.cameraMax);
+    cameraTarget = clamp(cameraTarget, 0, L.cameraMax);
+  }
 
-    const mascotH = Math.max(CONFIG.mascot.minHeight,
-      Math.min(CONFIG.mascot.maxHeight,
-        unit * (portrait ? CONFIG.mascot.heightFrac : CONFIG.mascot.heightFracLandscape)));
-    // Hit-testing wants the boy's own width, not the pose file's, for the same
-    // reason drawMascot normalises: the margins around him vary by pose.
-    const ref = poseFor('stand');
-    let aspect = 0.52;
-    if (ref && ref.naturalWidth) {
-      const bb = boundsOf(ref);
-      aspect = (ref.naturalWidth * (bb.x1 - bb.x0)) / (ref.naturalHeight * (bb.y1 - bb.y0));
-    }
+  function wx(fraction) {
+    return fraction * L.w;
+  }
 
-    const tramW = unit * (portrait ? cfg.trampolineWidthFrac : cfg.trampolineWidthFracLandscape);
-    const tramX = w * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
+  function screenPoint(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
 
-    L = {
-      w, h, unit, portrait,
-      horizonY: h * (portrait ? cfg.horizonYPortrait : cfg.horizonYLandscape),
-      groundY,
-      houseLeft, houseRight, wallTop, roofPeak,
-      houseMidX: (houseLeft + houseRight) / 2,
-      mascotH, mascotW: mascotH * aspect,
-      tramX, tramW, tramH: tramW * 0.62,
-      sunX: w * (portrait ? cfg.sunXPortrait : cfg.sunXLandscape),
-      sunY: h * (portrait ? cfg.sunYPortrait : cfg.sunYLandscape),
-      sunR: unit * cfg.sunRadiusFrac,
-      station: {
-        bed: portrait ? CONFIG.stations.bedPortrait : CONFIG.stations.bedLandscape,
-        wardrobe: portrait ? CONFIG.stations.wardrobePortrait : CONFIG.stations.wardrobeLandscape,
-        trampoline: portrait ? CONFIG.stations.trampolinePortrait : CONFIG.stations.trampolineLandscape,
-        playpen: portrait ? CONFIG.stations.playpenPortrait : CONFIG.stations.playpenLandscape,
-        home: portrait ? CONFIG.stations.homePortrait : CONFIG.stations.homeLandscape,
-      },
-    };
-
-    // Interior furniture boxes, used for drawing and for hit-testing.
-    const inW = houseRight - houseLeft;
-    L.bed = {
-      x: houseLeft + inW * 0.06, y: groundY - houseH * 0.42,
-      w: inW * 0.42, h: houseH * 0.42,
-    };
-    // Shorter than the wall and standing on legs, so it reads as furniture
-    // rather than a front door set into the house.
-    L.wardrobe = {
-      x: houseLeft + inW * 0.58, y: groundY - houseH * 0.62,
-      w: inW * 0.34, h: houseH * 0.62,
-    };
-    L.tram = { x: tramX - L.tramW / 2, y: groundY - L.tramH, w: L.tramW, h: L.tramH };
-
-    const penW = w * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
-    const penH = unit * CONFIG.playpen.heightFrac;
-    const penCx = w * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
-    L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
-    L.babyH = mascotH * CONFIG.baby.heightFrac;
-
-    // Open beside the playpen rather than at a hard-coded fraction, which
-    // otherwise leaves him standing inside it.
-    if (!placed) {
-      mascotX = targetX = L.station.home;
-      placed = true;
-    }
-
-    // Roof geometry, shared by the drawing and by roofYAt().
-    L.wallT = Math.max(5, unit * 0.022);
-    const overhang = L.wallT * 3.2;
-    L.eaveLeft = houseLeft - overhang;
-    L.eaveRight = houseRight + overhang;
-    L.eaveY = wallTop + unit * 0.018;      // eaves hang a little below the wall top
-    L.chimney = {
-      x: houseLeft + inW * 0.70,
-      w: inW * 0.10,
-      // Stands proud of the ridge, but never so high that it — or its smoke —
-      // runs off the top of a short landscape canvas.
-      top: Math.max(unit * 0.14, roofPeak - unit * 0.075),
+  function worldPoint(e) {
+    const p = screenPoint(e);
+    return {
+      screenX: p.x,
+      x: p.x + cameraX * L.w,
+      y: p.y,
+      xf: (p.x + cameraX * L.w) / L.w,
+      yf: p.y / L.h,
     };
   }
 
-  /* ---- scenery seeding ---- */
+  function focus(where) {
+    cameraTarget = where === 'inside' ? 0 : L.cameraMax;
+  }
+
+  function focusForX(xf) {
+    focus(xf < 0.79 ? 'inside' : 'outside');
+  }
+
   function seedScenery() {
-    const count = weather === 'sunny' ? CONFIG.weather.cloudCountSunny : CONFIG.weather.cloudCountElse;
-    clouds = Array.from({ length: count }, () => ({
-      x: Math.random(), y: 0.06 + Math.random() * 0.3,
-      s: 0.6 + Math.random() * 0.8, v: 0.008 + Math.random() * 0.02,
+    clouds = Array.from({ length: weather === 'sunny' ? 3 : 5 }, () => ({
+      x: Math.random(),
+      y: 0.07 + Math.random() * 0.28,
+      s: 0.65 + Math.random() * 0.8,
+      v: 0.008 + Math.random() * 0.018,
     }));
-    stars = Array.from({ length: 34 }, () => ({
-      x: Math.random(), y: Math.random() * 0.44,
-      r: 0.6 + Math.random() * 1.6, tw: Math.random() * Math.PI * 2,
+    stars = Array.from({ length: 36 }, () => ({
+      x: Math.random(),
+      y: Math.random() * 0.45,
+      r: 0.6 + Math.random() * 1.5,
+      tw: Math.random() * Math.PI * 2,
     }));
     drops = [];
-    leaves = [];
     flakes = [];
+    leaves = [];
   }
 
-  /* ---- roof line, so rain lands on the house instead of inside it ----
-     Measured to the eaves, not the walls. The roof overhangs, and weather
-     falling through the overhang would undo the one piece of cause and effect
-     this world has. Both this and drawRoof() read L.eaveLeft/L.eaveRight. */
-  function roofYAt(x) {
-    if (x < L.eaveLeft || x > L.eaveRight) return Infinity;
-    const half = (L.eaveRight - L.eaveLeft) / 2;
-    const d = Math.abs(x - L.houseMidX) / half;      // 0 at the peak, 1 at the eaves
-    return lerp(L.roofPeak, L.eaveY, clamp01(d));
+  function addPulse(screenX, y) {
+    touchPulses.push({ x: screenX, y, born: now() });
+    if (touchPulses.length > 12) touchPulses.shift();
   }
 
-  /* ---- interactions ---- */
-  // speech.speak() is a permanent no-op app-wide (how every other game's
-  // descriptive narration was silenced); speech.speakWord() is the one real
-  // channel, reserved for essential single-word cues. Weather words and these
-  // moment cues are exactly that, so this calls the real one.
-  function say(word) { speech.speakWord(word, { interrupt: true }); }
+  function setActivity(next) {
+    activity = next;
+    activityStart = now();
+  }
 
-  function walkTo(frac, then) {
-    openPickerAt = 0;            // any pending wardrobe opening is abandoned
-    targetX = frac;
-    pending = then || null;
-    if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
-    facing = targetX > mascotX ? 1 : -1;
-    activity = 'walking';
+  function cancelDemo() {
+    demo = null;
+  }
+
+  function walkTo(xf, after = null, { keepDemo = false } = {}) {
+    if (!keepDemo) cancelDemo();
+    if (activity === 'sleeping') activity = 'idle';
+    boyTarget = clamp(xf, 0.08, WORLD_SCREENS - 0.05);
+    afterWalk = after;
+    facing = boyTarget >= boyX ? 1 : -1;
+    focusForX(boyTarget);
+    if (Math.abs(boyTarget - boyX) < 0.008) {
+      finishWalk();
+      return;
+    }
+    setActivity('walking');
   }
 
   function finishWalk() {
-    const next = pending;
-    pending = null;
-    activity = 'idle';
-    if (!next) return;
-    activity = next;
-    activityStart = now();
-    if (next === 'sleeping') zzz = [];
-    if (next === 'jumping') audio.boing();
-    if (next === 'wardrobe') {
-      audio.pop();
-      // Change once the doors have swung most of the way open, so the new
-      // outfit appears to come out of the wardrobe rather than through it.
-      openPickerAt = activityStart + CONFIG.wardrobeOpenMs * CONFIG.outfitOpenAtFrac;
-    }
-  }
-
-  /* ---- outfits ---- */
-
-  // Normalised bounding box of the non-transparent pixels in a pose, cached on
-  // the image itself. The poses are framed inconsistently — some fill the file,
-  // some leave a wide margin — and scaling by the file would make him change
-  // size and hover off the ground as he changed pose. Measured on a small
-  // downsample, which is plenty for a placement fraction and costs about a
-  // millisecond once per image.
-  const BOUNDS = new WeakMap();
-  const FULL_BOUNDS = { x0: 0, x1: 1, y0: 0, y1: 1 };
-
-  function boundsOf(img) {
-    const cached = BOUNDS.get(img);
-    if (cached) return cached;
-    let box = FULL_BOUNDS;
-    try {
-      const cw = 96;
-      const ch = Math.max(1, Math.round(cw * img.naturalHeight / img.naturalWidth));
-      const c = document.createElement('canvas');
-      c.width = cw; c.height = ch;
-      const cg = c.getContext('2d', { willReadFrequently: true });
-      cg.drawImage(img, 0, 0, cw, ch);
-      const d = cg.getImageData(0, 0, cw, ch).data;
-      let x0 = cw, x1 = -1, y0 = ch, y1 = -1;
-      for (let y = 0; y < ch; y++) {
-        for (let x = 0; x < cw; x++) {
-          if (d[(y * cw + x) * 4 + 3] > 24) {
-            if (x < x0) x0 = x;
-            if (x > x1) x1 = x;
-            if (y < y0) y0 = y;
-            if (y > y1) y1 = y;
-          }
-        }
-      }
-      // A fully transparent (or unreadable) image falls back to the whole frame
-      // rather than producing a zero-height box and a division by zero.
-      if (x1 >= x0 && y1 >= y0) {
-        box = { x0: x0 / cw, x1: (x1 + 1) / cw, y0: y0 / ch, y1: (y1 + 1) / ch };
-      }
-    } catch (e) {
-      // Never let a measurement problem stop the world from drawing.
-    }
-    BOUNDS.set(img, box);
-    return box;
-  }
-
-  // Loads an outfit's poses at most once. Never rejects: a pose that fails to
-  // load is simply absent, and `poseFor` falls back to something that isn't.
-  function loadOutfit(index) {
-    const outfit = OUTFITS[index];
-    if (!wardrobeCache.has(outfit.id)) {
-      // No budget here: unlike the opening sequence there is no deadline to
-      // race, and a partially loaded outfit would look like a costume change
-      // that half happened.
-      wardrobeCache.set(outfit.id, preloadImages(outfit.poses, 0));
-    }
-    return wardrobeCache.get(outfit.id);
-  }
-
-  // Warm the outfit after this one so the first wardrobe tap is instant. Kept
-  // strictly sequential so it can never compete with the outfit on screen.
-  function prefetchNextOutfit() {
-    const next = (outfitIndex + 1) % OUTFITS.length;
-    if (!alive || wardrobeCache.has(OUTFITS[next].id)) return;
-    loadOutfit(next);
-  }
-
-  function wearOutfit(index) {
-    outfitIndex = index;
-    const outfit = OUTFITS[index];
-    loadOutfit(index).then(loaded => {
-      // Ignore a set that finished after the child moved on to another outfit.
-      if (!alive || OUTFITS[outfitIndex].id !== outfit.id) return;
-      images = loaded || {};
-      if (L) layout(canvas.clientWidth, canvas.clientHeight);   // aspect may differ
-      prefetchNextOutfit();
-    });
-  }
-
-  // Card rectangles, recomputed each time rather than cached, so a rotation
-  // mid-choice can never leave the hit boxes pointing at the old layout.
-  function pickerCards() {
-    const cfg = CONFIG.picker;
-    const cw = L.w * cfg.cardWidthFrac;
-    const gap = L.w * cfg.cardGapFrac;
-    const chh = L.h * cfg.cardHeightFrac;
-    const total = cw * OUTFITS.length + gap * (OUTFITS.length - 1);
-    const x0 = (L.w - total) / 2;
-    const y = (L.h - chh) / 2;
-    return OUTFITS.map((o, i) => ({
-      outfit: o, index: i,
-      x: x0 + i * (cw + gap), y, w: cw, h: chh,
-    }));
-  }
-
-  function pickerHit(px, py) {
-    const pad = L.unit * 0.02;
-    for (const card of pickerCards()) {
-      if (px >= card.x - pad && px <= card.x + card.w + pad
-          && py >= card.y - pad && py <= card.y + card.h + pad) return card.index;
-    }
-    return -1;
-  }
-
-  function openPicker() {
-    picker = { openedAt: now() };
-    audio.chime();
-  }
-
-  function closePicker() {
-    picker = null;
-  }
-
-  function choose(index) {
-    closePicker();
-    if (index === outfitIndex) { audio.pop(); return; }   // already wearing it
-    wearOutfit(index);
-    audio.pop();
-    say(OUTFITS[index].label);
-  }
-
-  // Resolves an upright pose to whatever art is actually available, so a
-  // missing or still-loading file degrades to a sensible neighbour rather than
-  // nothing. Deliberately excludes `sleep`, which is drawn lying down and would
-  // look broken standing on the grass.
-  function poseFor(kind) {
-    return images[kind] || images.stand || images.walk || images.jump || null;
-  }
-
-  // Rain and wind get a quiet looping bed; sunny and snow are deliberately
-  // silent, snow because falling snow makes no sound.
-  const WEATHER_BED = { rainy: 'rain', windy: 'wind' };
-
-  function applyWeatherBed() {
-    audio.setWeatherBed(WEATHER_BED[weather] || null);
-  }
-
-  /* ---- the baby ---- */
-
-  function babyImage() {
-    if (night && babyPose !== 'happy') return baby.sleep || baby.sit || null;
-    return baby[babyPose] || baby.sit || null;
-  }
-
-  // Delighted to be noticed. Also wakes her at night, which is the one bit of
-  // mischief the game allows.
-  function delightBaby() {
-    babyPose = 'happy';
-    babyUntil = now() + CONFIG.baby.happyMs;
-    audio.babble();
-  }
-
-  /* ---- "Play Together" moments ---- */
-
-  // A shuffle bag rather than plain random: guarantees every one of the ten
-  // is seen once before any of them repeats, instead of the same handful
-  // showing up again and again by chance.
-  function nextMomentId() {
-    if (!momentBag.length) {
-      momentBag = MOMENTS.map(m => m.id);
-      for (let i = momentBag.length - 1; i > 0; i--) {
-        const j = (Math.random() * (i + 1)) | 0;
-        [momentBag[i], momentBag[j]] = [momentBag[j], momentBag[i]];
-      }
-    }
-    return momentBag.pop();
-  }
-
-  // Opens immediately on the pen tap, rather than waiting for the walk-over
-  // to finish: the illustration already shows the two of them together up
-  // close, so waiting would just mean he visibly walks over in the
-  // background while a static picture of the same thing plays in front.
-  function showMoment() {
-    const id = nextMomentId();
-    const entry = MOMENTS.find(m => m.id === id);
-    moment = { id, openedAt: now() };
-    entry.sound(audio);
-    say(entry.cue);
-  }
-
-  function updateBaby(dt, t) {
-    if (night && babyPose !== 'happy') return;      // asleep: no wandering
-    if (t < babyUntil) {
-      if (babyPose === 'crawl') {
-        const speed = dt * 0.32;
-        const dx = babyTargetX - babyX;
-        if (Math.abs(dx) > speed) {
-          babyX += Math.sign(dx) * speed;
-          babyFacing = dx > 0 ? 1 : -1;
-        }
-      }
+    const next = afterWalk;
+    afterWalk = null;
+    setActivity('idle');
+    if (typeof next === 'function') {
+      next();
       return;
     }
-    // Alternate between sitting still and a short crawl to somewhere else in
-    // the pen, so she is never quite a static prop.
-    const cfg = CONFIG.baby;
-    if (babyPose === 'crawl') {
-      babyPose = 'sit';
-      babyUntil = t + cfg.sitMinMs + Math.random() * (cfg.sitMaxMs - cfg.sitMinMs);
-    } else {
-      babyPose = 'crawl';
-      babyUntil = t + cfg.crawlMs;
-      babyTargetX = 0.5 + (Math.random() * 2 - 1) * cfg.crawlRangeFrac;
+    if (!next) return;
+    setActivity(next);
+    if (next === 'jumping') {
+      lastLaughBounce = -1;
+      audio.boing();
+    } else if (next === 'wardrobe') {
+      picker = { openedAt: now() };
+      audio.chime();
+    } else if (next === 'sleeping') {
+      audio.chime();
+    } else if (next === 'giving') {
+      giveTransferred = false;
     }
+  }
+
+  function currentCotX() {
+    return cotX;
+  }
+
+  function cotBox() {
+    const cx = wx(currentCotX());
+    return {
+      x: cx - L.cotW / 2,
+      y: L.groundY - L.cotH,
+      w: L.cotW,
+      h: L.cotH,
+    };
+  }
+
+  function babyCenter() {
+    const c = cotBox();
+    return {
+      x: c.x + c.w * 0.53,
+      y: c.y + c.h * 0.30,
+    };
+  }
+
+  function boyBox() {
+    return {
+      x: wx(boyX) - L.boyH * 0.32,
+      y: L.groundY - L.boyH,
+      w: L.boyH * 0.64,
+      h: L.boyH,
+    };
+  }
+
+  function toyById(id) {
+    return toys.find(t => t.id === id) || null;
+  }
+
+  function playToySound(id, delighted = false) {
+    if (id === 'rattle') audio.rattleShake();
+    else if (id === 'duck') audio.quack();
+    else if (id === 'ball') audio.boing();
+    else if (id === 'teddy') audio.gentleGift();
+    else audio.chime();
+    if (delighted) setTimeout(() => { if (alive) audio.babyLaugh(); }, 130);
+  }
+
+  function resetBabyMood() {
+    mood = 'content';
+    moodSince = now();
+    preferredToy = ['teddy', 'ball', 'duck', 'rattle'][(Math.random() * 4) | 0];
+  }
+
+  function babyReceives(toy, { modelled = false } = {}) {
+    if (!toy) return;
+    const rightGift = mood === 'wantsToy' && toy.id === preferredToy;
+    if (toy.care) {
+      blanketOn = true;
+      toy.owner = 'baby';
+      babyReaction = mood === 'sleepy' ? 'sleepy' : 'sit';
+      reactionUntil = now() + CONFIG.baby.reactionMs;
+      if (mood === 'sleepy' && cotSpot === 'inside') {
+        babyReaction = 'sleep';
+        reactionUntil = Infinity;
+      }
+      audio.chime();
+      return;
+    }
+
+    toy.owner = 'baby';
+    heldToyId = heldToyId === toy.id ? null : heldToyId;
+    babyReaction = toy.id === 'teddy' ? 'hugTeddy' : 'sit';
+    reactionUntil = now() + CONFIG.baby.reactionMs * (rightGift ? 1.5 : 1);
+    playToySound(toy.id, rightGift);
+    if (!rightGift) audio.babble();
+    resetBabyMood();
+    if (modelled) lastDemoAt = now();
+  }
+
+  function dropHeldToyNearBoy() {
+    if (!heldToyId) return;
+    const old = toyById(heldToyId);
+    if (old) {
+      old.owner = 'loose';
+      old.x = clamp(boyX + facing * 0.07, 0.04, WORLD_SCREENS - 0.04);
+      old.y = 0.82;
+    }
+    heldToyId = null;
+  }
+
+  function boyTakes(toy) {
+    if (!toy || toy.care) return;
+    dropHeldToyNearBoy();
+    toy.owner = 'boy';
+    heldToyId = toy.id;
+    setActivity('idle');
+    audio.gentleGift();
+  }
+
+  function startGiving({ modelled = false } = {}) {
+    if (!heldToyId) {
+      setActivity('idle');
+      return;
+    }
+    demo = modelled ? { phase: 'giving', toyId: heldToyId } : null;
+    facing = currentCotX() >= boyX ? 1 : -1;
+    setActivity('giving');
+    giveTransferred = false;
+  }
+
+  function deliverHeldToy({ modelled = false } = {}) {
+    if (!heldToyId || cotMove) return;
+    const side = currentCotX() - (currentCotX() >= boyX ? 0.205 : -0.205);
+    walkTo(side, () => startGiving({ modelled }), { keepDemo: modelled });
+  }
+
+  function startIdleDemo(t) {
+    if (demo || heldToyId || activity !== 'idle' || cotMove) return;
+    const toy = toys.find(item => !item.care && item.owner === 'loose');
+    if (!toy) return;
+    demo = { phase: 'pickup', toyId: toy.id };
+    walkTo(toy.x, () => {
+      if (!alive || !demo || demo.toyId !== toy.id || toy.owner !== 'loose') {
+        demo = null;
+        return;
+      }
+      boyTakes(toy);
+      demo = { phase: 'carry', toyId: toy.id };
+      deliverHeldToy({ modelled: true });
+    }, { keepDemo: true });
+    lastDemoAt = t;
+  }
+
+  function startCotMove(destination) {
+    if (cotMove || destination === cotSpot) {
+      cotNudgeUntil = now() + 350;
+      audio.pop();
+      return;
+    }
+    cancelDemo();
+    dropHeldToyNearBoy();
+    if (activity === 'sleeping') activity = 'idle';
+    const to = destination === 'inside' ? CONFIG.cot.indoorX : CONFIG.cot.outdoorX;
+    const direction = Math.sign(to - cotX);
+    cotMove = {
+      from: cotX,
+      to,
+      destination,
+      direction,
+      startedAt: now(),
+    };
+    facing = direction;
+    setActivity('pushing');
+    audio.whoosh();
+  }
+
+  function finishCotMove() {
+    if (!cotMove) return;
+    cotSpot = cotMove.destination;
+    cotX = cotMove.to;
+    boyX = cotX - cotMove.direction * (L.cotW / L.w) * 0.85;
+    cotMove = null;
+    setActivity('idle');
+    focus(cotSpot);
+    audio.chime();
+    audio.babble();
+    if (cotSpot === 'inside' && mood === 'sleepy' && blanketOn) {
+      babyReaction = 'sleep';
+      reactionUntil = Infinity;
+    } else if (babyReaction === 'sleep') {
+      babyReaction = 'sleepy';
+      reactionUntil = now() + CONFIG.baby.reactionMs;
+    }
+  }
+
+  function startJumping() {
+    walkTo(CONFIG.stations.trampoline, 'jumping');
+  }
+
+  function triggerMagic() {
+    cancelDemo();
+    setActivity('magic');
+    sparkles = Array.from({ length: 24 }, (_, i) => ({
+      angle: i / 24 * Math.PI * 2 + Math.random() * 0.2,
+      distance: 0.24 + Math.random() * 0.58,
+      size: 0.012 + Math.random() * 0.018,
+      color: CONFIG.colors.leaf[i % CONFIG.colors.leaf.length],
+    }));
+    audio.chime();
   }
 
   function cycleWeather() {
     const order = CONFIG.weather.order;
     weather = order[(order.indexOf(weather) + 1) % order.length];
     seedScenery();
-    audio.pop();
     applyWeatherBed();
-    say(WEATHER_WORD[weather] || '');
+    audio.pop();
   }
 
   function toggleNight() {
     night = !night;
     audio.chime();
-    say(night ? 'Night time!' : 'Morning!');
+    if (night && cotSpot === 'inside' && blanketOn) {
+      mood = 'sleepy';
+      babyReaction = 'sleep';
+      reactionUntil = Infinity;
+    } else if (!night && babyReaction === 'sleep') {
+      resetBabyMood();
+      babyReaction = 'sit';
+      reactionUntil = 0;
+    }
   }
 
-  function hit(px, py) {
-    // Furniture is tested before the mascot, and deliberately so: he stands in
-    // front of whatever he has walked to, and checking him first meant that
-    // tapping the wardrobe he was standing at only ever got you a wave. The
-    // fixed thing you aimed at should be the thing that answers; he stays
-    // tappable everywhere he is not covering a station.
-    // Every box is generously padded, because these are small pieces of
-    // furniture on a phone and a toddler aiming near one clearly means it.
-    const pad = L.unit * 0.05;
-    const inBox = (b) => px >= b.x - pad && px <= b.x + b.w + pad
-                      && py >= b.y - pad && py <= b.y + b.h + pad;
-    if (Math.hypot(px - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
-    if (inBox(L.bed)) return 'bed';
-    if (inBox(L.wardrobe)) return 'wardrobe';
-    // The trampoline is short, so it also claims the space above its mat —
-    // that is where a child aiming at "the bouncy thing" will actually tap.
-    if (px >= L.tram.x - pad && px <= L.tram.x + L.tram.w + pad
-        && py >= L.tram.y - L.mascotH * 0.7 && py <= L.tram.y + L.tram.h + pad) {
-      return 'trampoline';
+  const WEATHER_BED = { rainy: 'rain', windy: 'wind' };
+  function applyWeatherBed() {
+    audio.setWeatherBed(WEATHER_BED[weather] || null);
+  }
+
+  function toyHit(p) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (const toy of toys) {
+      if (toy.owner !== 'loose') continue;
+      const x = wx(toy.x);
+      const y = toy.y * L.h;
+      const radius = L.unit * Math.max(0.055, toy.size * 0.75);
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d <= radius && d < bestDistance) {
+        best = toy;
+        bestDistance = d;
+      }
     }
-    if (px >= L.pen.x - pad && px <= L.pen.x + L.pen.w + pad
-        && py >= L.pen.y - L.babyH * 0.8 && py <= L.pen.y + L.pen.h + pad) {
-      return 'playpen';
-    }
-    if (inBox(mascotBox())) return 'mascot';
-    if (py < L.horizonY) return 'sky';
-    return 'ground';
+    return best;
+  }
+
+  function inBox(p, b, pad = L.unit * 0.04) {
+    return p.x >= b.x - pad && p.x <= b.x + b.w + pad
+      && p.y >= b.y - pad && p.y <= b.y + b.h + pad;
+  }
+
+  function cotHandleHit(p) {
+    const c = cotBox();
+    const pad = L.unit * 0.07;
+    return p.y >= c.y - pad && p.y <= c.y + c.h * 0.75
+      && p.x >= c.x - pad * 1.8 && p.x <= c.x + c.w + pad * 1.8;
+  }
+
+  function babyHit(p) {
+    const b = babyCenter();
+    return Math.hypot(p.x - b.x, p.y - b.y) <= L.unit * 0.19;
+  }
+
+  function beginToyDrag(e, p, toy) {
+    cancelDemo();
+    if (heldToyId === toy.id) heldToyId = null;
+    toy.owner = 'drag';
+    drag = {
+      kind: 'toy',
+      id: toy.id,
+      pointerId: e.pointerId,
+      offsetX: p.x - wx(toy.x),
+      offsetY: p.y - toy.y * L.h,
+    };
+    babyReaction = 'sit';
+    canvas.setPointerCapture?.(e.pointerId);
+    playToySound(toy.id);
+  }
+
+  function beginCotGesture(e, p) {
+    drag = {
+      kind: 'cot',
+      pointerId: e.pointerId,
+      startScreenX: p.screenX,
+      started: false,
+    };
+    cotNudgeUntil = now() + 450;
+    canvas.setPointerCapture?.(e.pointerId);
+    audio.pop();
   }
 
   function onPointerDown(e) {
-    if (!alive || !L) return;
-    if (L.portrait) return;        // the rotate screen is not interactive
-    // Any tap is a user gesture, which is the only thing that can start audio.
-    // Re-asserting the bed here covers a weather change made while the context
-    // was still suspended, which would otherwise stay silent forever.
+    if (!alive || !L || L.portrait) return;
+    const p = worldPoint(e);
+    lastInputAt = now();
+    addPulse(p.screenX, p.y);
     if (audio.tryResume()) applyWeatherBed();
 
-    const r = canvas.getBoundingClientRect();
-    const px = e.clientX - r.left, py = e.clientY - r.top;
-
-    // While the wardrobe is open it takes every tap: a card is a choice,
-    // anywhere else closes without changing anything. Nothing in the world
-    // behind it can be triggered by accident.
     if (picker) {
-      const i = pickerHit(px, py);
-      if (i >= 0) choose(i);
-      else closePicker();
+      const index = pickerHit(p.screenX, p.y);
+      if (index >= 0) {
+        picker = null;
+        wearOutfit(index);
+        audio.pop();
+      } else {
+        picker = null;
+      }
       return;
     }
 
-    // A moment is a beat to watch, not a choice to make — it clears itself,
-    // and nothing else can trigger underneath it while it's showing.
-    if (moment) return;
+    const toy = toyHit(p);
+    if (toy) {
+      beginToyDrag(e, p, toy);
+      return;
+    }
 
-    // Asleep, every tap simply wakes him. A child who wants him up should not
-    // have to find him under the covers to do it.
-    if (activity === 'sleeping') {
-      activity = 'idle';
+    if (cotHandleHit(p)) {
+      beginCotGesture(e, p);
+      return;
+    }
+
+    if (Math.hypot(p.screenX - L.sunX, p.y - L.sunY) <= L.sunR * 1.75) {
+      toggleNight();
+      return;
+    }
+
+    if (p.y < L.horizonY) {
+      cycleWeather();
+      return;
+    }
+
+    if (babyHit(p)) {
+      if (heldToyId) {
+        deliverHeldToy();
+      } else if (babyReaction === 'sleep') {
+        babyReaction = 'sit';
+        blanketOn = false;
+        const blanket = toyById('blanket');
+        if (blanket) {
+          blanket.owner = 'loose';
+          blanket.x = cotX + 0.11;
+          blanket.y = 0.82;
+        }
+        resetBabyMood();
+        audio.babble();
+      } else {
+        babyReaction = 'laugh';
+        reactionUntil = now() + CONFIG.baby.laughMs;
+        audio.babyLaugh();
+      }
+      return;
+    }
+
+    if (inBox(p, L.bed)) {
+      focus('inside');
+      walkTo(CONFIG.stations.bed, 'sleeping');
+      return;
+    }
+
+    if (inBox(p, L.wardrobe)) {
+      focus('inside');
+      walkTo(CONFIG.stations.wardrobe, 'wardrobe');
+      return;
+    }
+
+    if (inBox(p, L.tram, L.unit * 0.07)) {
+      focus('outside');
+      startJumping();
+      return;
+    }
+
+    if (inBox(p, L.bin, L.unit * 0.06)) {
+      focus('outside');
+      for (const item of toys) {
+        if (item.owner === 'loose' && !item.care) {
+          item.y = clamp(item.y - 0.025 - Math.random() * 0.02, 0.62, 0.83);
+        }
+      }
+      audio.rattleShake();
+      return;
+    }
+
+    if (inBox(p, boyBox(), L.unit * 0.035)) {
+      triggerMagic();
+      return;
+    }
+
+    // The house sliver and the open yard are natural attention targets rather
+    // than labelled navigation controls.
+    if (p.x >= wx(0.70) && p.x <= wx(0.84)) {
+      focus(cameraTarget > 0.35 ? 'inside' : 'outside');
       audio.pop();
       return;
     }
 
-    switch (hit(px, py)) {
-      case 'sun': toggleNight(); break;
-      case 'sky': cycleWeather(); break;
-      case 'bed': walkTo(L.station.bed, 'sleeping'); break;
-      case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
-      case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
-      case 'playpen':
-        // The baby reacts straight away; her brother comes over to join in,
-        // and the moment overlay opens immediately alongside both.
-        delightBaby();
-        walkTo(L.station.playpen, 'waving');
-        showMoment();
-        break;
-      case 'mascot':
-        // The winter set includes the wand pose used by the opening sequence.
-        // Other outfits keep their own stand pose, but get the same forgiving
-        // burst of magic rather than unexpectedly changing clothes.
-        activity = 'magic';
-        activityStart = now();
-        sparkles = Array.from({ length: 22 }, (_, i) => ({
-          angle: (i / 22) * Math.PI * 2 + Math.random() * 0.25,
-          distance: 0.25 + Math.random() * 0.55,
-          size: 0.012 + Math.random() * 0.018,
-          color: CONFIG.colors.leaf[i % CONFIG.colors.leaf.length],
-        }));
-        audio.chime();
-        break;
-      default:
-        walkTo(L.station.home);       // tapping open ground brings him outside
+    walkTo(p.xf);
+  }
+
+  function onPointerMove(e) {
+    if (!drag || drag.pointerId !== e.pointerId || !L) return;
+    const p = worldPoint(e);
+    if (drag.kind === 'toy') {
+      const toy = toyById(drag.id);
+      if (!toy) return;
+
+      if (p.screenX < L.w * CONFIG.camera.edgeFrac) focus('inside');
+      else if (p.screenX > L.w * (1 - CONFIG.camera.edgeFrac)) focus('outside');
+
+      toy.x = clamp((p.x - drag.offsetX) / L.w, 0.04, WORLD_SCREENS - 0.04);
+      toy.y = clamp((p.y - drag.offsetY) / L.h, 0.42, 0.84);
+      const baby = babyCenter();
+      if (Math.hypot(wx(toy.x) - baby.x, toy.y * L.h - baby.y) < L.unit * CONFIG.toys.snapBabyFrac) {
+        babyReaction = 'reach';
+        reactionUntil = now() + 240;
+      } else if (reactionUntil < now()) {
+        babyReaction = mood === 'sleepy' ? 'sleepy' : 'sit';
+      }
+      return;
+    }
+
+    if (drag.kind === 'cot' && !drag.started) {
+      const dx = p.screenX - drag.startScreenX;
+      const required = L.unit * 0.045;
+      const wantsOutside = cotSpot === 'inside' && dx > required;
+      const wantsInside = cotSpot === 'outside' && dx < -required;
+      if (wantsOutside || wantsInside) {
+        drag.started = true;
+        startCotMove(wantsOutside ? 'outside' : 'inside');
+      }
     }
   }
+
+  function finishToyDrag(toy) {
+    if (!toy) return;
+    const baby = babyCenter();
+    const tx = wx(toy.x);
+    const ty = toy.y * L.h;
+    const boy = boyBox();
+    const boyCx = boy.x + boy.w / 2;
+    const boyCy = boy.y + boy.h * 0.48;
+
+    if (Math.hypot(tx - baby.x, ty - baby.y) <= L.unit * CONFIG.toys.snapBabyFrac) {
+      babyReceives(toy);
+    } else if (!toy.care
+      && Math.hypot(tx - boyCx, ty - boyCy) <= L.unit * CONFIG.toys.snapBoyFrac) {
+      boyTakes(toy);
+    } else {
+      toy.owner = 'loose';
+      audio.pop();
+    }
+    if (babyReaction === 'reach' && reactionUntil < now() + 300) {
+      babyReaction = mood === 'sleepy' ? 'sleepy' : 'sit';
+    }
+  }
+
+  function endPointer(e) {
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    if (drag.kind === 'toy') finishToyDrag(toyById(drag.id));
+    drag = null;
+    try {
+      canvas.releasePointerCapture?.(e.pointerId);
+    } catch (err) {
+      // Pointer capture may already be gone after an orientation change.
+    }
+  }
+
   canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
 
-  /* ---- update ---- */
-  function update(dt, t) {
-    // Walking
+  function updateBoy(dt, t) {
     if (activity === 'walking') {
-      const speed = CONFIG.mascot.walkSpeedFrac * dt;
-      const dx = targetX - mascotX;
-      if (Math.abs(dx) <= speed) { mascotX = targetX; finishWalk(); }
-      else {
-        mascotX += Math.sign(dx) * speed;
-        walkPhase += dt * CONFIG.mascot.bobHz;
-        if (t > stepAt) { audio.footstep(); stepAt = t + 300; }
-      }
-    }
-
-    updateBaby(dt, t);
-
-    // Timed activities return to idle on their own.
-    if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
-    if (activity === 'magic' && t - activityStart > CONFIG.magicMs) {
-      activity = 'idle';
-      sparkles = [];
-    }
-    if (activity === 'wardrobe') {
-      if (openPickerAt && t >= openPickerAt) { openPickerAt = 0; openPicker(); }
-      if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
-    }
-    if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
-      activity = 'idle';
-    }
-
-    // Clouds drift; wind pushes them along.
-    const drift = weather === 'windy' ? 3.2 : 1;
-    for (const c of clouds) {
-      c.x += c.v * dt * drift;
-      if (c.x > 1.25) c.x = -0.25;
-    }
-
-    // Rain
-    if (weather === 'rainy') {
-      while (drops.length < CONFIG.weather.rainDrops) {
-        drops.push({ x: Math.random() * L.w, y: Math.random() * -L.h, v: 0.8 + Math.random() * 0.5 });
-      }
-      const fall = CONFIG.weather.rainSpeedFrac * L.h * dt;
-      for (const d of drops) {
-        d.y += fall * d.v;
-        // Rain stops at the roof: that is the whole point of the house.
-        const roof = roofYAt(d.x);
-        if (d.y >= Math.min(roof, L.groundY)) {
-          d.y = Math.random() * -L.h * 0.4;
-          d.x = Math.random() * L.w;
+      const distance = boyTarget - boyX;
+      const step = CONFIG.boy.walkSpeed * dt;
+      if (Math.abs(distance) <= step) {
+        boyX = boyTarget;
+        finishWalk();
+      } else {
+        boyX += Math.sign(distance) * step;
+        walkPhase += dt * CONFIG.boy.bobHz;
+        if (t >= stepAt) {
+          audio.footstep();
+          stepAt = t + 310;
         }
       }
-    } else if (drops.length) {
+    }
+
+    if (activity === 'giving') {
+      const age = t - activityStart;
+      if (!giveTransferred && age >= 520) {
+        giveTransferred = true;
+        const toy = toyById(heldToyId);
+        if (toy) babyReceives(toy, { modelled: !!demo });
+        heldToyId = null;
+      }
+      if (age >= 1050) {
+        setActivity('idle');
+        demo = null;
+      }
+    }
+
+    if (activity === 'magic' && t - activityStart > 1450) {
+      setActivity('idle');
+      sparkles = [];
+    }
+
+    if (activity === 'jumping') {
+      const total = CONFIG.jump.count * CONFIG.jump.durationMs;
+      const age = t - activityStart;
+      const bounce = Math.floor(age / CONFIG.jump.durationMs);
+      const local = (age % CONFIG.jump.durationMs) / CONFIG.jump.durationMs;
+      if (bounce < CONFIG.jump.count && local > 0.78 && lastLaughBounce !== bounce) {
+        lastLaughBounce = bounce;
+        landingPuffs.push({ x: wx(CONFIG.stations.trampoline), born: t });
+        audio.boing();
+        if (cotSpot === 'outside') {
+          babyReaction = 'laugh';
+          reactionUntil = t + CONFIG.baby.laughMs;
+          audio.babyLaugh();
+        }
+      }
+      if (age >= total) setActivity('idle');
+    }
+  }
+
+  function updateCot(t) {
+    if (!cotMove) return;
+    const progress = clamp01((t - cotMove.startedAt) / CONFIG.cot.moveMs);
+    const eased = easeInOutCubic(progress);
+    cotX = lerp(cotMove.from, cotMove.to, eased);
+    boyX = cotX - cotMove.direction * (L.cotW / L.w) * 0.66;
+    facing = cotMove.direction;
+    wheelAngle += 0.16;
+    cameraTarget = clamp(cotX - 0.36, 0, L.cameraMax);
+    if (progress >= 1) finishCotMove();
+  }
+
+  function updateBaby(t) {
+    if (babyReaction !== 'sleep' && t >= reactionUntil) {
+      babyReaction = mood === 'sleepy' ? 'sleepy' : 'sit';
+    }
+    if (babyReaction === 'sleep') return;
+
+    const moodAge = t - moodSince;
+    if (mood === 'content' && moodAge >= CONFIG.baby.contentMs) {
+      mood = 'wantsToy';
+      moodSince = t;
+      const available = toys.filter(toy => !toy.care && toy.owner !== 'baby');
+      preferredToy = (available[(Math.random() * available.length) | 0] || { id: 'teddy' }).id;
+    } else if (mood === 'wantsToy' && moodAge >= CONFIG.baby.toyWantMs) {
+      mood = 'sleepy';
+      moodSince = t;
+      babyReaction = 'sleepy';
+      reactionUntil = Infinity;
+    }
+
+    if (mood === 'wantsToy'
+      && t - lastInputAt >= CONFIG.idleDemoMs
+      && t - lastDemoAt >= CONFIG.idleDemoMs * 2) {
+      startIdleDemo(t);
+    }
+  }
+
+  function updateWeather(dt) {
+    const drift = weather === 'windy' ? 3.1 : 1;
+    for (const cloud of clouds) {
+      cloud.x += cloud.v * dt * drift;
+      if (cloud.x > 1.25) cloud.x = -0.25;
+    }
+
+    if (weather === 'rainy') {
+      while (drops.length < CONFIG.weather.rainDrops) {
+        drops.push({
+          x: Math.random() * L.w,
+          y: Math.random() * -L.h,
+          speed: 0.75 + Math.random() * 0.65,
+        });
+      }
+      for (const drop of drops) {
+        drop.y += L.h * 1.45 * dt * drop.speed;
+        if (drop.y > L.groundY) {
+          drop.y = -Math.random() * L.h * 0.4;
+          drop.x = Math.random() * L.w;
+        }
+      }
+    } else {
       drops = [];
     }
 
-    // Snow: falls slowly, wanders sideways, and settles on what it lands on.
     if (weather === 'snowy') {
       while (flakes.length < CONFIG.weather.snowFlakes) {
         flakes.push({
-          x: Math.random() * L.w, y: Math.random() * -L.h,
-          v: 0.6 + Math.random() * 0.8,
-          r: L.unit * (0.004 + Math.random() * 0.007),
-          wob: Math.random() * Math.PI * 2,
+          x: Math.random() * L.w,
+          y: Math.random() * -L.h,
+          r: L.unit * (0.004 + Math.random() * 0.006),
+          speed: 0.55 + Math.random() * 0.75,
+          wobble: Math.random() * Math.PI * 2,
         });
       }
-      const fall = CONFIG.weather.snowSpeedFrac * L.h * dt;
-      for (const f of flakes) {
-        f.y += fall * f.v;
-        f.wob += dt * 1.4;
-        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.w * dt;
-        // Like rain, snow stops at the roof rather than falling through it.
-        const roof = roofYAt(f.x);
-        if (f.y >= Math.min(roof, L.groundY)) {
-          f.y = Math.random() * -L.h * 0.3;
-          f.x = Math.random() * L.w;
+      for (const flake of flakes) {
+        flake.y += L.h * 0.17 * dt * flake.speed;
+        flake.wobble += dt * 1.5;
+        flake.x += Math.sin(flake.wobble) * L.w * 0.025 * dt;
+        if (flake.y > L.groundY) {
+          flake.y = -Math.random() * L.h * 0.35;
+          flake.x = Math.random() * L.w;
         }
       }
       snowDepth = Math.min(1, snowDepth + dt * 1000 / CONFIG.weather.snowSettleMs);
     } else {
-      if (flakes.length) flakes = [];
+      flakes = [];
       snowDepth = Math.max(0, snowDepth - dt * 1000 / CONFIG.weather.snowThawMs);
     }
 
-    // Wind-blown leaves
     if (weather === 'windy') {
       while (leaves.length < CONFIG.weather.leafCount) {
         leaves.push({
-          // Kept mostly above the horizon so they blow across the sky rather
-          // than appearing to swirl around inside the house.
-          x: Math.random() * -0.3, y: 0.12 + Math.random() * 0.42,
-          r: Math.random() * Math.PI, spin: (Math.random() - 0.5) * 6,
-          c: CONFIG.colors.leaf[(Math.random() * CONFIG.colors.leaf.length) | 0],
-          s: 0.6 + Math.random() * 0.8, wob: Math.random() * Math.PI * 2,
+          x: -0.2 - Math.random() * 0.4,
+          y: 0.12 + Math.random() * 0.45,
+          angle: Math.random() * Math.PI,
+          speed: 0.45 + Math.random() * 0.35,
+          color: CONFIG.colors.leaf[(Math.random() * CONFIG.colors.leaf.length) | 0],
         });
       }
-      for (const lf of leaves) {
-        lf.x += CONFIG.weather.windSpeedFrac * dt * lf.s;
-        lf.wob += dt * 3;
-        lf.r += lf.spin * dt;
-        if (lf.x > 1.2) { lf.x = -0.2; lf.y = 0.12 + Math.random() * 0.42; }
+      for (const leaf of leaves) {
+        leaf.x += leaf.speed * dt;
+        leaf.angle += dt * 5;
+        if (leaf.x > 1.2) leaf.x = -0.2;
       }
-    } else if (leaves.length) {
+    } else {
       leaves = [];
-    }
-
-    // Zzz while sleeping
-    if (activity === 'sleeping') {
-      if (!zzz.length || t - zzz[zzz.length - 1].born > 700) {
-        zzz.push({ born: t });
-      }
-      zzz = zzz.filter(z => t - z.born < CONFIG.sleep.zzzMs);
-    } else if (zzz.length) {
-      zzz = [];
     }
   }
 
-  /* ---- drawing ---- */
+  function update(dt, t) {
+    const cameraEase = 1 - Math.exp(-CONFIG.camera.ease * dt);
+    cameraX = lerp(cameraX, cameraTarget, cameraEase);
+    if (Math.abs(cameraTarget - cameraX) < 0.0005) cameraX = cameraTarget;
+
+    updateBoy(dt, t);
+    updateCot(t);
+    updateBaby(t);
+    updateWeather(dt);
+
+    touchPulses = touchPulses.filter(p => t - p.born < 480);
+    landingPuffs = landingPuffs.filter(p => t - p.born < 520);
+  }
 
   function skyColors() {
     if (night) return [CONFIG.colors.skyNightTop, CONFIG.colors.skyNightBottom];
@@ -918,1063 +1208,811 @@ function start(ctx) {
 
   function drawSky(t) {
     const [top, bottom] = skyColors();
-    const grad = g.createLinearGradient(0, 0, 0, L.horizonY);
-    grad.addColorStop(0, top);
-    grad.addColorStop(1, bottom);
-    g.fillStyle = grad;
+    const gradient = g.createLinearGradient(0, 0, 0, L.horizonY);
+    gradient.addColorStop(0, top);
+    gradient.addColorStop(1, bottom);
+    g.fillStyle = gradient;
     g.fillRect(0, 0, L.w, L.horizonY + 1);
 
     if (night) {
-      for (const s of stars) {
-        const a = 0.45 + 0.55 * Math.abs(Math.sin(t / 900 + s.tw));
-        g.globalAlpha = a;
-        g.fillStyle = CONFIG.colors.star;
+      for (const star of stars) {
+        g.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(t / 900 + star.tw));
+        g.fillStyle = '#ffffff';
         g.beginPath();
-        g.arc(s.x * L.w, s.y * L.horizonY, s.r, 0, Math.PI * 2);
+        g.arc(star.x * L.w, star.y * L.horizonY, star.r, 0, Math.PI * 2);
         g.fill();
       }
       g.globalAlpha = 1;
     }
-    drawSunOrMoon(t);
-    for (const c of clouds) drawCloud(c);
+
+    drawSunMoon(t);
+    for (const cloud of clouds) drawCloud(cloud);
   }
 
-  // Cached because the cut only changes when the radius does.
-  let moonCache = null;
-  function moonSprite(r) {
-    const size = Math.ceil(r * 2.2);
-    if (moonCache && moonCache.r === r) return moonCache.canvas;
-    const c = document.createElement('canvas');
-    c.width = c.height = Math.max(1, Math.ceil(size * dpr));
-    const mg = c.getContext('2d');
-    mg.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const cx = size / 2, cy = size / 2;
-    mg.fillStyle = CONFIG.colors.moon;
-    mg.beginPath();
-    mg.arc(cx, cy, r, 0, Math.PI * 2);
-    mg.fill();
-    mg.globalCompositeOperation = 'destination-out';
-    mg.beginPath();
-    mg.arc(cx + r * 0.42, cy - r * 0.26, r * 0.92, 0, Math.PI * 2);
-    mg.fill();
-    c.style.width = size + 'px';
-    moonCache = { r, canvas: c, size };
-    return c;
-  }
-
-  function drawSunOrMoon(t) {
-    const x = L.sunX, y = L.sunY, r = L.sunR;
+  function drawSunMoon(t) {
+    const x = L.sunX;
+    const y = L.sunY;
+    const r = L.sunR;
     g.save();
     if (night) {
-      // The crescent is cut on its own offscreen canvas and then stamped on.
-      // Punching it directly with destination-out would erase the sky behind
-      // it too, leaving a hole through to the page background.
-      // Explicit size: the sprite's backing store is devicePixelRatio-scaled.
-      g.drawImage(moonSprite(r), x - r * 1.1, y - r * 1.1, r * 2.2, r * 2.2);
+      g.fillStyle = CONFIG.colors.moon;
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = skyColors()[0];
+      g.beginPath();
+      g.arc(x + r * 0.38, y - r * 0.24, r * 0.86, 0, Math.PI * 2);
+      g.fill();
     } else {
-      // In rain the sun sits behind the weather: dimmed so the grey sky reads
-      // honestly, but never hidden, because it is also the day/night control.
-      if (weather === 'rainy' || weather === 'snowy') g.globalAlpha = 0.45;
-      const glow = g.createRadialGradient(x, y, r * 0.2, x, y, r * 2.1);
-      glow.addColorStop(0, 'rgba(255,243,176,0.55)');
+      if (weather === 'rainy' || weather === 'snowy') g.globalAlpha = 0.5;
+      const glow = g.createRadialGradient(x, y, r * 0.2, x, y, r * 2);
+      glow.addColorStop(0, 'rgba(255,243,176,.6)');
       glow.addColorStop(1, 'rgba(255,243,176,0)');
       g.fillStyle = glow;
-      g.beginPath(); g.arc(x, y, r * 2.1, 0, Math.PI * 2); g.fill();
-
+      g.beginPath();
+      g.arc(x, y, r * 2, 0, Math.PI * 2);
+      g.fill();
       g.strokeStyle = CONFIG.colors.sun;
       g.lineWidth = Math.max(2, r * 0.13);
       g.lineCap = 'round';
       for (let i = 0; i < 10; i++) {
-        const a = (i / 10) * Math.PI * 2 + t / 4200;
+        const angle = i / 10 * Math.PI * 2 + t / 4200;
         g.beginPath();
-        g.moveTo(x + Math.cos(a) * r * 1.28, y + Math.sin(a) * r * 1.28);
-        g.lineTo(x + Math.cos(a) * r * 1.62, y + Math.sin(a) * r * 1.62);
+        g.moveTo(x + Math.cos(angle) * r * 1.25, y + Math.sin(angle) * r * 1.25);
+        g.lineTo(x + Math.cos(angle) * r * 1.58, y + Math.sin(angle) * r * 1.58);
         g.stroke();
       }
       g.fillStyle = CONFIG.colors.sun;
-      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-      g.fillStyle = CONFIG.colors.sunGlow;
-      g.beginPath(); g.arc(x - r * 0.25, y - r * 0.28, r * 0.42, 0, Math.PI * 2); g.fill();
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
     }
     g.restore();
   }
 
-  function drawCloud(c) {
-    const x = c.x * L.w, y = c.y * L.horizonY, s = c.s * L.unit * 0.07;
-    g.fillStyle = night ? CONFIG.colors.cloudNight : CONFIG.colors.cloudDay;
-    g.globalAlpha = weather === 'rainy' ? 0.95 : 0.85;
-    g.beginPath();
-    g.arc(x, y, s, 0, Math.PI * 2);
-    g.arc(x + s * 0.9, y + s * 0.15, s * 0.78, 0, Math.PI * 2);
-    g.arc(x - s * 0.9, y + s * 0.2, s * 0.66, 0, Math.PI * 2);
-    g.arc(x, y + s * 0.45, s * 0.8, 0, Math.PI * 2);
-    g.fill();
-    g.globalAlpha = 1;
+  function drawCloud(cloud) {
+    const x = cloud.x * L.w;
+    const y = cloud.y * L.h;
+    const s = cloud.s * L.unit * 0.055;
+    g.save();
+    g.globalAlpha = weather === 'rainy' ? 0.82 : 0.92;
+    g.fillStyle = night ? '#8f9ccb' : '#ffffff';
+    for (const [dx, dy, radius] of [[0, 0, 0.7], [0.65, -0.22, 0.9], [1.38, 0, 0.72]]) {
+      g.beginPath();
+      g.arc(x + dx * s, y + dy * s, radius * s, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillRect(x, y - s * 0.25, s * 1.4, s * 0.65);
+    g.restore();
   }
 
   function drawGround() {
     g.fillStyle = night ? CONFIG.colors.grassNight : CONFIG.colors.grassDay;
-    g.fillRect(0, L.horizonY, L.w, L.h - L.horizonY);
-    // A soft band of lighter grass at the horizon gives the ground some depth.
-    const grad = g.createLinearGradient(0, L.horizonY, 0, L.groundY);
-    grad.addColorStop(0, night ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.28)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = grad;
-    g.fillRect(0, L.horizonY, L.w, L.groundY - L.horizonY);
-    drawSnowOnGround();
+    g.fillRect(0, L.horizonY, L.worldW, L.h - L.horizonY);
+    g.globalAlpha = 0.16;
+    g.fillStyle = CONFIG.colors.grassStripe;
+    for (let x = 0; x < L.worldW; x += L.unit * 0.12) {
+      g.beginPath();
+      g.ellipse(x, L.groundY + L.unit * 0.025, L.unit * 0.09, L.unit * 0.02, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+
+    if (snowDepth > 0) {
+      g.fillStyle = CONFIG.colors.snow;
+      g.globalAlpha = 0.35 + snowDepth * 0.65;
+      g.fillRect(0, L.horizonY, L.worldW, L.h - L.horizonY);
+      g.globalAlpha = 1;
+    }
   }
 
-  // Full width of the world, from the horizon down, with a gently undulating
-  // top edge so the covering reads as settled snow and not a painted stripe.
-  function drawSnowOnGround() {
-    if (snowDepth <= 0.001) return;
-    // Creeps up from the foreground and reaches the horizon when fully settled,
-    // so a covered world is genuinely white rather than white with a green
-    // field still showing behind it.
-    // Overshoot the horizon a little so the undulating edge cannot leave a
-    // sliver of green showing along it at full depth.
-    const topY = lerp(L.h, L.horizonY - L.unit * 0.02, clamp01(snowDepth));
-    g.save();
-    g.fillStyle = night ? CONFIG.colors.snowShade : CONFIG.colors.snow;
+  function drawHouse() {
+    const h = L.house;
+    const wallColor = night ? CONFIG.colors.wallNight : CONFIG.colors.wall;
+    const interiorColor = night ? CONFIG.colors.interiorNight : CONFIG.colors.interior;
+
+    // Interior cutaway: wide in the indoor rest, entirely off-screen except
+    // for the final exterior sliver in the outdoor rest.
+    g.fillStyle = interiorColor;
+    g.fillRect(h.x, h.wallTop, h.interiorRight - h.x, L.groundY - h.wallTop);
+    g.fillStyle = CONFIG.colors.floor;
+    g.fillRect(h.x, L.groundY - L.unit * 0.035, h.interiorRight - h.x, L.unit * 0.035);
+
+    // Threshold/exterior sliver with a real window to tap from the yard.
+    g.fillStyle = wallColor;
+    g.fillRect(h.interiorRight, h.wallTop, h.right - h.interiorRight, L.groundY - h.wallTop);
+    const window = {
+      x: wx(0.718),
+      y: h.wallTop + L.unit * 0.12,
+      w: wx(0.078),
+      h: L.unit * 0.20,
+    };
+    g.fillStyle = night ? '#35507c' : '#9fe2ff';
+    g.fillRect(window.x, window.y, window.w, window.h);
+    g.strokeStyle = '#fffaf0';
+    g.lineWidth = Math.max(4, L.unit * 0.014);
+    g.strokeRect(window.x, window.y, window.w, window.h);
     g.beginPath();
-    g.moveTo(0, L.h);
-    g.lineTo(0, topY);
-    const bumps = 7;
-    for (let i = 0; i <= bumps; i++) {
-      const x = (i / bumps) * L.w;
-      const wave = Math.sin(i * 1.7) * L.unit * 0.012 * snowDepth;
-      g.lineTo(x, topY + wave);
-    }
-    g.lineTo(L.w, L.h);
+    g.moveTo(window.x + window.w / 2, window.y);
+    g.lineTo(window.x + window.w / 2, window.y + window.h);
+    g.moveTo(window.x, window.y + window.h / 2);
+    g.lineTo(window.x + window.w, window.y + window.h / 2);
+    g.stroke();
+
+    // A curtain and pillow glimpse give the little outdoor window a reason to
+    // exist without placing a second fake bed behind it.
+    g.fillStyle = 'rgba(255,255,255,.65)';
+    g.beginPath();
+    g.moveTo(window.x, window.y);
+    g.lineTo(window.x + window.w * 0.25, window.y);
+    g.lineTo(window.x + window.w * 0.16, window.y + window.h);
+    g.lineTo(window.x, window.y + window.h);
     g.closePath();
+    g.fill();
+
+    g.fillStyle = CONFIG.colors.roof;
+    g.strokeStyle = CONFIG.colors.roofDark;
+    g.lineJoin = 'round';
+    g.lineWidth = Math.max(4, L.unit * 0.02);
+    g.beginPath();
+    g.moveTo(h.x - L.unit * 0.035, h.wallTop + L.unit * 0.015);
+    g.lineTo((h.x + h.right) / 2, h.roofPeak);
+    g.lineTo(h.right + L.unit * 0.035, h.wallTop + L.unit * 0.015);
+    g.stroke();
+
+    if (snowDepth > 0) {
+      g.strokeStyle = CONFIG.colors.snow;
+      g.globalAlpha = snowDepth;
+      g.lineWidth = L.unit * 0.025;
+      g.beginPath();
+      g.moveTo(h.x - L.unit * 0.03, h.wallTop + L.unit * 0.005);
+      g.lineTo((h.x + h.right) / 2, h.roofPeak - L.unit * 0.008);
+      g.lineTo(h.right + L.unit * 0.03, h.wallTop + L.unit * 0.005);
+      g.stroke();
+      g.globalAlpha = 1;
+    }
+  }
+
+  function drawBed() {
+    const b = L.bed;
+    g.fillStyle = CONFIG.colors.bedFrame;
+    roundRect(b.x, b.y + b.h * 0.48, b.w, b.h * 0.46, L.unit * 0.025);
+    g.fill();
+    g.fillRect(b.x + b.w * 0.04, b.y + b.h * 0.88, b.w * 0.06, b.h * 0.12);
+    g.fillRect(b.x + b.w * 0.90, b.y + b.h * 0.88, b.w * 0.06, b.h * 0.12);
+
+    g.fillStyle = CONFIG.colors.bedSheet;
+    roundRect(b.x + b.w * 0.05, b.y + b.h * 0.35, b.w * 0.90, b.h * 0.35, L.unit * 0.02);
+    g.fill();
+    g.fillStyle = CONFIG.colors.bedBlanket;
+    roundRect(b.x + b.w * 0.38, b.y + b.h * 0.40, b.w * 0.57, b.h * 0.34, L.unit * 0.018);
+    g.fill();
+    g.fillStyle = '#fffdf7';
+    roundRect(b.x + b.w * 0.08, b.y + b.h * 0.38, b.w * 0.26, b.h * 0.20, L.unit * 0.02);
+    g.fill();
+
+    // The folded care blanket starts visibly on a low shelf beside the bed.
+    const blanket = toyById('blanket');
+    if (blanket && blanket.owner === 'loose') {
+      drawContained(toyArt.blanket, wx(blanket.x), blanket.y * L.h, L.unit * 0.13, L.unit * 0.09);
+    }
+  }
+
+  function drawWardrobe(t) {
+    const w = L.wardrobe;
+    g.fillStyle = CONFIG.colors.wardrobeDark;
+    roundRect(w.x, w.y, w.w, w.h, L.unit * 0.025);
+    g.fill();
+    g.fillStyle = CONFIG.colors.wardrobe;
+    roundRect(w.x + w.w * 0.04, w.y + w.h * 0.04, w.w * 0.92, w.h * 0.92, L.unit * 0.02);
+    g.fill();
+
+    const open = activity === 'wardrobe' || picker;
+    const amount = open ? easeOutCubic(clamp01((t - activityStart) / 520)) : 0;
+    const half = w.w * 0.44;
+    g.fillStyle = CONFIG.colors.wardrobeDoor;
+    roundRect(w.x + w.w * 0.06 - half * amount * 0.42, w.y + w.h * 0.07, half, w.h * 0.84, L.unit * 0.015);
+    g.fill();
+    roundRect(w.x + w.w * 0.50 + half * amount * 0.42, w.y + w.h * 0.07, half, w.h * 0.84, L.unit * 0.015);
+    g.fill();
+    g.fillStyle = '#e8c36b';
+    g.beginPath();
+    g.arc(w.x + w.w * 0.47 - half * amount * 0.42, w.y + w.h * 0.50, L.unit * 0.008, 0, Math.PI * 2);
+    g.arc(w.x + w.w * 0.53 + half * amount * 0.42, w.y + w.h * 0.50, L.unit * 0.008, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  function drawBush() {
+    drawShadow(L.bush.x + L.bush.w / 2, L.groundY, L.bush.w * 0.72, L.unit * 0.025, 0.16);
+    drawContained(worldArt.bush, L.bush.x + L.bush.w / 2, L.bush.y + L.bush.h / 2, L.bush.w, L.bush.h);
+  }
+
+  function jumpState(t) {
+    if (activity !== 'jumping') return { lift: 0, compress: 0 };
+    const local = ((t - activityStart) % CONFIG.jump.durationMs) / CONFIG.jump.durationMs;
+    const lift = Math.sin(Math.PI * local) * L.boyH * CONFIG.jump.heightFrac;
+    const landing = Math.max(0, (local - 0.76) / 0.24);
+    const compress = Math.sin(Math.PI * clamp01(landing)) * L.unit * 0.025;
+    return { lift, compress };
+  }
+
+  function drawTrampoline(t) {
+    const tr = L.tram;
+    const jump = jumpState(t);
+    const matY = tr.y + tr.h * 0.25 + jump.compress;
+
+    g.strokeStyle = CONFIG.colors.tramSpring;
+    g.lineWidth = Math.max(2, L.unit * 0.008);
+    for (let i = 0; i < 7; i++) {
+      const x = tr.x + tr.w * (0.12 + i * 0.125);
+      g.beginPath();
+      g.moveTo(x, matY);
+      g.lineTo(x - tr.w * 0.025, tr.y + tr.h * 0.62);
+      g.lineTo(x + tr.w * 0.025, tr.y + tr.h * 0.75);
+      g.stroke();
+    }
+    g.strokeStyle = CONFIG.colors.tramFrame;
+    g.lineWidth = Math.max(4, L.unit * 0.014);
+    g.beginPath();
+    g.moveTo(tr.x + tr.w * 0.13, matY);
+    g.lineTo(tr.x + tr.w * 0.07, L.groundY);
+    g.moveTo(tr.x + tr.w * 0.87, matY);
+    g.lineTo(tr.x + tr.w * 0.93, L.groundY);
+    g.stroke();
+
+    g.fillStyle = CONFIG.colors.tramMat;
+    g.beginPath();
+    g.ellipse(tr.x + tr.w / 2, matY, tr.w / 2, tr.h * 0.18, 0, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = CONFIG.colors.tramFrame;
+    g.lineWidth = Math.max(3, L.unit * 0.012);
+    g.stroke();
+  }
+
+  function drawToyBin() {
+    const looseCount = toys.filter(toy => !toy.care && toy.owner === 'loose').length;
+    const art = looseCount ? worldArt.binOpen : worldArt.binClosed;
+    drawShadow(L.bin.x + L.bin.w / 2, L.groundY, L.bin.w * 0.68, L.unit * 0.024, 0.17);
+    drawContained(art, L.bin.x + L.bin.w / 2, L.bin.y + L.bin.h / 2, L.bin.w, L.bin.h);
+  }
+
+  function drawShadow(x, y, rx, ry, alpha = 0.18) {
+    g.save();
+    g.fillStyle = `rgba(45,50,55,${alpha})`;
+    g.beginPath();
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
     g.fill();
     g.restore();
   }
 
-  function drawHouse(t) {
-    const c = CONFIG.colors;
-    const left = L.houseLeft, right = L.houseRight;
-    const w = right - left;
-    const wallH = L.groundY - L.wallTop;
+  function drawCotBack(t) {
+    const c = cotBox();
+    const nudge = t < cotNudgeUntil ? Math.sin((cotNudgeUntil - t) / 45) * L.unit * 0.005 : 0;
+    g.save();
+    g.translate(nudge, 0);
+    drawShadow(c.x + c.w / 2, L.groundY, c.w * 0.43, L.unit * 0.025, 0.20);
 
-    // Interior: warm light at night so the house reads as somewhere to go.
-    g.fillStyle = night ? c.interiorNight : c.interiorDay;
-    g.fillRect(left, L.wallTop, w, wallH);
-    if (night) {
-      const glow = g.createRadialGradient(L.houseMidX, L.wallTop + wallH * 0.4,
-        w * 0.05, L.houseMidX, L.wallTop + wallH * 0.4, w * 0.8);
-      glow.addColorStop(0, 'rgba(255,214,120,0.55)');
-      glow.addColorStop(1, 'rgba(255,214,120,0)');
-      g.fillStyle = glow;
-      g.fillRect(left, L.wallTop, w, wallH);
-    }
-
-    // A window high on the back wall, above the bed rather than between the
-    // furniture, where there is barely a tenth of the interior to spare. It is
-    // filled with the live sky, so the weather is visible from indoors too.
-    drawWindow();
-
-    // Floor, with a few board seams so it is not a flat slab.
-    const floorH = wallH * 0.07;
-    const floorY = L.groundY - floorH;
-    g.fillStyle = c.floor;
-    g.fillRect(left, floorY, w, floorH);
-    g.strokeStyle = 'rgba(0,0,0,0.13)';
-    g.lineWidth = Math.max(1, L.unit * 0.003);
-    for (let i = 1; i < 6; i++) {
-      const x = left + (w * i) / 6;
-      g.beginPath();
-      g.moveTo(x, floorY);
-      g.lineTo(x - w * 0.012, L.groundY);
-      g.stroke();
-    }
-    // Skirting board where the wall meets the floor.
-    g.fillStyle = 'rgba(0,0,0,0.10)';
-    g.fillRect(left, floorY - wallH * 0.035, w, wallH * 0.035);
-
-    // A rug under the bed, so that corner of the room is not bare.
-    g.fillStyle = 'rgba(224,104,90,0.22)';
+    g.strokeStyle = CONFIG.colors.cotDark;
+    g.lineWidth = Math.max(4, L.unit * 0.012);
+    g.lineCap = 'round';
     g.beginPath();
-    roundRect(L.bed.x + L.bed.w * 0.06, floorY + floorH * 0.15,
-      L.bed.w * 0.88, floorH * 0.6, floorH * 0.3);
+    g.moveTo(c.x + c.w * 0.07, c.y + c.h * 0.36);
+    g.lineTo(c.x - c.w * 0.13, c.y + c.h * 0.16);
+    g.moveTo(c.x + c.w * 0.93, c.y + c.h * 0.36);
+    g.lineTo(c.x + c.w * 1.13, c.y + c.h * 0.16);
+    g.stroke();
+
+    g.fillStyle = CONFIG.colors.cotDark;
+    g.beginPath();
+    g.arc(c.x + c.w * 0.21, L.groundY - L.unit * 0.012, L.unit * 0.032, 0, Math.PI * 2);
+    g.arc(c.x + c.w * 0.79, L.groundY - L.unit * 0.012, L.unit * 0.032, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#f5dba0';
+    g.lineWidth = Math.max(2, L.unit * 0.006);
+    for (const wheelX of [c.x + c.w * 0.21, c.x + c.w * 0.79]) {
+      g.save();
+      g.translate(wheelX, L.groundY - L.unit * 0.012);
+      g.rotate(wheelAngle);
+      g.beginPath();
+      g.moveTo(-L.unit * 0.022, 0);
+      g.lineTo(L.unit * 0.022, 0);
+      g.moveTo(0, -L.unit * 0.022);
+      g.lineTo(0, L.unit * 0.022);
+      g.stroke();
+      g.restore();
+    }
+
+    g.fillStyle = CONFIG.colors.cotFrame;
+    roundRect(c.x, c.y + c.h * 0.16, c.w, c.h * 0.69, L.unit * 0.035);
+    g.fill();
+    g.fillStyle = CONFIG.colors.cotMat;
+    roundRect(c.x + c.w * 0.07, c.y + c.h * 0.20, c.w * 0.86, c.h * 0.50, L.unit * 0.03);
+    g.fill();
+    g.restore();
+  }
+
+  function drawBaby(t) {
+    const c = cotBox();
+    const center = babyCenter();
+    let kind = babyReaction;
+    if (kind === 'sit' && mood === 'sleepy') kind = 'sleepy';
+    const img = babyArt[kind] || babyArt.sit;
+    const base = c.y + c.h * 0.76;
+    const bob = kind === 'laugh' ? Math.sin(t / 75) * L.unit * 0.004 : 0;
+    drawGrounded(img, center.x, base, L.babyH, { facing: 1, bob });
+
+    const owned = toys.filter(toy => toy.owner === 'baby' && !toy.care);
+    if (kind !== 'hugTeddy' && kind !== 'sleep') {
+      owned.slice(-2).forEach((toy, index) => {
+        const x = center.x + (index - (owned.length > 1 ? 0.5 : 0)) * L.unit * 0.055;
+        const y = c.y + c.h * 0.47;
+        drawContained(toyArt[toy.id], x, y, L.unit * 0.095, L.unit * 0.095);
+      });
+    }
+
+    if (blanketOn) {
+      g.save();
+      g.globalAlpha = kind === 'sleep' ? 0.96 : 0.82;
+      g.fillStyle = '#f8d7dd';
+      roundRect(c.x + c.w * 0.22, c.y + c.h * 0.48, c.w * 0.58, c.h * 0.34, L.unit * 0.025);
+      g.fill();
+      g.strokeStyle = '#efb8c4';
+      g.lineWidth = Math.max(2, L.unit * 0.006);
+      g.stroke();
+      g.restore();
+    }
+
+    drawBabyMoodBubble(t, center.x, c.y - L.unit * 0.03);
+  }
+
+  function drawBabyMoodBubble(t, x, y) {
+    if (babyReaction === 'sleep') {
+      g.fillStyle = CONFIG.colors.ink;
+      g.globalAlpha = 0.55 + 0.25 * Math.sin(t / 400);
+      g.font = `700 ${Math.max(18, L.unit * 0.055)}px system-ui`;
+      g.fillText('Z', x + L.unit * 0.08, y - L.unit * 0.03);
+      g.globalAlpha = 1;
+      return;
+    }
+    if (mood === 'content') return;
+
+    const bubbleY = y - L.unit * 0.06 + Math.sin(t / 500) * L.unit * 0.004;
+    g.fillStyle = 'rgba(255,255,255,.94)';
+    g.strokeStyle = 'rgba(58,51,87,.18)';
+    g.lineWidth = Math.max(2, L.unit * 0.006);
+    g.beginPath();
+    g.arc(x, bubbleY, L.unit * 0.064, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.beginPath();
+    g.arc(x - L.unit * 0.045, bubbleY + L.unit * 0.063, L.unit * 0.016, 0, Math.PI * 2);
     g.fill();
 
-    drawBed();
-    drawWardrobe(t);
-
-    // Side walls, drawn after the contents so they frame the cutaway.
-    const wallT = L.wallT;
-    g.fillStyle = night ? c.wallNight : c.wallDay;
-    g.fillRect(left - wallT, L.wallTop, wallT, wallH);
-    g.fillRect(right, L.wallTop, wallT, wallH);
-
-    // Stone foundation the walls stand on.
-    g.fillStyle = '#9d9384';
-    g.fillRect(left - wallT, L.groundY - wallH * 0.045, w + wallT * 2, wallH * 0.045);
-    g.fillStyle = 'rgba(0,0,0,0.12)';
-    for (let i = 0; i < 9; i++) {
-      const x = left - wallT + ((w + wallT * 2) * i) / 9;
-      g.fillRect(x, L.groundY - wallH * 0.045, Math.max(1, L.unit * 0.003), wallH * 0.045);
+    if (mood === 'wantsToy') {
+      drawContained(toyArt[preferredToy], x, bubbleY, L.unit * 0.075, L.unit * 0.075);
+    } else {
+      g.fillStyle = CONFIG.colors.ink;
+      g.font = `700 ${Math.max(14, L.unit * 0.045)}px system-ui`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Z', x, bubbleY);
+      g.textBaseline = 'alphabetic';
     }
-
-    drawChimney(t);
-    drawRoof();
   }
 
-  function drawWindow() {
-    const wallH = L.groundY - L.wallTop;
-    const wx = L.bed.x + L.bed.w * 0.12;
-    const ww = L.bed.w * 0.62;
-    const wy = L.wallTop + wallH * 0.10;
-    const wh = wallH * 0.24;
-    const frame = Math.max(2, L.unit * 0.008);
-
-    // Panes show the current sky, so the weather reads from inside.
-    const [top, bottom] = skyColors();
-    const grad = g.createLinearGradient(0, wy, 0, wy + wh);
-    grad.addColorStop(0, top);
-    grad.addColorStop(1, bottom);
-    g.fillStyle = grad;
-    g.fillRect(wx, wy, ww, wh);
-
-    // Snow piles on the outside of the sill, visible through the glass.
-    if (snowDepth > 0.001) {
-      g.fillStyle = CONFIG.colors.snow;
-      g.fillRect(wx, wy + wh - wh * 0.16 * snowDepth, ww, wh * 0.16 * snowDepth);
+  function drawCotFront(t) {
+    const c = cotBox();
+    const nudge = t < cotNudgeUntil ? Math.sin((cotNudgeUntil - t) / 45) * L.unit * 0.005 : 0;
+    g.save();
+    g.translate(nudge, 0);
+    g.fillStyle = CONFIG.colors.cotFrame;
+    roundRect(c.x + c.w * 0.03, c.y + c.h * 0.55, c.w * 0.94, c.h * 0.28, L.unit * 0.025);
+    g.fill();
+    g.strokeStyle = CONFIG.colors.cotRail;
+    g.lineWidth = Math.max(3, L.unit * 0.009);
+    for (let i = 1; i < 7; i++) {
+      const x = c.x + c.w * (0.06 + i * 0.125);
+      g.beginPath();
+      g.moveTo(x, c.y + c.h * 0.26);
+      g.lineTo(x, c.y + c.h * 0.68);
+      g.stroke();
     }
-
-    g.strokeStyle = '#8a5a3c';
-    g.lineWidth = frame;
-    g.strokeRect(wx, wy, ww, wh);
+    g.strokeStyle = CONFIG.colors.cotDark;
+    g.lineWidth = Math.max(4, L.unit * 0.012);
     g.beginPath();
-    g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
-    g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2);
+    g.moveTo(c.x + c.w * 0.04, c.y + c.h * 0.25);
+    g.lineTo(c.x + c.w * 0.96, c.y + c.h * 0.25);
     g.stroke();
-    // Sill
-    g.fillStyle = '#8a5a3c';
-    g.fillRect(wx - frame * 1.6, wy + wh, ww + frame * 3.2, frame * 1.4);
+
+    // A soft pulse on the handles makes the physical verb discoverable.
+    if (!drag && !cotMove && t - lastInputAt > 4500) {
+      const alpha = 0.18 + 0.16 * Math.sin(t / 420);
+      g.strokeStyle = `rgba(255,255,255,${alpha})`;
+      g.lineWidth = L.unit * 0.012;
+      g.beginPath();
+      g.arc(c.x - c.w * 0.13, c.y + c.h * 0.16, L.unit * 0.035, 0, Math.PI * 2);
+      g.arc(c.x + c.w * 1.13, c.y + c.h * 0.16, L.unit * 0.035, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.restore();
   }
 
-  function drawChimney(t) {
-    const ch = L.chimney;
-    const c = CONFIG.colors;
-    // Base sits on the roof slope; roofYAt gives the exact height there.
-    const baseY = roofYAt(ch.x + ch.w / 2);
-    g.fillStyle = c.roofDark;
-    g.fillRect(ch.x, ch.top, ch.w, baseY - ch.top);
-    g.fillStyle = 'rgba(0,0,0,0.15)';
-    for (let i = 1; i < 4; i++) {
-      const y = ch.top + ((baseY - ch.top) * i) / 4;
-      g.fillRect(ch.x, y, ch.w, Math.max(1, L.unit * 0.003));
+  function drawLooseToys(t) {
+    for (const toy of toys) {
+      if (toy.owner !== 'loose' && toy.owner !== 'drag') continue;
+      if (toy.id === 'blanket') continue; // drawn beside the bed
+      const x = wx(toy.x);
+      const y = toy.y * L.h;
+      const lift = toy.owner === 'drag' ? L.unit * 0.012 : 0;
+      drawShadow(x, y + L.unit * 0.035, L.unit * toy.size * 0.45, L.unit * 0.012, toy.owner === 'drag' ? 0.24 : 0.13);
+      drawContained(
+        toyArt[toy.id],
+        x,
+        y - lift,
+        L.unit * toy.size,
+        L.unit * toy.size,
+        { rotation: toy.owner === 'drag' ? Math.sin(t / 130) * 0.05 : 0 },
+      );
     }
-    // Cap
-    g.fillStyle = '#7a6a60';
-    g.fillRect(ch.x - ch.w * 0.14, ch.top - ch.w * 0.16, ch.w * 1.28, ch.w * 0.16);
+  }
 
-    if (snowDepth > 0.001) {
-      g.fillStyle = CONFIG.colors.snow;
-      g.fillRect(ch.x - ch.w * 0.14, ch.top - ch.w * (0.16 + 0.20 * snowDepth),
-        ch.w * 1.28, ch.w * 0.20 * snowDepth);
+  function drawBlanketIfDragged(t) {
+    const blanket = toyById('blanket');
+    if (!blanket || blanket.owner !== 'drag') return;
+    const x = wx(blanket.x);
+    const y = blanket.y * L.h;
+    drawShadow(x, y + L.unit * 0.035, L.unit * 0.06, L.unit * 0.012, 0.20);
+    drawContained(toyArt.blanket, x, y - L.unit * 0.012, L.unit * 0.13, L.unit * 0.10, {
+      rotation: Math.sin(t / 140) * 0.04,
+    });
+  }
+
+  function currentBoyPose(t) {
+    if (activity === 'pushing') {
+      return pose(Math.floor((t - activityStart) / 180) % 2 ? 'pushA' : 'pushB');
     }
+    if (activity === 'giving') return pose('give');
+    if (heldToyId) return pose('carry');
+    if (activity === 'walking') return pose('walk');
+    if (activity === 'jumping') return pose('jump');
+    if (activity === 'sleeping') return pose('sleep');
+    if (activity === 'magic') return pose('magic');
+    return pose('stand');
+  }
 
-    // Smoke, when the fire would be lit: after dark or in the cold.
-    if (night || weather === 'snowy') {
-      const cx = ch.x + ch.w / 2;
+  function drawBoy(t) {
+    if (activity === 'sleeping') {
+      drawSleepingBoy(t);
+      return;
+    }
+    const x = wx(boyX);
+    const jump = jumpState(t);
+    let base = L.groundY - jump.lift;
+    let bob = 0;
+    if (activity === 'walking') bob = Math.sin(walkPhase * Math.PI * 2) * L.boyH * 0.012;
+    if (activity === 'pushing') bob = Math.sin((t - activityStart) / 90) * L.boyH * 0.007;
+
+    drawShadow(x, L.groundY, L.boyH * 0.22 * (1 - jump.lift / (L.boyH * 0.8)), L.unit * 0.018, 0.18);
+    const img = currentBoyPose(t);
+    const height = activity === 'giving' ? L.boyH * 0.82 : L.boyH;
+    drawGrounded(img, x, base, height, { facing, bob });
+
+    if (heldToyId) drawHeldToy(t);
+    if (activity === 'magic') drawMagic(t, x, base);
+  }
+
+  function drawHeldToy(t) {
+    const toy = toyById(heldToyId);
+    if (!toy) return;
+    const progress = activity === 'giving'
+      ? easeInOutCubic(clamp01((t - activityStart) / 720))
+      : 0;
+    const startX = wx(boyX) + facing * L.boyH * 0.20;
+    const startY = L.groundY - L.boyH * (activity === 'giving' ? 0.42 : 0.46);
+    const baby = babyCenter();
+    const x = lerp(startX, baby.x - facing * L.unit * 0.025, progress);
+    const y = lerp(startY, baby.y + L.unit * 0.03, progress) - Math.sin(progress * Math.PI) * L.unit * 0.035;
+    drawContained(toyArt[toy.id], x, y, L.unit * 0.082, L.unit * 0.082);
+  }
+
+  function drawSleepingBoy(t) {
+    const b = L.bed;
+    const img = pose('sleep');
+    const x = b.x + b.w * 0.52;
+    const base = b.y + b.h * 0.68;
+    drawGrounded(img, x, base, L.boyH * 0.57, { facing: 1 });
+    g.fillStyle = CONFIG.colors.bedBlanket;
+    g.globalAlpha = 0.92;
+    roundRect(b.x + b.w * 0.34, b.y + b.h * 0.43, b.w * 0.60, b.h * 0.30, L.unit * 0.018);
+    g.fill();
+    g.globalAlpha = 1;
+    g.fillStyle = CONFIG.colors.ink;
+    g.globalAlpha = 0.55 + 0.2 * Math.sin(t / 420);
+    g.font = `700 ${Math.max(18, L.unit * 0.05)}px system-ui`;
+    g.fillText('Z', b.x + b.w * 0.25, b.y + b.h * 0.20);
+    g.globalAlpha = 1;
+  }
+
+  function drawMagic(t, x, base) {
+    const age = clamp01((t - activityStart) / 1450);
+    g.save();
+    for (const sparkle of sparkles) {
+      const radius = L.boyH * sparkle.distance * easeOutCubic(age);
+      const sx = x + Math.cos(sparkle.angle) * radius;
+      const sy = base - L.boyH * 0.54 + Math.sin(sparkle.angle) * radius;
+      g.globalAlpha = Math.sin(age * Math.PI);
+      g.fillStyle = sparkle.color;
       g.save();
-      g.fillStyle = 'rgba(226,226,232,0.42)';
-      for (let i = 0; i < 4; i++) {
-        const p = ((t / 2600) + i / 4) % 1;
-        const r = ch.w * (0.28 + p * 0.7);
-        g.globalAlpha = 0.42 * (1 - p);
+      g.translate(sx, sy);
+      g.rotate(sparkle.angle + age * 2);
+      const size = L.unit * sparkle.size;
+      g.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * Math.PI * 2;
+        const r = i % 2 ? size * 0.35 : size;
+        g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      g.closePath();
+      g.fill();
+      g.restore();
+    }
+    g.restore();
+  }
+
+  function drawLandingPuffs(t) {
+    for (const puff of landingPuffs) {
+      const age = clamp01((t - puff.born) / 520);
+      g.save();
+      g.globalAlpha = 1 - age;
+      g.fillStyle = 'rgba(255,255,255,.9)';
+      for (let i = 0; i < 5; i++) {
+        const angle = -Math.PI + i / 4 * Math.PI;
+        const distance = L.unit * 0.06 * age;
         g.beginPath();
-        g.arc(cx + Math.sin(p * 3.4 + i) * ch.w * 0.7,
-          ch.top - ch.w * 0.3 - p * L.unit * 0.15, r, 0, Math.PI * 2);
+        g.arc(
+          puff.x + Math.cos(angle) * distance,
+          L.tram.y + L.tram.h * 0.24 + Math.sin(angle) * distance * 0.35,
+          L.unit * (0.016 - age * 0.007),
+          0,
+          Math.PI * 2,
+        );
         g.fill();
       }
       g.restore();
     }
   }
 
-  function drawRoof() {
-    const c = CONFIG.colors;
-    const L_ = L.eaveLeft, R_ = L.eaveRight, peakY = L.roofPeak, eaveY = L.eaveY;
-
-    g.save();
-    // Clip to the roof triangle so the shingle rows and the snow cap can be
-    // drawn as plain bands without any per-row trigonometry.
-    g.beginPath();
-    g.moveTo(L_, eaveY);
-    g.lineTo(L.houseMidX, peakY);
-    g.lineTo(R_, eaveY);
-    g.closePath();
-    g.clip();
-
-    g.fillStyle = c.roof;
-    g.fillRect(L_, peakY, R_ - L_, eaveY - peakY);
-
-    // Shingle rows.
-    g.strokeStyle = 'rgba(0,0,0,0.16)';
-    g.lineWidth = Math.max(1.5, L.unit * 0.005);
-    const rows = 5;
-    for (let i = 1; i <= rows; i++) {
-      const y = peakY + ((eaveY - peakY) * i) / (rows + 1);
-      g.beginPath();
-      g.moveTo(L_, y);
-      g.lineTo(R_, y);
-      g.stroke();
-    }
-    // The left slope is turned away from the light.
-    g.fillStyle = 'rgba(0,0,0,0.12)';
-    g.beginPath();
-    g.moveTo(L_, eaveY);
-    g.lineTo(L.houseMidX, peakY);
-    g.lineTo(L.houseMidX, eaveY);
-    g.closePath();
-    g.fill();
-
-    // Settled snow: fill the (clipped) roof white, then paint the roof back
-    // over it shifted down by the depth. What is left is a clean band lying
-    // along both slopes — no per-slope trigonometry needed.
-    if (snowDepth > 0.001) {
-      const cap = L.unit * CONFIG.weather.snowCapFrac * snowDepth;
-      g.fillStyle = CONFIG.colors.snow;
-      g.fillRect(L_, peakY, R_ - L_, eaveY - peakY);
-      g.fillStyle = c.roof;
-      g.beginPath();
-      g.moveTo(L_, eaveY + cap);
-      g.lineTo(L.houseMidX, peakY + cap);
-      g.lineTo(R_, eaveY + cap);
-      g.lineTo(R_, eaveY + cap * 40);
-      g.lineTo(L_, eaveY + cap * 40);
-      g.closePath();
-      g.fill();
-      // Redraw the shading on the left slope so it survives the repaint.
-      g.fillStyle = 'rgba(0,0,0,0.12)';
-      g.beginPath();
-      g.moveTo(L_, eaveY + cap);
-      g.lineTo(L.houseMidX, peakY + cap);
-      g.lineTo(L.houseMidX, eaveY + cap * 40);
-      g.lineTo(L_, eaveY + cap * 40);
-      g.closePath();
-      g.fill();
-    }
-    g.restore();
-
-    // Ridge cap along the peak, outside the clip so it reads as a raised edge.
-    g.strokeStyle = c.roofDark;
-    g.lineWidth = Math.max(2.5, L.unit * 0.010);
-    g.lineCap = 'round';
-    g.beginPath();
-    g.moveTo(L.houseMidX, peakY + L.unit * 0.004);
-    g.lineTo(L.houseMidX, peakY - L.unit * 0.004);
-    g.stroke();
-    g.beginPath();
-    g.moveTo(L_, eaveY);
-    g.lineTo(L.houseMidX, peakY);
-    g.lineTo(R_, eaveY);
-    g.stroke();
+  function pickerCards() {
+    const width = L.w * CONFIG.picker.cardWidthFrac;
+    const gap = L.w * CONFIG.picker.cardGapFrac;
+    const height = L.h * CONFIG.picker.cardHeightFrac;
+    const total = width * OUTFITS.length + gap * (OUTFITS.length - 1);
+    return OUTFITS.map((outfit, index) => ({
+      outfit,
+      index,
+      x: (L.w - total) / 2 + index * (width + gap),
+      y: (L.h - height) / 2,
+      w: width,
+      h: height,
+    }));
   }
 
-  function drawBed() {
-    const c = CONFIG.colors, b = L.bed;
-    const legH = b.h * 0.16;
-    // Frame
-    g.fillStyle = c.bedFrame;
-    g.fillRect(b.x, b.y + b.h * 0.42, b.w, b.h * 0.24);
-    g.fillRect(b.x, b.y + b.h * 0.1, b.w * 0.07, b.h * 0.9);              // headboard
-    g.fillRect(b.x + b.w - b.w * 0.06, b.y + b.h * 0.34, b.w * 0.06, b.h * 0.66);
-    // Mattress + blanket
-    g.fillStyle = c.bedSheet;
-    g.fillRect(b.x + b.w * 0.07, b.y + b.h * 0.36, b.w * 0.88, b.h * 0.2);
-    g.fillStyle = c.blanket;
-    g.fillRect(b.x + b.w * 0.36, b.y + b.h * 0.34, b.w * 0.59, b.h * 0.24);
-    // Pillow
-    g.fillStyle = c.pillow;
-    g.beginPath();
-    const pr = b.h * 0.07;
-    roundRect(b.x + b.w * 0.10, b.y + b.h * 0.30, b.w * 0.24, b.h * 0.14, pr);
-    g.fill();
-    // Legs
-    g.fillStyle = c.bedFrame;
-    g.fillRect(b.x + b.w * 0.02, b.y + b.h - legH, b.w * 0.06, legH);
-    g.fillRect(b.x + b.w * 0.90, b.y + b.h - legH, b.w * 0.06, legH);
-  }
-
-  function drawWardrobe(t) {
-    const c = CONFIG.colors, wd = L.wardrobe;
-    const legH = wd.h * 0.06;
-    const bodyH = wd.h - legH;
-
-    // Legs, then a body that stops short of the floor.
-    g.fillStyle = c.wardrobeDark;
-    g.fillRect(wd.x + wd.w * 0.08, wd.y + bodyH, wd.w * 0.10, legH);
-    g.fillRect(wd.x + wd.w * 0.82, wd.y + bodyH, wd.w * 0.10, legH);
-
-    g.fillStyle = c.wardrobeDark;
-    roundRect(wd.x, wd.y, wd.w, bodyH, wd.w * 0.06); g.fill();
-    g.fillStyle = c.wardrobe;
-    roundRect(wd.x + wd.w * 0.04, wd.y + bodyH * 0.06, wd.w * 0.92, bodyH * 0.92, wd.w * 0.05); g.fill();
-    // Overhanging cornice reads instantly as a piece of furniture.
-    g.fillStyle = c.wardrobeDark;
-    roundRect(wd.x - wd.w * 0.05, wd.y - bodyH * 0.04, wd.w * 1.10, bodyH * 0.10, wd.w * 0.04);
-    g.fill();
-
-    // Doors swing open while he is at the wardrobe.
-    let open = 0;
-    if (activity === 'wardrobe') {
-      const p = clamp01((t - activityStart) / CONFIG.wardrobeOpenMs);
-      open = Math.sin(p * Math.PI);                    // open then close again
-    }
-    const halfW = wd.w * 0.44;
-    const doorY = wd.y + bodyH * 0.12;
-    const doorH = bodyH * 0.80;
-    if (open > 0.02) {
-      // Interior when open: a hint of hanging clothes.
-      g.fillStyle = '#5c3d26';
-      g.fillRect(wd.x + wd.w * 0.06, doorY, wd.w * 0.88, doorH);
-      const colors = ['#ff9fce', '#a9dcf5', '#ffd54a'];
-      colors.forEach((col, i) => {
-        g.fillStyle = col;
-        const cx = wd.x + wd.w * (0.20 + i * 0.24);
-        g.fillRect(cx, doorY + doorH * 0.12, wd.w * 0.14, doorH * 0.5);
-      });
-    }
-    g.fillStyle = c.wardrobeDoor;
-    // Left and right doors, narrowing as they swing.
-    const shrink = 1 - open * 0.92;
-    g.fillRect(wd.x + wd.w * 0.06, doorY, halfW * shrink, doorH);
-    g.fillRect(wd.x + wd.w * 0.94 - halfW * shrink, doorY, halfW * shrink, doorH);
-    // Handles
-    g.fillStyle = '#f0d9a8';
-    const hr = Math.max(1.5, wd.w * 0.035);
-    g.beginPath();
-    g.arc(wd.x + wd.w * 0.06 + halfW * shrink - hr * 2, doorY + doorH * 0.5, hr, 0, Math.PI * 2);
-    g.arc(wd.x + wd.w * 0.94 - halfW * shrink + hr * 2, doorY + doorH * 0.5, hr, 0, Math.PI * 2);
-    g.fill();
-  }
-
-  function drawTrampoline(t) {
-    const c = CONFIG.colors, tr = L.tram;
-    const cx = tr.x + tr.w / 2;
-    const rimY = tr.y + tr.h * 0.30;      // the rim sits high; legs splay below
-    const rx = tr.w * 0.5, ry = tr.h * 0.20;
-
-    // Mat dips while he is in the air and snaps back as he lands.
-    let dip = 0;
-    if (activity === 'jumping') {
-      const p = ((t - activityStart) % CONFIG.jump.durationMs) / CONFIG.jump.durationMs;
-      dip = Math.max(0, Math.cos(p * Math.PI * 2)) * tr.h * 0.26;
-    }
-
-    // Four splayed legs, drawn first so the rim overlaps their tops.
-    g.strokeStyle = c.tramFrame;
-    g.lineWidth = Math.max(3.5, tr.w * 0.055);
-    g.lineCap = 'round';
-    g.beginPath();
-    [[-0.86, -1.05], [-0.34, -0.52], [0.34, 0.52], [0.86, 1.05]].forEach(([a, b]) => {
-      g.moveTo(cx + rx * a, rimY + ry * 0.5);
-      g.lineTo(cx + rx * b, tr.y + tr.h);
-    });
-    g.stroke();
-
-    // Mat: a darker well, then the sagging surface on top of it.
-    g.fillStyle = '#3f7fae';
-    g.beginPath();
-    g.ellipse(cx, rimY + ry * 0.35, rx * 0.9, ry * 0.85, 0, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = c.tramMat;
-    g.beginPath();
-    g.ellipse(cx, rimY + dip, rx * 0.9, ry * 0.85, 0, 0, Math.PI * 2);
-    g.fill();
-    // A highlight so the surface reads as taut fabric.
-    g.fillStyle = 'rgba(255,255,255,0.25)';
-    g.beginPath();
-    g.ellipse(cx - rx * 0.28, rimY + dip - ry * 0.22, rx * 0.34, ry * 0.24, -0.3, 0, Math.PI * 2);
-    g.fill();
-
-    // Padded rim with spring ticks.
-    g.strokeStyle = c.tramSpring;
-    g.lineWidth = Math.max(3, tr.w * 0.07);
-    g.beginPath();
-    g.ellipse(cx, rimY, rx, ry, 0, 0, Math.PI * 2);
-    g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,0.55)';
-    g.lineWidth = Math.max(1, tr.w * 0.014);
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      g.beginPath();
-      g.moveTo(cx + Math.cos(a) * rx * 0.9, rimY + Math.sin(a) * ry * 0.9);
-      g.lineTo(cx + Math.cos(a) * rx * 1.02, rimY + Math.sin(a) * ry * 1.02);
-      g.stroke();
-    }
-
-    // Snow gathers along the far half of the rim, where it would actually
-    // rest — capping the whole ellipse would read as a white ring.
-    if (snowDepth > 0.001) {
-      g.strokeStyle = CONFIG.colors.snow;
-      g.lineWidth = Math.max(1.5, tr.h * 0.10 * snowDepth);
-      g.lineCap = 'round';
-      g.beginPath();
-      g.ellipse(cx, rimY, rx, ry, 0, Math.PI, Math.PI * 2);
-      g.stroke();
-    }
-  }
-
-  // Top of the trampoline mat: where a bouncing child's feet actually leave.
-  // Matches the mat ellipse drawn in drawTrampoline: rimY + ry * 0.35.
-  function matY() {
-    return L.tram.y + L.tram.h * 0.37;
-  }
-
-  // Drawn in two halves around the baby: the mat and back rail behind her, the
-  // front rail and bars in front, so she genuinely sits inside the pen.
-  function drawPenBack() {
-    const c = CONFIG.colors, pen = L.pen;
-    const rail = Math.max(3, pen.h * 0.13);
-    // Mat
-    g.fillStyle = c.penMat;
-    g.beginPath();
-    g.ellipse(pen.x + pen.w / 2, pen.y + pen.h * 0.92, pen.w * 0.48, pen.h * 0.20, 0, 0, Math.PI * 2);
-    g.fill();
-    // Back wall: bars first, then its rail on top, both in the shaded tone so
-    // the pen reads as something you see through rather than a flat panel.
-    g.strokeStyle = c.penRailDark;
-    g.lineWidth = Math.max(1.5, pen.w * 0.011);
-    g.lineCap = 'round';
-    const bars = 8;
-    for (let i = 0; i <= bars; i++) {
-      const x = pen.x + (pen.w * i) / bars;
-      g.beginPath();
-      g.moveTo(x, pen.y + rail * 0.5);
-      g.lineTo(x, pen.y + pen.h * 0.72);
-      g.stroke();
-    }
-    g.fillStyle = c.penRailDark;
-    g.beginPath();
-    roundRect(pen.x, pen.y, pen.w, rail, rail * 0.5);
-    g.fill();
-  }
-
-  function drawPenFront(t) {
-    const c = CONFIG.colors, pen = L.pen;
-    const rail = Math.max(3, pen.h * 0.13);
-    const frontY = pen.y + pen.h * 0.34;
-
-    // Bars
-    g.strokeStyle = c.penBar;
-    g.lineWidth = Math.max(2, pen.w * 0.016);
-    g.lineCap = 'round';
-    const bars = 8;
-    for (let i = 0; i <= bars; i++) {
-      const x = pen.x + (pen.w * i) / bars;
-      g.beginPath();
-      g.moveTo(x, frontY + rail * 0.5);
-      g.lineTo(x, pen.y + pen.h);
-      g.stroke();
-    }
-    // Front rail, and the feet it stands on
-    g.fillStyle = c.penRail;
-    g.beginPath();
-    roundRect(pen.x - pen.w * 0.02, frontY, pen.w * 1.04, rail, rail * 0.5);
-    g.fill();
-    g.fillStyle = c.penRailDark;
-    g.fillRect(pen.x + pen.w * 0.02, pen.y + pen.h, pen.w * 0.05, pen.h * 0.07);
-    g.fillRect(pen.x + pen.w * 0.93, pen.y + pen.h, pen.w * 0.05, pen.h * 0.07);
-
-    // Snow gathers along the top rail, as it does on the trampoline.
-    if (snowDepth > 0.001) {
-      g.fillStyle = CONFIG.colors.snow;
-      g.beginPath();
-      roundRect(pen.x - pen.w * 0.02, frontY - rail * 0.55 * snowDepth,
-        pen.w * 1.04, rail * 0.7 * snowDepth, rail * 0.35);
-      g.fill();
-    }
-  }
-
-  function drawBaby(t) {
-    const img = babyImage();
-    if (!img) return;               // art missing: the pen simply stands empty
-    const pen = L.pen;
-    const asleep = night && babyPose !== 'happy';
-
-    // The four frames were sliced at one common scale and cropped tight to
-    // their content, so their relative proportions are already right. Drawing
-    // every pose at the same factor keeps a crawling baby lower and longer
-    // than a sitting one — which per-pose height normalisation, as used for
-    // her brother, would have flattened out.
-    const ref = baby.sit || baby.happy || img;
-    const k = L.babyH / ref.naturalHeight;
-    const drawW = img.naturalWidth * k;
-    const drawH = img.naturalHeight * k;
-
-    const x = pen.x + pen.w * (0.16 + babyX * 0.68);
-    // The crop bottom is the content bottom, so this rests her on the mat.
-    let y = pen.y + pen.h * 0.92;
-    if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * drawH * 0.03;
-
-    g.save();
-    g.translate(x, y);
-    if (babyFacing < 0) g.scale(-1, 1);
-    g.drawImage(img, -drawW / 2, -drawH, drawW, drawH);
-    g.restore();
-
-    if (asleep) drawBabyZzz(t, x, y - drawH);
-  }
-
-  function drawBabyZzz(t, x, y) {
-    g.save();
-    g.fillStyle = CONFIG.colors.ink;
-    g.font = `700 ${Math.max(10, L.unit * 0.035)}px ${getComputedStyle(document.body).fontFamily}`;
-    g.textAlign = 'center';
-    for (let i = 0; i < 3; i++) {
-      const p = ((t / 2400) + i / 3) % 1;
-      g.globalAlpha = (1 - p) * 0.75;
-      g.fillText('z', x + p * L.unit * 0.05, y - p * L.unit * 0.11);
-    }
-    g.restore();
-  }
-
-  function mascotBox() {
-    const x = mascotX * L.w;
-    let y = L.groundY;
-    if (activity === 'jumping') y = matY() - jumpOffset(now());
-    return { x: x - L.mascotW / 2, y: y - L.mascotH, w: L.mascotW, h: L.mascotH };
-  }
-
-  function jumpOffset(t) {
-    const p = ((t - activityStart) % CONFIG.jump.durationMs) / CONFIG.jump.durationMs;
-    return Math.sin(p * Math.PI) * L.mascotH * CONFIG.jump.heightFrac;
-  }
-
-  // Asleep he lies on the bed rather than standing on the ground, so this pose
-  // is placed against the mattress instead of the usual walking baseline. All
-  // three sleep poses face head-left, matching the pillow.
-  function drawSleeping(t) {
-    // No upright fallback here — if the sleep pose is missing he is simply
-    // tucked out of sight and only the Zzz shows, as in phase 1.
-    const img = images.sleep || null;
-    const b = L.bed;
-    if (img) {
-      const bb = boundsOf(img);
-      const drawW = (b.w * CONFIG.sleep.widthFrac) / (bb.x1 - bb.x0);
-      const drawH = drawW * (img.naturalHeight / img.naturalWidth);
-      // Sunk slightly into the bedding rather than balanced on the very top
-      // edge of it, so he reads as lying in the bed and not above it.
-      const restY = b.y + b.h * (0.36 + CONFIG.sleep.sinkFrac);
-      const breathe = Math.sin(t / 1400) * L.unit * 0.004;
-      g.drawImage(img,
-        b.x + b.w * CONFIG.sleep.headFrac - bb.x0 * drawW,
-        restY - bb.y1 * drawH + breathe,
-        drawW, drawH);
-    }
-    drawZzz(t);
-  }
-
-  function drawMascot(t) {
-    if (activity === 'sleeping') { drawSleeping(t); return; }
-
-    let img = poseFor('stand');
-    if (activity === 'walking') img = poseFor('walk');
-    if (activity === 'waving') img = poseFor('wave');
-    if (activity === 'magic') img = images.magic || poseFor('stand');
-    if (activity === 'jumping') img = poseFor('jump');
-    if (!img) return;
-
-    // Every pose is framed differently inside its file — some fill it, some
-    // leave a wide margin — so scale by the boy himself, not by the PNG. That
-    // keeps him the same size and standing on the same line in every pose.
-    const bb = boundsOf(img);
-    const drawH = L.mascotH / (bb.y1 - bb.y0);
-    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-    const h = L.mascotH;
-
-    let x = mascotX * L.w;
-    let y = L.groundY;
-    let rot = 0;
-
-    if (activity === 'walking') {
-      const swing = Math.sin(walkPhase * Math.PI * 2);
-      y -= Math.abs(swing) * h * CONFIG.mascot.bobFrac;
-      rot = swing * CONFIG.mascot.tiltDegrees * (Math.PI / 180);
-    } else if (activity === 'jumping') {
-      // The pose is already airborne, so the arc alone carries the bounce — no
-      // squash-and-stretch, which would only distort the artwork. He bounces
-      // off the mat surface rather than the ground line the legs stand on.
-      y = matY() - jumpOffset(t);
-    } else if (activity === 'waving') {
-      const p = (t - activityStart) / CONFIG.waveMs;
-      rot = Math.sin(p * Math.PI * 4) * 2 * (Math.PI / 180);
-    } else {
-      y -= Math.abs(Math.sin(t / 900)) * h * 0.008;      // gentle idle breathing
-    }
-
-    // Wind leans him downwind.
-    if (weather === 'windy') {
-      rot += Math.sin(t / 420) * 1.2 * (Math.PI / 180)
-        + CONFIG.mascot.windLeanDegrees * (Math.PI / 180) * 0.5;
-    }
-
-    // Pivot at mid-body so the walk tilt swings from the waist, then place the
-    // art so his feet land on `y` and his middle sits on `x`.
-    g.save();
-    g.translate(x, y - h / 2);
-    if (rot) g.rotate(rot);
-    if (facing < 0) g.scale(-1, 1);
-    g.drawImage(img,
-      -((bb.x0 + bb.x1) / 2) * drawW,
-      h / 2 - bb.y1 * drawH,
-      drawW, drawH);
-    g.restore();
-  }
-
-  function drawMagic(t) {
-    if (activity !== 'magic' || !sparkles.length) return;
-    const p = clamp01((t - activityStart) / CONFIG.magicMs);
-    const cx = mascotX * L.w;
-    const cy = L.groundY - L.mascotH * 0.62;
-    g.save();
-    for (const sparkle of sparkles) {
-      const distance = L.mascotH * sparkle.distance * easeOutCubic(p);
-      const x = cx + Math.cos(sparkle.angle) * distance;
-      const y = cy + Math.sin(sparkle.angle) * distance - p * L.mascotH * 0.12;
-      const radius = L.unit * sparkle.size * (1 - p);
-      g.globalAlpha = 1 - p;
-      g.fillStyle = sparkle.color;
-      g.translate(x, y);
-      g.rotate(sparkle.angle + p * Math.PI);
-      g.beginPath();
-      for (let point = 0; point < 8; point++) {
-        const r = point % 2 ? radius * 0.35 : radius;
-        const a = point * Math.PI / 4;
-        const x = Math.cos(a) * r, y = Math.sin(a) * r;
-        if (point === 0) g.moveTo(x, y);
-        else g.lineTo(x, y);
-      }
-      g.closePath();
-      g.fill();
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    g.restore();
-  }
-
-  function drawMoment(t) {
-    if (!moment) return;
-    const cfg = CONFIG.moment;
-    const c = CONFIG.colors;
-    const age = t - moment.openedAt;
-
-    // Fades in, holds fully visible, fades out, then clears itself — no tap
-    // needed to dismiss it, since it's something to watch rather than choose.
-    let alpha;
-    if (age < cfg.openMs) {
-      alpha = easeOutCubic(clamp01(age / cfg.openMs));
-    } else if (age < cfg.openMs + cfg.holdMs) {
-      alpha = 1;
-    } else if (age < cfg.openMs + cfg.holdMs + cfg.closeMs) {
-      alpha = 1 - clamp01((age - cfg.openMs - cfg.holdMs) / cfg.closeMs);
-    } else {
-      moment = null;
-      return;
-    }
-
-    const entry = MOMENTS.find(m => m.id === moment.id);
-    const img = moments[moment.id];
-
-    g.save();
-    g.fillStyle = `rgba(24,20,44,${cfg.scrimAlpha * alpha})`;
-    g.fillRect(0, 0, L.w, L.h);
-    g.globalAlpha = alpha;
-
-    const maxW = L.w * cfg.maxWidthFrac, maxH = L.h * cfg.maxHeightFrac;
-    if (img && img.naturalWidth) {
-      // Contain-fit: these illustrations are native-resolution "hero" art,
-      // not a small in-world sprite, so they are never stretched larger than
-      // their own pixels warrant.
-      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
-      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-      const dx = (L.w - dw) / 2, dy = (L.h - dh) / 2 - L.h * 0.03;
-      g.drawImage(img, dx, dy, dw, dh);
-
-      g.fillStyle = c.ink;
-      g.font = `700 ${Math.max(16, L.unit * 0.07)}px ${getComputedStyle(document.body).fontFamily}`;
-      g.textAlign = 'center';
-      g.fillText(entry.cue, L.w / 2, dy + dh + L.unit * 0.08);
-    } else {
-      // A moment whose art failed to load still says its cue rather than
-      // showing nothing at all.
-      g.fillStyle = '#fffaf0';
-      g.fillText(entry.cue, L.w / 2, L.h / 2);
-    }
-    g.restore();
+  function pickerHit(x, y) {
+    const pad = L.unit * 0.02;
+    const card = pickerCards().find(c => x >= c.x - pad && x <= c.x + c.w + pad
+      && y >= c.y - pad && y <= c.y + c.h + pad);
+    return card ? card.index : -1;
   }
 
   function drawPicker(t) {
     if (!picker) return;
-    const cfg = CONFIG.picker;
-    const c = CONFIG.colors;
-    // Cards scale up from the middle as the panel appears.
-    const p = clamp01((t - picker.openedAt) / cfg.openMs);
-    const grow = 0.86 + 0.14 * easeOutCubic(p);
-
+    const progress = easeOutCubic(clamp01((t - picker.openedAt) / CONFIG.picker.openMs));
     g.save();
-    g.fillStyle = `rgba(24,20,44,${cfg.scrimAlpha * p})`;
+    g.fillStyle = 'rgba(24,20,44,.68)';
     g.fillRect(0, 0, L.w, L.h);
-
     for (const card of pickerCards()) {
-      const cx = card.x + card.w / 2, cy = card.y + card.h / 2;
-      const w = card.w * grow, h = card.h * grow;
-      const x = cx - w / 2, y = cy - h / 2;
-      const worn = card.index === outfitIndex;
-      const radius = Math.min(w, h) * 0.10;
-
-      g.globalAlpha = p;
-      g.fillStyle = '#fffaf0';
-      g.beginPath();
-      roundRect(x, y, w, h, radius);
+      const selected = card.index === outfitIndex;
+      g.save();
+      g.translate(card.x + card.w / 2, card.y + card.h / 2);
+      g.scale(progress, progress);
+      const x = -card.w / 2;
+      const y = -card.h / 2;
+      g.fillStyle = selected ? '#fff7cf' : '#ffffff';
+      roundRect(x, y, card.w, card.h, L.unit * 0.035);
       g.fill();
-
-      // The outfit he has on is ringed, so the choice has some context.
-      g.strokeStyle = worn ? '#ffb300' : 'rgba(0,0,0,0.12)';
-      g.lineWidth = Math.max(2, L.unit * (worn ? 0.016 : 0.005));
-      g.beginPath();
-      roundRect(x, y, w, h, radius);
+      g.strokeStyle = selected ? '#ffd54a' : 'rgba(58,51,87,.18)';
+      g.lineWidth = selected ? L.unit * 0.012 : L.unit * 0.006;
       g.stroke();
-
-      const labelH = h * 0.16;
       const img = cards[card.outfit.id];
-      const padX = w * 0.08, padY = h * 0.06;
-      const boxW = w - padX * 2, boxH = h - labelH - padY * 2;
-      if (img && img.naturalWidth) {
-        // Contain, so a garment is never cropped or stretched.
-        const scale = Math.min(boxW / img.naturalWidth, boxH / img.naturalHeight);
-        const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-        g.drawImage(img, cx - dw / 2, y + padY + (boxH - dh) / 2, dw, dh);
-      } else {
-        // A card whose art failed to load still reads as that outfit rather
-        // than as an empty box.
-        g.fillStyle = card.outfit.tint;
+      drawContained(img, 0, 0, card.w * 0.78, card.h * 0.72);
+      if (selected) {
+        g.fillStyle = '#ffd54a';
         g.beginPath();
-        roundRect(cx - boxW / 2, y + padY, boxW, boxH, radius * 0.6);
+        g.arc(card.w * 0.34, -card.h * 0.36, L.unit * 0.025, 0, Math.PI * 2);
         g.fill();
       }
-
-      g.fillStyle = c.ink;
-      g.font = `700 ${Math.max(13, L.unit * 0.055)}px ${getComputedStyle(document.body).fontFamily}`;
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(card.outfit.label, cx, y + h - labelH / 2);
-    }
-    g.restore();
-  }
-
-  function drawZzz(t) {
-    const b = L.bed;
-    // Above and behind his head rather than on top of him, now that the sleep
-    // pose actually occupies the bed.
-    const x = b.x + b.w * 0.34, y = b.y - b.h * 0.06;
-    g.save();
-    g.fillStyle = CONFIG.colors.ink;
-    g.font = `700 ${Math.max(12, L.unit * 0.05)}px ${getComputedStyle(document.body).fontFamily}`;
-    g.textAlign = 'center';
-    zzz.forEach(z => {
-      const p = clamp01((t - z.born) / CONFIG.sleep.zzzMs);
-      g.globalAlpha = (1 - p) * 0.9;
-      g.fillText('z', x + p * L.unit * 0.06, y - p * L.unit * 0.16);
-    });
-    g.restore();
-  }
-
-  function drawSnowfall() {
-    if (weather !== 'snowy' || !flakes.length) return;
-    g.save();
-    g.fillStyle = CONFIG.colors.snow;
-    g.globalAlpha = 0.9;
-    for (const f of flakes) {
-      g.beginPath();
-      g.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-      g.fill();
-    }
-    g.restore();
-  }
-
-  function drawRain() {
-    if (weather !== 'rainy') return;
-    g.strokeStyle = CONFIG.colors.rain;
-    g.lineWidth = Math.max(1.2, L.unit * 0.006);
-    g.lineCap = 'round';
-    g.globalAlpha = 0.75;
-    const len = L.unit * 0.045;
-    for (const d of drops) {
-      g.beginPath();
-      g.moveTo(d.x, d.y);
-      g.lineTo(d.x - len * 0.18, d.y + len);
-      g.stroke();
-    }
-    g.globalAlpha = 1;
-  }
-
-  function drawLeaves() {
-    if (weather !== 'windy') return;
-    for (const lf of leaves) {
-      const x = lf.x * L.w;
-      const y = (lf.y + Math.sin(lf.wob) * 0.03) * L.h;
-      const s = L.unit * 0.018 * lf.s;
-      g.save();
-      g.translate(x, y);
-      g.rotate(lf.r);
-      g.fillStyle = lf.c;
-      g.beginPath();
-      g.ellipse(0, 0, s, s * 0.55, 0, 0, Math.PI * 2);
-      g.fill();
       g.restore();
     }
+    g.restore();
   }
 
-  function roundRect(x, y, w, h, r) {
+  function drawPrecipitation() {
+    if (weather === 'rainy') {
+      g.strokeStyle = CONFIG.colors.rain;
+      g.lineWidth = Math.max(1.5, L.unit * 0.004);
+      g.globalAlpha = 0.82;
+      for (const drop of drops) {
+        g.beginPath();
+        g.moveTo(drop.x, drop.y);
+        g.lineTo(drop.x - L.unit * 0.012, drop.y + L.unit * 0.036);
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+    }
+    if (weather === 'snowy') {
+      g.fillStyle = CONFIG.colors.snow;
+      for (const flake of flakes) {
+        g.beginPath();
+        g.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    if (weather === 'windy') {
+      for (const leaf of leaves) {
+        g.save();
+        g.translate(leaf.x * L.w, leaf.y * L.h);
+        g.rotate(leaf.angle);
+        g.fillStyle = leaf.color;
+        g.beginPath();
+        g.ellipse(0, 0, L.unit * 0.012, L.unit * 0.006, 0, 0, Math.PI * 2);
+        g.fill();
+        g.restore();
+      }
+    }
+  }
+
+  function drawTouchFeedback(t) {
+    for (const pulse of touchPulses) {
+      const age = clamp01((t - pulse.born) / 480);
+      g.strokeStyle = `rgba(255,255,255,${0.72 * (1 - age)})`;
+      g.lineWidth = Math.max(2, L.unit * 0.008 * (1 - age * 0.5));
+      g.beginPath();
+      g.arc(pulse.x, pulse.y, L.unit * (0.018 + age * 0.05), 0, Math.PI * 2);
+      g.stroke();
+    }
+  }
+
+  function roundRect(x, y, w, h, radius) {
+    const r = Math.min(radius, w / 2, h / 2);
     g.beginPath();
-    if (g.roundRect) { g.roundRect(x, y, w, h, r); return; }
     g.moveTo(x + r, y);
-    g.arcTo(x + w, y, x + w, y + h, r);
-    g.arcTo(x + w, y + h, x, y + h, r);
-    g.arcTo(x, y + h, x, y, r);
-    g.arcTo(x, y, x + w, y, r);
+    g.lineTo(x + w - r, y);
+    g.quadraticCurveTo(x + w, y, x + w, y + r);
+    g.lineTo(x + w, y + h - r);
+    g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    g.lineTo(x + r, y + h);
+    g.quadraticCurveTo(x, y + h, x, y + h - r);
+    g.lineTo(x, y + r);
+    g.quadraticCurveTo(x, y, x + r, y);
     g.closePath();
   }
 
-  /* ---- rotate gate ----
-     A phone held upright cannot fit a house, a wardrobe and a playground side
-     by side. Where the browser lets us we simply lock to landscape; everywhere
-     else (notably iOS, which has no orientation lock at all) we ask, with a
-     tilting phone the parent can read at a glance. */
-
   function drawRotatePrompt(t) {
-    const w = L.w, h = L.h, u = L.unit;
-    g.clearRect(0, 0, w, h);
-    g.fillStyle = '#fffaf2';
-    g.fillRect(0, 0, w, h);
-
-    const cx = w / 2, cy = h * 0.44;
-    const tilt = -Math.PI / 2 * easeInOutCubic(clamp01((Math.sin(t / 900) + 1) / 2));
-    const pw = u * 0.30, ph = pw * 1.85, r = pw * 0.14;
-
+    const c = CONFIG.colors;
+    const cx = L.w / 2;
+    const cy = L.h / 2;
+    g.fillStyle = night ? c.skyNightTop : c.skyDayTop;
+    g.fillRect(0, 0, L.w, L.h);
     g.save();
-    g.translate(cx, cy);
-    g.rotate(tilt);
-    g.fillStyle = '#3a3357';
-    roundRect(-pw / 2, -ph / 2, pw, ph, r); g.fill();
-    g.fillStyle = '#8ed6ff';
-    roundRect(-pw / 2 + pw * 0.07, -ph / 2 + pw * 0.16, pw * 0.86, ph - pw * 0.32, r * 0.6);
-    g.fill();
+    g.translate(cx, cy - L.unit * 0.04);
+    g.rotate(Math.sin(t / 650) * 0.18);
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = Math.max(6, L.unit * 0.025);
+    roundRect(-L.unit * 0.17, -L.unit * 0.28, L.unit * 0.34, L.unit * 0.56, L.unit * 0.045);
+    g.stroke();
     g.restore();
-
-    // Curved arrow hinting at the turn.
-    g.strokeStyle = '#ffb627';
-    g.lineWidth = Math.max(4, u * 0.022);
-    g.lineCap = 'round';
-    const ar = u * 0.30;
-    g.beginPath();
-    g.arc(cx, cy, ar, Math.PI * 1.15, Math.PI * 1.75);
-    g.stroke();
-    const ae = Math.PI * 1.75;
-    const ax = cx + Math.cos(ae) * ar, ay = cy + Math.sin(ae) * ar;
-    g.beginPath();
-    g.moveTo(ax, ay);
-    g.lineTo(ax - u * 0.045, ay - u * 0.035);
-    g.moveTo(ax, ay);
-    g.lineTo(ax - u * 0.012, ay + u * 0.052);
-    g.stroke();
-
-    g.fillStyle = '#2f3557';
+    g.fillStyle = '#ffffff';
+    g.font = `700 ${Math.max(20, L.unit * 0.07)}px system-ui`;
     g.textAlign = 'center';
-    g.font = `800 ${Math.max(16, u * 0.075)}px ${getComputedStyle(document.body).fontFamily}`;
-    g.fillText('Turn me sideways!', cx, h * 0.80);
+    g.fillText('↻', cx, cy + L.unit * 0.34);
   }
 
-  // Best effort: succeeds on installed Android PWAs, silently refused
-  // elsewhere. Never awaited, never allowed to throw.
+  function draw(t) {
+    if (L.portrait) {
+      drawRotatePrompt(t);
+      return;
+    }
+
+    drawSky(t);
+    g.save();
+    g.translate(-cameraX * L.w, 0);
+    drawGround();
+    drawHouse();
+    drawBed();
+    drawWardrobe(t);
+    drawBush();
+    drawToyBin();
+    drawTrampoline(t);
+    drawLandingPuffs(t);
+    drawLooseToys(t);
+    drawCotBack(t);
+    drawBaby(t);
+    drawCotFront(t);
+    drawBoy(t);
+    drawBlanketIfDragged(t);
+    g.restore();
+
+    drawPrecipitation();
+    drawTouchFeedback(t);
+    drawPicker(t);
+  }
+
+  function frame(t) {
+    if (!alive) return;
+    const dt = Math.min(0.05, Math.max(0, (t - lastFrame) / 1000));
+    lastFrame = t;
+    update(dt, t);
+    g.clearRect(0, 0, L.w, L.h);
+    draw(t);
+    raf = requestAnimationFrame(frame);
+  }
+
   function tryLockLandscape() {
     try {
-      const o = screen.orientation;
-      if (o && typeof o.lock === 'function') o.lock('landscape').catch(() => {});
-    } catch (e) { /* unsupported: the prompt covers it */ }
+      const result = screen.orientation?.lock?.('landscape');
+      if (result?.catch) result.catch(() => {});
+    } catch (e) {
+      // Safari exposes the API inconsistently; the rotate gate is the fallback.
+    }
   }
 
   function unlockOrientation() {
     try {
-      const o = screen.orientation;
-      if (o && typeof o.unlock === 'function') o.unlock();
-    } catch (e) { /* nothing to undo */ }
-  }
-
-  /* ---- loop ---- */
-  let last = 0;
-  function frame(t) {
-    if (!alive) return;
-    const dt = last ? Math.min((t - last) / 1000, 0.05) : 0.016;
-    last = t;
-
-    if (L.portrait) {
-      drawRotatePrompt(t);
-      raf = requestAnimationFrame(frame);
-      return;
+      screen.orientation?.unlock?.();
+    } catch (e) {
+      // Nothing to undo on browsers without the orientation API.
     }
-
-    update(dt, t);
-
-    g.clearRect(0, 0, L.w, L.h);
-    drawSky(t);
-    drawGround();
-    drawTrampoline(t);
-    drawPenBack();
-    drawBaby(t);
-    drawPenFront(t);
-    drawHouse(t);
-    drawMascot(t);
-    drawMagic(t);
-    drawRain();
-    drawSnowfall();
-    drawLeaves();
-    drawPicker(t);
-    drawMoment(t);
-
-    raf = requestAnimationFrame(frame);
   }
 
-  /* ---- boot ---- */
-  resize();
+  const onResize = () => resize();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
   tryLockLandscape();
-  window.addEventListener('resize', resize);
-  window.addEventListener('orientationchange', resize);
 
-  wearOutfit(0);
-
-  // The garment cards are small and the picker must never open empty, so they
-  // load once up front rather than when the wardrobe is first tapped.
-  preloadImages(Object.fromEntries(OUTFITS.map(o => [o.id, o.card])), 0)
-    .then(loaded => { if (alive) cards = loaded || {}; });
-
-  preloadImages(BABY_POSES, 0).then(loaded => {
+  Promise.all([
+    loadOutfit(0),
+    preloadImages(BABY_ART, 0),
+    preloadImages(WORLD_ART, 0),
+    preloadImages(TOY_FILES, 0),
+    preloadImages(Object.fromEntries(OUTFITS.map(o => [o.id, o.card])), 0),
+  ]).then(([outfit, loadedBaby, loadedWorld, loadedToys, loadedCards]) => {
     if (!alive) return;
-    baby = loaded || {};
-    if (L) layout(canvas.clientWidth, canvas.clientHeight);
+    images = outfit || {};
+    babyArt = loadedBaby || {};
+    worldArt = loadedWorld || {};
+    toyArt = loadedToys || {};
+    cards = loadedCards || {};
+    loadOutfit(1);
   });
 
-  preloadImages(Object.fromEntries(MOMENTS.map(m => [m.id, m.file])), 0)
-    .then(loaded => { if (alive) moments = loaded || {}; });
-
+  resize();
+  seedScenery();
   raf = requestAnimationFrame(frame);
-  setReprompt(null);      // free play: never nag
+  setReprompt(null);
 
   return () => {
     alive = false;
+    drag = null;
     picker = null;
-    moment = null;
     cancelAnimationFrame(raf);
-    audio.stopWeatherBed();  // leaving must never leave weather playing
-    unlockOrientation();     // leave the rest of the app free to rotate
     canvas.removeEventListener('pointerdown', onPointerDown);
-    window.removeEventListener('resize', resize);
-    window.removeEventListener('orientationchange', resize);
+    canvas.removeEventListener('pointermove', onPointerMove);
+    canvas.removeEventListener('pointerup', endPointer);
+    canvas.removeEventListener('pointercancel', endPointer);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onResize);
+    audio.stopWeatherBed();
+    unlockOrientation();
   };
 }
 

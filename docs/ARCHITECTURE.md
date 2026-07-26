@@ -198,6 +198,36 @@ After the final stroke, Trace records the outcome, speaks exactly
 `current.spoken`, then runs the normal visual celebration and separate parent
 praise path.
 
+### Play House
+
+`js/games/playhouse.js` owns a landscape-only Canvas sandbox whose world is 1.7
+times the viewport width. The camera has two resting positions, indoors and in
+the yard. It moves only as a consequence of touching or dragging something in
+the corresponding area; during cot travel it follows the cot, then settles at
+the destination rest.
+
+The baby remains in one wheeled cot. A horizontal handle gesture sends her
+between fixed indoor and outdoor parking spots, with the brother drawn in one
+of two pushing frames throughout the trip. Baby-owned toys travel with the cot.
+
+Teddy, ball, duck and rattle are persistent draggable world objects. A drop near
+the baby gives the object directly to her; proximity raises her reaching pose.
+A drop near the brother makes him carry it, and a later baby tap makes him walk
+over and offer it. The folded blanket is a distinct care object and can settle
+the sleepy baby. There are no failure states and an open-ground drop simply
+leaves the object where it was released.
+
+Baby mood moves from content to wanting a toy and then sleepy. The requested
+object or sleep state is shown visually, without adding computer narration.
+After a long idle period the brother can demonstrate the same pick-up,
+carry-and-give path available to the child. Trampoline landings trigger a baby
+laugh only while her cot is outside.
+
+Generated contact sheets remain as source art. `scripts/slice-playhouse-sheets.sh`
+uses ImageMagick to create tightly cropped transparent runtime sprites. Only
+those runtime sprites are precached; obsolete v3.7 moment illustrations are
+removed from the shipped asset set.
+
 ## Settings and local state
 
 `js/app.js` `showSettings()` creates the modal dynamically. Its red sticky Close
