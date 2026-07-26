@@ -23,7 +23,7 @@ nothing to buy, works offline once loaded:
 16. **Sort It** — drag each animal to its home, the farm or the water
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, and open the wardrobe to pick his outfit
+19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, and visit his baby sister in her playpen
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -84,6 +84,15 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v3.5** — a second character in Play House: a baby sister in a playpen on
+  the grass between the house and the trampoline. She sits, crawls a little
+  every few seconds, sleeps at night with her own drifting Zzz, and laughs
+  when tapped, which also brings her brother over to wave. Her four poses were
+  sliced from a single sprite sheet at import — found by detecting
+  disconnected islands of opaque pixels rather than assuming a grid — and
+  scaled by one common factor so a crawling baby stays lower and longer than a
+  sitting one. Snow settles on the playpen rail. New `babble()` earcon.
 
 - **v3.4** — Play House weather and wardrobe: the wardrobe now opens a picker
   showing the three outfits as garment cards, so the child chooses rather than

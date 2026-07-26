@@ -72,12 +72,12 @@ const CONFIG = {
   // house wall (ends ~0.45) and the trampoline (starts ~0.73).
   playpen: {
     xPortrait: 0.62, xLandscape: 0.625,
-    widthFracPortrait: 0.22, widthFracLandscape: 0.165,   // of canvas width
+    widthFracPortrait: 0.20, widthFracLandscape: 0.145,   // of canvas width
     heightFrac: 0.17,                                      // of unit
   },
 
   baby: {
-    heightFrac: 0.46,          // of the boy's drawn height
+    heightFrac: 0.58,          // of the boy's drawn height
     bobHz: 0.6,
     happyMs: 1600,
     // Idle wandering: sits still for a while, crawls a little, sits again.
@@ -207,9 +207,9 @@ const OUTFITS = [
 ];
 
 /* ---------------- the baby ----------------
-   One look only, unlike his brother: four poses, no outfits. Sliced from a
-   single sprite sheet at import, so at runtime these are ordinary images and
-   boundsOf() places them exactly as it places the boy's. */
+   One look only, unlike her brother: four poses, no outfits. Sliced from a
+   single sprite sheet at import, uniformly scaled and cropped tight to the
+   artwork, so at runtime they are ordinary images that need no measuring. */
 
 const BABY_POSES = {
   sit: 'assets/baby_sit.PNG',
@@ -570,7 +570,7 @@ function start(ctx) {
     return baby[babyPose] || baby.sit || null;
   }
 
-  // Delighted to be noticed. Also wakes him at night, which is the one bit of
+  // Delighted to be noticed. Also wakes her at night, which is the one bit of
   // mischief the game allows.
   function delightBaby() {
     babyPose = 'happy';
@@ -592,7 +592,7 @@ function start(ctx) {
       return;
     }
     // Alternate between sitting still and a short crawl to somewhere else in
-    // the pen, so he is never quite a static prop.
+    // the pen, so she is never quite a static prop.
     const cfg = CONFIG.baby;
     if (babyPose === 'crawl') {
       babyPose = 'sit';
@@ -684,7 +684,7 @@ function start(ctx) {
       case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
       case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
       case 'playpen':
-        // The baby reacts straight away; his brother comes over to join in.
+        // The baby reacts straight away; her brother comes over to join in.
         delightBaby();
         walkTo(L.station.playpen, 'waving');
         break;
@@ -1331,8 +1331,8 @@ function start(ctx) {
     return L.tram.y + L.tram.h * 0.37;
   }
 
-  // Drawn in two halves around the baby: the mat and back rail behind him, the
-  // front rail and bars in front, so he genuinely sits inside the pen.
+  // Drawn in two halves around the baby: the mat and back rail behind her, the
+  // front rail and bars in front, so she genuinely sits inside the pen.
   function drawPenBack() {
     const c = CONFIG.colors, pen = L.pen;
     const rail = Math.max(3, pen.h * 0.13);
@@ -1400,28 +1400,30 @@ function start(ctx) {
     const img = babyImage();
     if (!img) return;               // art missing: the pen simply stands empty
     const pen = L.pen;
-    const bb = boundsOf(img);
     const asleep = night && babyPose !== 'happy';
 
-    const h = L.babyH * (asleep ? 0.78 : 1);
-    const drawH = h / (bb.y1 - bb.y0);
-    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+    // The four frames were sliced at one common scale and cropped tight to
+    // their content, so their relative proportions are already right. Drawing
+    // every pose at the same factor keeps a crawling baby lower and longer
+    // than a sitting one — which per-pose height normalisation, as used for
+    // her brother, would have flattened out.
+    const ref = baby.sit || baby.happy || img;
+    const k = L.babyH / ref.naturalHeight;
+    const drawW = img.naturalWidth * k;
+    const drawH = img.naturalHeight * k;
 
     const x = pen.x + pen.w * (0.16 + babyX * 0.68);
-    // Sits on the mat, a little in front of the pen's back edge.
+    // The crop bottom is the content bottom, so this rests her on the mat.
     let y = pen.y + pen.h * 0.92;
-    if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * h * 0.03;
+    if (!asleep) y -= Math.abs(Math.sin(t / 900 * CONFIG.baby.bobHz)) * drawH * 0.03;
 
     g.save();
-    g.translate(x, y - h / 2);
+    g.translate(x, y);
     if (babyFacing < 0) g.scale(-1, 1);
-    g.drawImage(img,
-      -((bb.x0 + bb.x1) / 2) * drawW,
-      h / 2 - bb.y1 * drawH,
-      drawW, drawH);
+    g.drawImage(img, -drawW / 2, -drawH, drawW, drawH);
     g.restore();
 
-    if (asleep) drawBabyZzz(t, x, y - h);
+    if (asleep) drawBabyZzz(t, x, y - drawH);
   }
 
   function drawBabyZzz(t, x, y) {
