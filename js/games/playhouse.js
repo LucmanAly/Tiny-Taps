@@ -90,7 +90,7 @@ const CONFIG = {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
     playpenPortrait: 0.60, homePortrait: 0.60,
     bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.860,
-    playpenLandscape: 0.468, homeLandscape: 0.480,
+    playpenLandscape: 0.500, homeLandscape: 0.480,
   },
 
   // The playpen sits on the one genuinely empty patch of grass, between the
@@ -110,8 +110,10 @@ const CONFIG = {
   // 30px sliver of a shared shelf. The bin stays as the scenery that explains
   // why they are all in one place.
   toys: {
-    rowStart: 0.500,           // world fraction of the leftmost toy
-    rowStep: 0.070,            // and the gap to the next
+    // The row starts clear of where the boy stands and ends clear of the
+    // trampoline: the first layout had him permanently covering the teddy.
+    rowStart: 0.540,           // world fraction of the leftmost toy
+    rowStep: 0.062,            // and the gap to the next
     heightFrac: 0.105,         // of unit
     binX: 0.655, binHeightFrac: 0.15,
     // One bush only. The second sat between the cot and the toy row, which is
@@ -122,9 +124,15 @@ const CONFIG = {
     snapBabyFrac: 0.24,        // of unit
     snapBoyFrac: 0.19,
     tapSlopFrac: 0.035,        // movement below this counts as a tap, not a drag
-    carryFrac: 0.62,           // height up the boy where a carried toy rides
+    // Measured against the carry pose's hands, not guessed. 0.62 put the toy
+    // squarely over his face.
+    carryFrac: 0.46,           // height up the boy where a carried toy rides
     giveMs: 900,               // kneeling, before the toy changes hands
     givePoseScale: 0.84,       // the kneeling art is genuinely shorter
+    // How long the boy waits, doing nothing, before he goes and does it
+    // himself. Long enough that he never races the child to a toy, short
+    // enough that a child who has not worked out what to do gets shown.
+    modelDelayMs: 7000,
   },
 
   baby: {
@@ -135,6 +143,12 @@ const CONFIG = {
     sitMinMs: 6000, sitMaxMs: 10000,
     crawlMs: 2200,
     crawlRangeFrac: 0.26,      // of playpen width, either side of centre
+    // She drifts through moods and signals them with her body rather than with
+    // any kind of prompt. There is no timer she can lose and no wrong answer:
+    // a mood is a reason to give her something, never a demand.
+    contentMs: 14000,
+    wantsMs: 22000,
+    sleepyMs: 26000,
   },
 
   jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
@@ -379,6 +393,11 @@ function start(ctx) {
   let babyX = 0.5;                // position across the pen, 0..1
   let babyTargetX = 0.5;
   let babyFacing = 1;
+  let mood = 'content';           // content | wants | sleepy
+  let moodAt = 0;                 // when it next drifts (0 = not yet scheduled)
+  let tucked = false;             // she has her blanket and has settled down
+  let idleSince = 0;              // how long the boy has had nothing to do
+  let modelling = false;          // ...and is now fetching something himself
   // Toys. `owner` is the whole model: 'ground' (lying where it was left),
   // 'boy' (being carried), 'baby' (hers, and she keeps it), or 'hand' (under
   // the child's finger right now). x is a world fraction; lift is how far off
@@ -627,6 +646,8 @@ function start(ctx) {
     if (next === 'pickup') {
       activity = 'idle';
       if (fetchToy) { boyTakes(fetchToy); fetchToy = null; }
+      // Fetching it was only half of what he set out to do.
+      if (modelling) { modelling = false; giveHeldToBaby(); return; }
     }
     // Kneeling to offer it. The toy changes hands partway through, not on
     // arrival, so the child sees the offer before the taking. He turns to face
@@ -783,8 +804,27 @@ function start(ctx) {
 
   /* ---- the baby ---- */
 
+  // Her arms come up as a toy nears her — proximity, not a trigger. It is the
+  // only feedback in the game that happens *during* a gesture rather than
+  // after it, and it is what tells a child mid-drag that this is going to work.
+  function babyReaching() {
+    if (!drag || night || !L.pen) return false;
+    const a = toyAnchor(drag.toy);
+    const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+    const cy = L.pen.y + L.pen.h * 0.55;
+    return Math.hypot(a.x - cx, a.y - cy) <= L.unit * CONFIG.toys.snapBabyFrac * 1.7;
+  }
+
   function babyImage() {
+    if (tucked && babyPose !== 'happy') return baby.sleep || baby.sleepy || baby.sit || null;
     if (night && babyPose !== 'happy') return baby.sleep || baby.sit || null;
+    if (babyReaching() && baby.reach) return baby.reach;
+    // A mood is worn, not announced. Wanting is a reach toward the toys;
+    // sleepy is rubbing her eyes. Neither is a prompt and neither expires.
+    if (babyPose !== 'happy' && babyPose !== 'crawl') {
+      if (mood === 'wants' && baby.reach) return baby.reach;
+      if (mood === 'sleepy' && baby.sleepy) return baby.sleepy;
+    }
     // What she has been given changes how she sits. The teddy has its own
     // hugging pose, and anything else settles her into the content one — so a
     // gift visibly leaves her different from how she was before it, which is
@@ -867,9 +907,66 @@ function start(ctx) {
     toy.lift = 0;
     const entry = toyEntry(toy.id);
     if (entry) { entry.sound(audio); say(entry.word); }
-    // Delighted, but without the babble on top of the toy's own sound.
-    babyPose = 'happy';
-    babyUntil = now() + CONFIG.baby.happyMs;
+
+    // Everything is received warmly — there is no wrong gift. But answering
+    // what she was actually asking for is *more* than warm, and that gap
+    // between fine and wonderful is the whole motivation engine.
+    const answered = mood === 'sleepy' ? toy.id === 'blanket' : mood === 'wants';
+    if (mood === 'sleepy' && toy.id === 'blanket') {
+      // The blanket is why sleepy exists as a mood at all: without it, sleepy
+      // would be a want with no possible response. Covering her up is also the
+      // most genuinely big-brotherly thing on offer here.
+      tucked = true;
+    } else {
+      tucked = false;
+      babyPose = 'happy';
+      babyUntil = now() + CONFIG.baby.happyMs;
+    }
+    if (answered) setTimeout(() => { if (alive) audio.chime(); }, 260);
+    mood = 'content';
+    moodAt = now() + CONFIG.baby.contentMs;
+  }
+
+  // Content for a while, then wanting something, then sleepy. Nothing here is
+  // a countdown: a mood she is left in simply carries on, and the world stays
+  // exactly as safe as it was.
+  function updateMood(t) {
+    if (night) { moodAt = 0; return; }        // moods resume in the morning
+    if (!moodAt) { moodAt = t + CONFIG.baby.contentMs; return; }
+    if (t < moodAt) return;
+    const cfg = CONFIG.baby;
+    if (mood === 'content') {
+      mood = 'wants';
+      moodAt = t + cfg.wantsMs;
+      audio.babble();
+    } else if (mood === 'wants') {
+      mood = 'sleepy';
+      moodAt = t + cfg.sleepyMs;
+    } else {
+      // Nobody answered, and that is allowed. She perks up again by herself.
+      mood = 'content';
+      tucked = false;
+      moodAt = t + cfg.contentMs;
+    }
+  }
+
+  // Demonstration, then the chance to imitate — which is how a toddler learns
+  // anything. When the child has left him alone long enough and his sister
+  // wants something, he goes and does it himself, through exactly the same
+  // code path a tap would have used.
+  function maybeModel(t) {
+    const busy = activity !== 'idle' || held || drag || picker || moment
+      || night || fetchToy || L.portrait;
+    if (busy || mood === 'content') { if (busy) idleSince = 0; return; }
+    if (!idleSince) { idleSince = t; return; }
+    if (t - idleSince < CONFIG.toys.modelDelayMs) return;
+    idleSince = t;                            // re-arm either way
+    // Sleepy has one right answer; wanting has five.
+    const loose = toys.filter(x => x.owner === 'ground');
+    if (!loose.length) return;
+    const toy = (mood === 'sleepy' && loose.find(x => x.id === 'blanket')) || loose[0];
+    modelling = true;
+    tapToy(toy);
   }
 
   function boyTakes(toy) {
@@ -960,6 +1057,12 @@ function start(ctx) {
 
   function updateBaby(dt, t) {
     if (night && babyPose !== 'happy') return;      // asleep: no wandering
+    // While she is signalling something, she stays put and signals it. Idle
+    // wandering on top of a mood pose just made the mood unreadable.
+    if ((mood !== 'content' || tucked) && babyPose !== 'happy') {
+      if (babyPose === 'crawl') babyPose = 'sit';
+      return;
+    }
     if (t < babyUntil) {
       if (babyPose === 'crawl') {
         const speed = dt * 0.32;
@@ -1035,6 +1138,10 @@ function start(ctx) {
     // Re-asserting the bed here covers a weather change made while the context
     // was still suspended, which would otherwise stay silent forever.
     if (audio.tryResume()) applyWeatherBed();
+    // The child acting is always the point. Anything he was about to do off
+    // his own bat waits until they have gone quiet again.
+    idleSince = 0;
+    modelling = false;
 
     const r = canvas.getBoundingClientRect();
     const sx = e.clientX - r.left, py = e.clientY - r.top;
@@ -1170,7 +1277,9 @@ function start(ctx) {
     }
 
     updateCamera(t);
+    updateMood(t);
     updateBaby(dt, t);
+    maybeModel(t);
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
@@ -1951,8 +2060,21 @@ function start(ctx) {
     const hugging = babyImage() === baby.hugteddy;
     for (const toy of babyToys()) {
       if (hugging && toy.id === 'teddy') continue;
+      // Tucked in, the blanket stops being a folded thing beside her and
+      // becomes a thing over her — which is the only visible difference
+      // between owning it and being covered by it.
+      if (tucked && toy.id === 'blanket') { drawBlanketOver(); continue; }
       drawToy(toy, false);
     }
+  }
+
+  function drawBlanketOver() {
+    const img = toyImages.blanket;
+    if (!img || !img.naturalHeight) return;
+    const w = L.babyH * 1.15;
+    const h = w * (img.naturalHeight / img.naturalWidth);
+    const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+    g.drawImage(img, cx - w / 2, L.pen.y + L.pen.h * 0.9 - h, w, h);
   }
 
   function drawDraggedToy() {
