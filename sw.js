@@ -83,9 +83,20 @@ const ASSETS = [
   // Flat-lay garment cards for the wardrobe picker.
   'assets/mascot_outfit_winter.PNG', 'assets/mascot_outfit_rain.PNG',
   'assets/mascot_outfit_summer.PNG',
-  // The baby's four poses, sliced from one sprite sheet.
+  // Carrying and kneeling-to-offer, one pair per outfit.
+  'assets/mascot_winter_carry.PNG', 'assets/mascot_winter_give.PNG',
+  'assets/mascot_rain_carry.PNG', 'assets/mascot_rain_give.PNG',
+  'assets/mascot_summer_carry.PNG', 'assets/mascot_summer_give.PNG',
+  // The baby's four idle poses, sliced from one sprite sheet.
   'assets/baby_sit.PNG', 'assets/baby_happy.PNG',
   'assets/baby_crawl.PNG', 'assets/baby_sleep.PNG',
+  // ...and her four reactions, from a second sheet.
+  'assets/baby_reach.PNG', 'assets/baby_hugteddy.PNG',
+  'assets/baby_sleepy.PNG', 'assets/baby_content.PNG',
+  // Toys the child gives away, and the props that stand around them.
+  'assets/toy_teddy.PNG', 'assets/toy_ball.PNG', 'assets/toy_duck.PNG',
+  'assets/toy_rattle.PNG', 'assets/toy_blanket.PNG',
+  'assets/prop_bin_open.PNG', 'assets/prop_bush_large.PNG',
   // "Play Together" sibling moments.
   'assets/moment_teddy.PNG', 'assets/moment_crawl.PNG', 'assets/moment_hug.PNG',
   'assets/moment_rattle.PNG', 'assets/moment_peekaboo.PNG', 'assets/moment_clap.PNG',

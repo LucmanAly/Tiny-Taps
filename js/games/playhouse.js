@@ -90,7 +90,7 @@ const CONFIG = {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
     playpenPortrait: 0.60, homePortrait: 0.60,
     bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.860,
-    playpenLandscape: 0.490, homeLandscape: 0.560,
+    playpenLandscape: 0.468, homeLandscape: 0.480,
   },
 
   // The playpen sits on the one genuinely empty patch of grass, between the
@@ -101,6 +101,30 @@ const CONFIG = {
     xPortrait: 0.62, xLandscape: 0.387,
     widthFracPortrait: 0.20, widthFracLandscape: 0.125,   // of WORLD width
     heightFrac: 0.17,                                      // of unit
+  },
+
+  // Toys are the one thing in this world the child moves directly, rather than
+  // by asking the boy to. They lie loose on the grass rather than inside the
+  // bin: a container is one more idea to understand, and spreading them along
+  // the open yard is what makes each one a finger-sized target instead of a
+  // 30px sliver of a shared shelf. The bin stays as the scenery that explains
+  // why they are all in one place.
+  toys: {
+    rowStart: 0.500,           // world fraction of the leftmost toy
+    rowStep: 0.070,            // and the gap to the next
+    heightFrac: 0.105,         // of unit
+    binX: 0.655, binHeightFrac: 0.15,
+    // One bush only. The second sat between the cot and the toy row, which is
+    // exactly where the boy walks, and read as clutter rather than scenery.
+    bushLargeX: 0.962, bushLargeHeightFrac: 0.21,
+    // Drop leniency. Deliberately large: a toddler dragging with a whole
+    // fingertip is aiming at a person, not at a pixel.
+    snapBabyFrac: 0.24,        // of unit
+    snapBoyFrac: 0.19,
+    tapSlopFrac: 0.035,        // movement below this counts as a tap, not a drag
+    carryFrac: 0.62,           // height up the boy where a carried toy rides
+    giveMs: 900,               // kneeling, before the toy changes hands
+    givePoseScale: 0.84,       // the kneeling art is genuinely shorter
   },
 
   baby: {
@@ -225,6 +249,8 @@ const OUTFITS = [
       wave: 'assets/mascot_waving.PNG',
       magic: 'assets/mascot_magic.PNG',
       jump: 'assets/mascot_winter_jump.PNG',
+      carry: 'assets/mascot_winter_carry.PNG',
+      give: 'assets/mascot_winter_give.PNG',
       sleep: 'assets/mascot_winter_sleep.PNG',
     },
   },
@@ -235,6 +261,8 @@ const OUTFITS = [
       stand: 'assets/mascot_rain_stand.PNG',
       walk: 'assets/mascot_rain_walk.PNG',
       jump: 'assets/mascot_rain_jump.PNG',
+      carry: 'assets/mascot_rain_carry.PNG',
+      give: 'assets/mascot_rain_give.PNG',
       sleep: 'assets/mascot_rain_sleep.PNG',
     },
   },
@@ -245,6 +273,8 @@ const OUTFITS = [
       stand: 'assets/mascot_summer_stand.PNG',
       walk: 'assets/mascot_summer_walk.PNG',
       jump: 'assets/mascot_summer_jump.PNG',
+      carry: 'assets/mascot_summer_carry.PNG',
+      give: 'assets/mascot_summer_give.PNG',
       sleep: 'assets/mascot_summer_sleep.PNG',
     },
   },
@@ -260,6 +290,30 @@ const BABY_POSES = {
   happy: 'assets/baby_happy.PNG',
   crawl: 'assets/baby_crawl.PNG',
   sleep: 'assets/baby_sleep.PNG',
+  // From the second sheet: reactions rather than idle states.
+  reach: 'assets/baby_reach.PNG',
+  hugteddy: 'assets/baby_hugteddy.PNG',
+  sleepy: 'assets/baby_sleepy.PNG',
+  content: 'assets/baby_content.PNG',
+};
+
+/* ---------------- toys and props ----------------
+   Five toys, each one a thing the child picks up with a finger and gives to
+   somebody. The word and the sound are what the giving *means* — they play
+   when a toy changes hands, never when it is merely touched, so the reward is
+   attached to the generous act rather than to the poking. */
+
+const TOYS = [
+  { id: 'teddy', file: 'assets/toy_teddy.PNG', word: 'Teddy!', sound: a => a.gentleGift() },
+  { id: 'ball', file: 'assets/toy_ball.PNG', word: 'Ball!', sound: a => a.boing() },
+  { id: 'duck', file: 'assets/toy_duck.PNG', word: 'Duck!', sound: a => a.quack() },
+  { id: 'rattle', file: 'assets/toy_rattle.PNG', word: 'Rattle!', sound: a => a.rattleShake() },
+  { id: 'blanket', file: 'assets/toy_blanket.PNG', word: 'Cosy!', sound: a => a.chime() },
+];
+
+const PROPS = {
+  bin: 'assets/prop_bin_open.PNG',
+  bushLarge: 'assets/prop_bush_large.PNG',
 };
 
 /* ---------------- "Play Together" moments ----------------
@@ -325,6 +379,17 @@ function start(ctx) {
   let babyX = 0.5;                // position across the pen, 0..1
   let babyTargetX = 0.5;
   let babyFacing = 1;
+  // Toys. `owner` is the whole model: 'ground' (lying where it was left),
+  // 'boy' (being carried), 'baby' (hers, and she keeps it), or 'hand' (under
+  // the child's finger right now). x is a world fraction; lift is how far off
+  // the ground it currently is, in pixels.
+  let toyImages = {};
+  let props = {};
+  let toys = [];
+  let drag = null;                // { toy, grabX, grabY, moved } while a finger is down
+  let held = null;                // the toy the boy is carrying, or null
+  let fetchToy = null;            // the toy he is walking over to pick up
+  let giveAt = 0;                 // when the kneeling offer completes (0 = none)
   let picker = null;              // { openedAt } while the child is choosing
   let cards = {};                 // outfit id -> garment image (or missing)
   let moments = {};                // moment id -> illustration (or missing)
@@ -427,6 +492,22 @@ function start(ctx) {
     L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
     L.babyH = mascotH * CONFIG.baby.heightFrac;
 
+    const tcfg = CONFIG.toys;
+    L.toyH = unit * tcfg.heightFrac;
+    L.binH = unit * tcfg.binHeightFrac;
+    L.binX = worldW * tcfg.binX;
+    L.bushes = [
+      { key: 'bushLarge', x: worldW * tcfg.bushLargeX, h: unit * tcfg.bushLargeHeightFrac },
+    ];
+    // Seeded once, then left alone: a resize must never sweep toys the child
+    // has already given away back into their opening row.
+    if (!toys.length) {
+      toys = TOYS.map((t, i) => ({
+        id: t.id, owner: 'ground', lift: 0,
+        x: tcfg.rowStart + i * tcfg.rowStep,
+      }));
+    }
+
     // Open beside the playpen rather than at a hard-coded fraction, which
     // otherwise leaves him standing inside it.
     if (!placed) {
@@ -526,6 +607,7 @@ function start(ctx) {
 
   function walkTo(frac, then) {
     openPickerAt = 0;            // any pending wardrobe opening is abandoned
+    giveAt = 0;                  // and any offer that had not yet completed
     targetX = Math.max(WALK_MIN, Math.min(WALK_MAX, frac));
     pending = then || null;
     if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
@@ -542,6 +624,18 @@ function start(ctx) {
     activityStart = now();
     if (next === 'sleeping') zzz = [];
     if (next === 'jumping') audio.boing();
+    if (next === 'pickup') {
+      activity = 'idle';
+      if (fetchToy) { boyTakes(fetchToy); fetchToy = null; }
+    }
+    // Kneeling to offer it. The toy changes hands partway through, not on
+    // arrival, so the child sees the offer before the taking. He turns to face
+    // her first: walking there set his facing from the direction of travel,
+    // which had him kneeling and holding the toy out into empty grass.
+    if (next === 'giving') {
+      giveAt = activityStart + CONFIG.toys.giveMs * 0.55;
+      facing = (L.pen.x + L.pen.w / 2) < mascotX * L.worldW ? -1 : 1;
+    }
     if (next === 'wardrobe') {
       audio.pop();
       // Change once the doors have swung most of the way open, so the new
@@ -691,6 +785,15 @@ function start(ctx) {
 
   function babyImage() {
     if (night && babyPose !== 'happy') return baby.sleep || baby.sit || null;
+    // What she has been given changes how she sits. The teddy has its own
+    // hugging pose, and anything else settles her into the content one — so a
+    // gift visibly leaves her different from how she was before it, which is
+    // the entire reward for giving.
+    if (babyPose === 'sit' && toys.length) {
+      const owned = babyToys();
+      if (owned.some(t => t.id === 'teddy') && baby.hugteddy) return baby.hugteddy;
+      if (owned.length && baby.content) return baby.content;
+    }
     return baby[babyPose] || baby.sit || null;
   }
 
@@ -700,6 +803,131 @@ function start(ctx) {
     babyPose = 'happy';
     babyUntil = now() + CONFIG.baby.happyMs;
     audio.babble();
+  }
+
+  /* ---- toys ----
+     The one part of this world the child's finger touches directly. Everything
+     else is a request the boy carries out; a toy is a thing you actually pick
+     up and hand to somebody. That is the whole point: the finger becomes the
+     third character, and giving is the verb. */
+
+  const toyEntry = id => TOYS.find(t => t.id === id);
+  const babyToys = () => toys.filter(t => t.owner === 'baby');
+
+  function toySize(toy) {
+    const img = toyImages[toy.id];
+    const h = L.toyH;
+    const w = img && img.naturalHeight ? h * (img.naturalWidth / img.naturalHeight) : h;
+    return { w, h };
+  }
+
+  // Centre of a toy in world pixels, derived from whoever owns it rather than
+  // stored — so a toy she is holding follows her when she crawls, and one he
+  // is carrying follows him when he walks, with no bookkeeping either side.
+  function toyAnchor(toy) {
+    const s = toySize(toy);
+    if (toy.owner === 'boy') {
+      return {
+        x: mascotX * L.worldW + facing * L.mascotW * 0.12,
+        y: L.groundY - L.mascotH * CONFIG.toys.carryFrac,
+      };
+    }
+    if (toy.owner === 'baby') {
+      // Fanned along the mat in front of her, so a second and third gift are
+      // visibly still there rather than replacing the first.
+      const owned = babyToys();
+      const i = Math.max(0, owned.indexOf(toy));
+      const n = Math.max(1, owned.length);
+      const step = Math.min(s.w * 0.9, (L.pen.w * 0.62) / n);
+      const cx = L.pen.x + L.pen.w * (0.16 + babyX * 0.68);
+      return { x: cx + (i - (n - 1) / 2) * step, y: L.pen.y + L.pen.h * 0.86 - s.h / 2 };
+    }
+    return { x: toy.x * L.worldW, y: L.groundY - s.h / 2 - toy.lift };
+  }
+
+  // Generously padded, and hers are excluded on purpose: once a toy has been
+  // given away it is the baby's, and taking it back is not a move this game
+  // offers.
+  function hitToy(px, py) {
+    const pad = L.unit * 0.045;
+    let best = null, bestD = Infinity;
+    for (const toy of toys) {
+      if (toy.owner === 'baby') continue;
+      const a = toyAnchor(toy), s = toySize(toy);
+      if (px < a.x - s.w / 2 - pad || px > a.x + s.w / 2 + pad) continue;
+      if (py < a.y - s.h / 2 - pad || py > a.y + s.h / 2 + pad) continue;
+      const d = Math.hypot(px - a.x, py - a.y);
+      if (d < bestD) { bestD = d; best = toy; }
+    }
+    return best;
+  }
+
+  function babyTakes(toy) {
+    toy.owner = 'baby';
+    toy.lift = 0;
+    const entry = toyEntry(toy.id);
+    if (entry) { entry.sound(audio); say(entry.word); }
+    // Delighted, but without the babble on top of the toy's own sound.
+    babyPose = 'happy';
+    babyUntil = now() + CONFIG.baby.happyMs;
+  }
+
+  function boyTakes(toy) {
+    // He has one pair of hands. Whatever he was already carrying goes down
+    // where he stands rather than silently vanishing.
+    if (held && held !== toy) {
+      held.owner = 'ground';
+      held.lift = 0;
+      held.x = clamp01(mascotX + 0.02);
+    }
+    toy.owner = 'boy';
+    toy.lift = 0;
+    held = toy;
+    audio.pop();
+  }
+
+  function dropToy(toy) {
+    const cfg = CONFIG.toys;
+    const a = toyAnchor(toy);          // measured before it settles
+    toy.owner = 'ground';
+    toy.lift = 0;
+
+    const babyPt = {
+      x: L.pen.x + L.pen.w * (0.16 + babyX * 0.68),
+      y: L.pen.y + L.pen.h * 0.55,
+    };
+    if (Math.hypot(a.x - babyPt.x, a.y - babyPt.y) <= L.unit * cfg.snapBabyFrac) {
+      babyTakes(toy);
+      return;
+    }
+    if (activity !== 'sleeping') {
+      const boyPt = { x: mascotX * L.worldW, y: L.groundY - L.mascotH * 0.5 };
+      if (Math.hypot(a.x - boyPt.x, a.y - boyPt.y) <= L.unit * cfg.snapBoyFrac) {
+        boyTakes(toy);
+        return;
+      }
+    }
+    // Anywhere else it simply stays where it was put. There is no wrong place.
+    toy.x = Math.max(0.02, Math.min(0.98, a.x / L.worldW));
+    audio.pop();
+  }
+
+  // A tap rather than a drag: the boy goes and fetches it, which is the same
+  // journey the child could have made with a finger and teaches that the two
+  // are interchangeable.
+  function tapToy(toy) {
+    if (toy.owner === 'boy') { giveHeldToBaby(); return; }
+    toy.owner = 'ground';
+    toy.lift = 0;
+    fetchToy = toy;
+    lookAt(restFor(toy.x * L.worldW));
+    walkTo(toy.x, 'pickup');
+  }
+
+  function giveHeldToBaby() {
+    if (!held) return;
+    lookAt(restFor(L.station.playpen * L.worldW));
+    walkTo(L.station.playpen, 'giving');
   }
 
   /* ---- "Play Together" moments ---- */
@@ -834,6 +1062,21 @@ function start(ctx) {
       return;
     }
 
+    // Toys are tested before everything else, and are the only thing here that
+    // can begin a drag. A toy lying at the boy's feet must belong to the
+    // finger, not to the furniture behind it.
+    const grabbed = hitToy(px, py);
+    if (grabbed) {
+      const a = toyAnchor(grabbed);
+      const wasHeld = grabbed === held;
+      if (wasHeld) held = null;
+      fetchToy = null;
+      grabbed.owner = 'hand';
+      drag = { toy: grabbed, ox: px, oy: py, dx: a.x - px, dy: a.y - py, moved: false, wasHeld };
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not fatal */ }
+      return;
+    }
+
     switch (hit(px, py, sx)) {
       case 'sun': toggleNight(); break;
       case 'sky': cycleWeather(); break;
@@ -843,6 +1086,9 @@ function start(ctx) {
       case 'playpen':
         // The cot straddles the threshold, so looking at it works from either
         // side; keep whichever rest the child is already in.
+        // Carrying something turns the tap into an errand: this is the second
+        // route to giving, for a child who would rather point than drag.
+        if (held) { giveHeldToBaby(); break; }
         delightBaby();
         walkTo(L.station.playpen, 'waving');
         break;
@@ -867,7 +1113,47 @@ function start(ctx) {
         walkTo(clamp01(px / L.worldW));
     }
   }
+  function onPointerMove(e) {
+    if (!drag || !L) return;
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, py = e.clientY - r.top;
+    const px = sx + camX;
+    if (!drag.moved
+        && Math.hypot(px - drag.ox, py - drag.oy) > L.unit * CONFIG.toys.tapSlopFrac) {
+      drag.moved = true;
+    }
+    const s = toySize(drag.toy);
+    drag.toy.x = (px + drag.dx) / L.worldW;
+    drag.toy.lift = Math.max(0, L.groundY - (py + drag.dy) - s.h / 2);
+    // Carrying a toy toward an edge of the screen brings the rest of the world
+    // into view — the one time the camera moves during a gesture rather than
+    // after it, because otherwise a toy can be dragged somewhere unreachable.
+    // Only at the genuine edge. An earlier 16% trigger fired while the child
+    // was dragging toward the cot, which is already on screen near the left of
+    // the outdoor rest — so aiming at the baby scrolled the baby away.
+    if (sx < L.w * 0.06) lookAt('indoor');
+    else if (sx > L.w * 0.94) lookAt('outdoor');
+  }
+
+  function onPointerUp() {
+    if (!drag) return;
+    const { toy, moved, wasHeld } = drag;
+    drag = null;
+    if (moved) { dropToy(toy); return; }
+    // A tap, not a drag. Tapping what he is already carrying is the request to
+    // hand it over; tapping a toy on the grass sends him to fetch it.
+    toy.lift = 0;
+    if (wasHeld) { toy.owner = 'boy'; held = toy; giveHeldToBaby(); }
+    else { toy.owner = 'ground'; tapToy(toy); }
+  }
+
   canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  // A cancelled pointer (a phone call, a second finger, the browser taking
+  // over) must still put the toy down. Losing one mid-air would leave it
+  // hovering forever with nothing able to grab it.
+  canvas.addEventListener('pointercancel', onPointerUp);
 
   /* ---- update ---- */
   function update(dt, t) {
@@ -898,6 +1184,13 @@ function start(ctx) {
     }
     if (activity === 'jumping' && t - activityStart > CONFIG.jump.count * CONFIG.jump.durationMs) {
       activity = 'idle';
+    }
+    if (activity === 'giving') {
+      if (giveAt && t >= giveAt) {
+        giveAt = 0;
+        if (held) { const toy = held; held = null; babyTakes(toy); }
+      }
+      if (t - activityStart > CONFIG.toys.giveMs) activity = 'idle';
     }
 
     // Clouds drift; wind pushes them along.
@@ -1602,6 +1895,70 @@ function start(ctx) {
     if (asleep) drawBabyZzz(t, x, y - drawH);
   }
 
+  /* ---- toys and the props around them ---- */
+
+  // A soft ellipse under anything standing on the grass. Cheap, and the single
+  // biggest thing separating a sprite that sits in the world from one that
+  // floats above a photograph of it.
+  function contactShadow(x, y, w, alpha) {
+    g.save();
+    g.globalAlpha = alpha;
+    g.fillStyle = night ? '#1c2b3a' : '#4e7a4e';
+    g.beginPath();
+    g.ellipse(x, y, w * 0.5, w * 0.16, 0, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+  }
+
+  function drawProp(key, x, h) {
+    const img = props[key];
+    if (!img || !img.naturalHeight) return;
+    const w = h * (img.naturalWidth / img.naturalHeight);
+    contactShadow(x, L.groundY, w * 0.8, 0.14);
+    g.drawImage(img, x - w / 2, L.groundY - h, w, h);
+  }
+
+  function drawScenery() {
+    for (const bush of L.bushes) drawProp(bush.key, bush.x, bush.h);
+    drawProp('bin', L.binX, L.binH);
+  }
+
+  function drawToy(toy, shadow) {
+    const img = toyImages[toy.id];
+    if (!img) return;
+    const a = toyAnchor(toy), s = toySize(toy);
+    if (shadow) {
+      // The shadow stays on the ground and shrinks as the toy is lifted, which
+      // is what makes a dragged toy read as held up rather than slid along.
+      const k = 1 / (1 + toy.lift / (L.unit * 0.35));
+      contactShadow(a.x, L.groundY, s.w * 0.85 * k, 0.20 * k);
+    }
+    g.drawImage(img, a.x - s.w / 2, a.y - s.h / 2, s.w, s.h);
+  }
+
+  // Loose on the grass, behind whoever is walking past them.
+  function drawLooseToys() {
+    for (const toy of toys) if (toy.owner === 'ground') drawToy(toy, true);
+  }
+
+  function drawCarriedToy() {
+    if (held) drawToy(held, false);
+  }
+
+  function drawBabyToys() {
+    // The teddy is baked into her hugging pose, so drawing it again would give
+    // her two of them.
+    const hugging = babyImage() === baby.hugteddy;
+    for (const toy of babyToys()) {
+      if (hugging && toy.id === 'teddy') continue;
+      drawToy(toy, false);
+    }
+  }
+
+  function drawDraggedToy() {
+    if (drag) drawToy(drag.toy, true);
+  }
+
   function drawBabyZzz(t, x, y) {
     g.save();
     g.fillStyle = CONFIG.colors.ink;
@@ -1659,15 +2016,24 @@ function start(ctx) {
     if (activity === 'waving') img = poseFor('wave');
     if (activity === 'magic') img = images.magic || poseFor('stand');
     if (activity === 'jumping') img = poseFor('jump');
+    // Carrying overrides the neutral poses but not the ones that are about
+    // something else: he keeps bouncing on the trampoline with the toy in hand.
+    if (held && (activity === 'idle' || activity === 'walking')) {
+      img = images.carry || img;
+    }
+    if (activity === 'giving') img = poseFor('give');
     if (!img) return;
 
     // Every pose is framed differently inside its file — some fill it, some
     // leave a wide margin — so scale by the boy himself, not by the PNG. That
     // keeps him the same size and standing on the same line in every pose.
     const bb = boundsOf(img);
-    const drawH = L.mascotH / (bb.y1 - bb.y0);
+    // Kneeling really is shorter than standing — measured at 0.84x off the
+    // sliced sheet — and normalising every pose to one height would have stood
+    // him back up again.
+    const h = L.mascotH * (activity === 'giving' ? CONFIG.toys.givePoseScale : 1);
+    const drawH = h / (bb.y1 - bb.y0);
     const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-    const h = L.mascotH;
 
     let x = mascotX * L.worldW;
     let y = L.groundY;
@@ -2010,6 +2376,7 @@ function start(ctx) {
     g.translate(-camX, 0);
     drawSky(t);
     drawGround();
+    drawScenery();
     drawTrampoline(t);
     // The house first: the cot stands on the grass just outside the wall,
     // under the eave, so it has to draw in front of the house rather than
@@ -2018,12 +2385,20 @@ function start(ctx) {
     drawHouse(t);
     drawPenBack();
     drawBaby(t);
+    drawBabyToys();
     drawPenFront(t);
+    // Toys on the grass sit behind him: he walks in front of what is lying
+    // there, and what he is carrying is in his arms, so it draws in front.
+    drawLooseToys();
     drawMascot(t);
+    drawCarriedToy();
     drawMagic(t);
     drawRain();
     drawSnowfall();
     drawLeaves();
+    // Whatever is under the finger is above everything, including the weather:
+    // it is the one object the child is directly touching.
+    drawDraggedToy();
     g.restore();
 
     drawSunOrMoon(t);
@@ -2052,6 +2427,11 @@ function start(ctx) {
     if (L) layout(canvas.clientWidth, canvas.clientHeight);
   });
 
+  preloadImages(Object.fromEntries(TOYS.map(t => [t.id, t.file])), 0)
+    .then(loaded => { if (alive) toyImages = loaded || {}; });
+
+  preloadImages(PROPS, 0).then(loaded => { if (alive) props = loaded || {}; });
+
   preloadImages(Object.fromEntries(MOMENTS.map(m => [m.id, m.file])), 0)
     .then(loaded => { if (alive) moments = loaded || {}; });
 
@@ -2065,7 +2445,11 @@ function start(ctx) {
     cancelAnimationFrame(raf);
     audio.stopWeatherBed();  // leaving must never leave weather playing
     unlockOrientation();     // leave the rest of the app free to rotate
+    drag = null;
     canvas.removeEventListener('pointerdown', onPointerDown);
+    canvas.removeEventListener('pointermove', onPointerMove);
+    canvas.removeEventListener('pointerup', onPointerUp);
+    canvas.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('resize', resize);
     window.removeEventListener('orientationchange', resize);
   };
