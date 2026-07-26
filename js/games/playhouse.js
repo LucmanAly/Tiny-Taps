@@ -98,6 +98,7 @@ const CONFIG = {
     scrimAlpha: 0.55,
   },
   waveMs: 1400,
+  magicMs: 1500,
 
   weather: {
     order: ['sunny', 'rainy', 'windy', 'snowy'],
@@ -180,6 +181,7 @@ const OUTFITS = [
       stand: 'assets/mascot_idle.PNG',
       walk: 'assets/mascot_walking.PNG',
       wave: 'assets/mascot_waving.PNG',
+      magic: 'assets/mascot_magic.PNG',
       jump: 'assets/mascot_winter_jump.PNG',
       sleep: 'assets/mascot_winter_sleep.PNG',
     },
@@ -243,7 +245,7 @@ function start(ctx) {
   let targetX = 0.66;
   let placed = false;             // has his opening position been set yet
   let facing = 1;                 // 1 = right, -1 = left
-  let activity = 'idle';          // idle | walking | sleeping | jumping | waving
+  let activity = 'idle';          // idle | walking | sleeping | jumping | waving | magic
   let pending = null;             // what to do once the walk finishes
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
@@ -265,6 +267,7 @@ function start(ctx) {
   let clouds = [];
   let stars = [];
   let zzz = [];
+  let sparkles = [];
 
   const now = () => performance.now();
 
@@ -689,9 +692,18 @@ function start(ctx) {
         walkTo(L.station.playpen, 'waving');
         break;
       case 'mascot':
-        activity = 'waving';
+        // The winter set includes the wand pose used by the opening sequence.
+        // Other outfits keep their own stand pose, but get the same forgiving
+        // burst of magic rather than unexpectedly changing clothes.
+        activity = 'magic';
         activityStart = now();
-        audio.greet();
+        sparkles = Array.from({ length: 22 }, (_, i) => ({
+          angle: (i / 22) * Math.PI * 2 + Math.random() * 0.25,
+          distance: 0.25 + Math.random() * 0.55,
+          size: 0.012 + Math.random() * 0.018,
+          color: CONFIG.colors.leaf[i % CONFIG.colors.leaf.length],
+        }));
+        audio.chime();
         break;
       default:
         walkTo(L.station.home);       // tapping open ground brings him outside
@@ -717,6 +729,10 @@ function start(ctx) {
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
+    if (activity === 'magic' && t - activityStart > CONFIG.magicMs) {
+      activity = 'idle';
+      sparkles = [];
+    }
     if (activity === 'wardrobe') {
       if (openPickerAt && t >= openPickerAt) { openPickerAt = 0; openPicker(); }
       if (t - activityStart > CONFIG.wardrobeOpenMs) activity = 'idle';
@@ -1481,6 +1497,7 @@ function start(ctx) {
     let img = poseFor('stand');
     if (activity === 'walking') img = poseFor('walk');
     if (activity === 'waving') img = poseFor('wave');
+    if (activity === 'magic') img = images.magic || poseFor('stand');
     if (activity === 'jumping') img = poseFor('jump');
     if (!img) return;
 
@@ -1528,6 +1545,36 @@ function start(ctx) {
       -((bb.x0 + bb.x1) / 2) * drawW,
       h / 2 - bb.y1 * drawH,
       drawW, drawH);
+    g.restore();
+  }
+
+  function drawMagic(t) {
+    if (activity !== 'magic' || !sparkles.length) return;
+    const p = clamp01((t - activityStart) / CONFIG.magicMs);
+    const cx = mascotX * L.w;
+    const cy = L.groundY - L.mascotH * 0.62;
+    g.save();
+    for (const sparkle of sparkles) {
+      const distance = L.mascotH * sparkle.distance * easeOutCubic(p);
+      const x = cx + Math.cos(sparkle.angle) * distance;
+      const y = cy + Math.sin(sparkle.angle) * distance - p * L.mascotH * 0.12;
+      const radius = L.unit * sparkle.size * (1 - p);
+      g.globalAlpha = 1 - p;
+      g.fillStyle = sparkle.color;
+      g.translate(x, y);
+      g.rotate(sparkle.angle + p * Math.PI);
+      g.beginPath();
+      for (let point = 0; point < 8; point++) {
+        const r = point % 2 ? radius * 0.35 : radius;
+        const a = point * Math.PI / 4;
+        const x = Math.cos(a) * r, y = Math.sin(a) * r;
+        if (point === 0) g.moveTo(x, y);
+        else g.lineTo(x, y);
+      }
+      g.closePath();
+      g.fill();
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     g.restore();
   }
 
@@ -1753,6 +1800,7 @@ function start(ctx) {
     drawPenFront(t);
     drawHouse(t);
     drawMascot(t);
+    drawMagic(t);
     drawRain();
     drawSnowfall();
     drawLeaves();
