@@ -19,6 +19,25 @@ const CONFIG = {
   // Everything is a fraction: of canvas width (x), canvas height (y), or of
   // `unit` (= the smaller edge) for anything whose size should feel the same
   // in portrait and landscape.
+  // The world is wider than the screen and the camera rests in one of two
+  // places. Everything horizontal below is a fraction of WORLD width, not
+  // screen width — which is also what stops object spacing drifting against
+  // unit-based sizing, the bug that made the playpen and trampoline collide
+  // on tablet.
+  world: {
+    // 1.42 rather than a rounder 1.5+: the world is exactly as wide as it
+    // needs to be to hold the house, the cot, the bin, open grass and the
+    // trampoline without either rest showing a band of nothing. Any wider and
+    // the outdoor rest ends in empty sky.
+    scale: 1.42,                 // world width, in screen widths
+    camIndoor: 0.0,              // camera left edge, in screen widths
+    // Chosen so the cot (world 0.39, i.e. 0.55 screen-widths in) sits a
+    // comfortable 15% from the left edge and the house wall still shows as a
+    // sliver — the child can see the room he just came out of.
+    camOutdoor: 0.40,
+    easeMs: 500,
+  },
+
   layout: {
     // This world is landscape-only (see the rotate gate below): a phone held
     // upright cannot fit a house, a wardrobe and a playground side by side
@@ -30,17 +49,21 @@ const CONFIG = {
     groundLineYLandscape: 0.88,
     houseLeftPortrait: 0.03,
     houseRightPortrait: 0.52,
-    houseLeftLandscape: 0.035,
-    houseRightLandscape: 0.44,
+    houseLeftLandscape: 0.028,
+    houseRightLandscape: 0.310,
     houseHeightFrac: 0.52,       // of unit (portrait)
-    houseHeightFracLandscape: 0.62,
+    // Lowered from 0.62: with the roof peak on top the old value put the house
+    // through 77% of the canvas height for two pieces of furniture.
+    houseHeightFracLandscape: 0.56,
     roofPeakFrac: 0.15,          // of unit, above the wall top
     trampolineXPortrait: 0.855,
-    trampolineXLandscape: 0.80,
+    trampolineXLandscape: 0.860,
     trampolineWidthFrac: 0.23,   // of unit (portrait)
     trampolineWidthFracLandscape: 0.31,
+    // The sun is screen-anchored, not world-anchored: it is the day/night
+    // control, so it must stay reachable from either camera rest.
     sunXPortrait: 0.82, sunYPortrait: 0.13,
-    sunXLandscape: 0.84, sunYLandscape: 0.23,
+    sunXLandscape: 0.86, sunYLandscape: 0.20,
     sunRadiusFrac: 0.075,        // of unit
   },
 
@@ -49,7 +72,9 @@ const CONFIG = {
     heightFracLandscape: 0.40,
     minHeight: 104,
     maxHeight: 240,
-    walkSpeedFrac: 0.55,         // of canvas width per second
+    // Of WORLD width per second. Lowered from 0.55 when positions moved from
+    // screen fractions to world fractions, so his on-screen pace is unchanged.
+    walkSpeedFrac: 0.39,
     bobFrac: 0.03,               // of mascot height
     bobHz: 3.2,
     tiltDegrees: 2.4,
@@ -64,15 +89,17 @@ const CONFIG = {
   stations: {
     bedPortrait: 0.17, wardrobePortrait: 0.44, trampolinePortrait: 0.855,
     playpenPortrait: 0.60, homePortrait: 0.60,
-    bedLandscape: 0.15, wardrobeLandscape: 0.36, trampolineLandscape: 0.80,
-    playpenLandscape: 0.47, homeLandscape: 0.47,
+    bedLandscape: 0.104, wardrobeLandscape: 0.240, trampolineLandscape: 0.860,
+    playpenLandscape: 0.490, homeLandscape: 0.560,
   },
 
   // The playpen sits on the one genuinely empty patch of grass, between the
   // house wall (ends ~0.45) and the trampoline (starts ~0.73).
   playpen: {
-    xPortrait: 0.62, xLandscape: 0.625,
-    widthFracPortrait: 0.20, widthFracLandscape: 0.145,   // of canvas width
+    // At the threshold, under the eave — inside the indoor rest AND inside the
+    // outdoor rest, so she is always on screen and never teleports.
+    xPortrait: 0.62, xLandscape: 0.387,
+    widthFracPortrait: 0.20, widthFracLandscape: 0.125,   // of WORLD width
     heightFrac: 0.17,                                      // of unit
   },
 
@@ -288,6 +315,10 @@ function start(ctx) {
   let activityStart = 0;
   let walkPhase = 0;              // drives the bob, only advances while moving
   let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
+  let camX = 0;                   // camera left edge, world pixels
+  let camTarget = 0;              // where it is easing to
+  let camFrom = 0;                // where the current ease started
+  let camAt = 0;                  // when the current ease started (0 = settled)
   let baby = {};                  // pose id -> image, empty until loaded
   let babyPose = 'sit';           // sit | crawl | happy  (sleep is derived from night)
   let babyUntil = 0;              // when the current baby pose gives way
@@ -330,9 +361,12 @@ function start(ctx) {
     const cfg = CONFIG.layout;
     const unit = Math.min(w, h);
     const portrait = h >= w;
+    // In portrait the rotate gate covers the screen, so the world collapses to
+    // one screen width and the camera is irrelevant.
+    const worldW = portrait ? w : w * CONFIG.world.scale;
     const groundY = h * (portrait ? cfg.groundLineYPortrait : cfg.groundLineYLandscape);
-    const houseLeft = w * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
-    const houseRight = w * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
+    const houseLeft = worldW * (portrait ? cfg.houseLeftPortrait : cfg.houseLeftLandscape);
+    const houseRight = worldW * (portrait ? cfg.houseRightPortrait : cfg.houseRightLandscape);
     const houseH = unit * (portrait ? cfg.houseHeightFrac : cfg.houseHeightFracLandscape);
     const wallTop = groundY - houseH;
     const roofPeak = wallTop - unit * cfg.roofPeakFrac;
@@ -350,17 +384,18 @@ function start(ctx) {
     }
 
     const tramW = unit * (portrait ? cfg.trampolineWidthFrac : cfg.trampolineWidthFracLandscape);
-    const tramX = w * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
+    const tramX = worldW * (portrait ? cfg.trampolineXPortrait : cfg.trampolineXLandscape);
 
     L = {
-      w, h, unit, portrait,
+      w, h, unit, portrait, worldW,
+      maxCam: Math.max(0, worldW - w),
       horizonY: h * (portrait ? cfg.horizonYPortrait : cfg.horizonYLandscape),
       groundY,
       houseLeft, houseRight, wallTop, roofPeak,
       houseMidX: (houseLeft + houseRight) / 2,
       mascotH, mascotW: mascotH * aspect,
       tramX, tramW, tramH: tramW * 0.62,
-      sunX: w * (portrait ? cfg.sunXPortrait : cfg.sunXLandscape),
+      sunX: w * (portrait ? cfg.sunXPortrait : cfg.sunXLandscape),   // screen space
       sunY: h * (portrait ? cfg.sunYPortrait : cfg.sunYLandscape),
       sunR: unit * cfg.sunRadiusFrac,
       station: {
@@ -386,9 +421,9 @@ function start(ctx) {
     };
     L.tram = { x: tramX - L.tramW / 2, y: groundY - L.tramH, w: L.tramW, h: L.tramH };
 
-    const penW = w * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
+    const penW = worldW * (portrait ? CONFIG.playpen.widthFracPortrait : CONFIG.playpen.widthFracLandscape);
     const penH = unit * CONFIG.playpen.heightFrac;
-    const penCx = w * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
+    const penCx = worldW * (portrait ? CONFIG.playpen.xPortrait : CONFIG.playpen.xLandscape);
     L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
     L.babyH = mascotH * CONFIG.baby.heightFrac;
 
@@ -396,8 +431,15 @@ function start(ctx) {
     // otherwise leaves him standing inside it.
     if (!placed) {
       mascotX = targetX = L.station.home;
+      // Open on the outdoor rest: that is where the yard, the cot and the
+      // trampoline are, and where he starts.
+      camX = camTarget = camRest('outdoor');
       placed = true;
     }
+    // Re-clamp after a resize, so a rotation can never leave the camera
+    // outside the new world bounds.
+    camX = Math.min(camX, L.maxCam);
+    camTarget = Math.min(camTarget, L.maxCam);
 
     // Roof geometry, shared by the drawing and by roofYAt().
     L.wallT = Math.max(5, unit * 0.022);
@@ -446,11 +488,45 @@ function start(ctx) {
   // descriptive narration was silenced); speech.speakWord() is the one real
   // channel, reserved for essential single-word cues. Weather words and these
   // moment cues are exactly that, so this calls the real one.
+  /* ---- camera ----
+     Two rest positions, and no control the child has to learn: the camera
+     moves because of what they just did, never because they asked it to.
+     A toddler does not navigate, so nothing here is a door or a swipe. */
+
+  function camRest(which) {
+    if (L.portrait) return 0;
+    const c = CONFIG.world;
+    return Math.min(L.maxCam, (which === 'indoor' ? c.camIndoor : c.camOutdoor) * L.w);
+  }
+
+  function lookAt(which) {
+    const to = camRest(which);
+    if (Math.abs(to - camTarget) < 1) return;
+    camFrom = camX;
+    camTarget = to;
+    camAt = now();
+  }
+
+  // Which rest a world x belongs to, so an interaction can pull the camera
+  // toward whatever it just touched.
+  function restFor(worldX) {
+    return worldX < L.houseRight + (L.pen ? L.pen.w : 0) ? 'indoor' : 'outdoor';
+  }
+
+  function updateCamera(t) {
+    if (!camAt) { camX = camTarget; return; }
+    const p = clamp01((t - camAt) / CONFIG.world.easeMs);
+    camX = camFrom + (camTarget - camFrom) * easeInOutCubic(p);
+    if (p >= 1) { camX = camTarget; camAt = 0; }
+  }
+
   function say(word) { speech.speakWord(word, { interrupt: true }); }
+
+  const WALK_MIN = 0.06, WALK_MAX = 0.94;
 
   function walkTo(frac, then) {
     openPickerAt = 0;            // any pending wardrobe opening is abandoned
-    targetX = frac;
+    targetX = Math.max(WALK_MIN, Math.min(WALK_MAX, frac));
     pending = then || null;
     if (Math.abs(targetX - mascotX) < 0.01) { finishWalk(); return; }
     facing = targetX > mascotX ? 1 : -1;
@@ -695,7 +771,7 @@ function start(ctx) {
     say(night ? 'Night time!' : 'Morning!');
   }
 
-  function hit(px, py) {
+  function hit(px, py, sx) {
     // Furniture is tested before the mascot, and deliberately so: he stands in
     // front of whatever he has walked to, and checking him first meant that
     // tapping the wardrobe he was standing at only ever got you a wave. The
@@ -706,7 +782,7 @@ function start(ctx) {
     const pad = L.unit * 0.05;
     const inBox = (b) => px >= b.x - pad && px <= b.x + b.w + pad
                       && py >= b.y - pad && py <= b.y + b.h + pad;
-    if (Math.hypot(px - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
+    if (Math.hypot(sx - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
     if (inBox(L.bed)) return 'bed';
     if (inBox(L.wardrobe)) return 'wardrobe';
     // The trampoline is short, so it also claims the space above its mat —
@@ -733,7 +809,8 @@ function start(ctx) {
     if (audio.tryResume()) applyWeatherBed();
 
     const r = canvas.getBoundingClientRect();
-    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const sx = e.clientX - r.left, py = e.clientY - r.top;
+    const px = sx + camX;          // world space; sx stays screen space
 
     // While the wardrobe is open it takes every tap: a card is a choice,
     // anywhere else closes without changing anything. Nothing in the world
@@ -757,18 +834,17 @@ function start(ctx) {
       return;
     }
 
-    switch (hit(px, py)) {
+    switch (hit(px, py, sx)) {
       case 'sun': toggleNight(); break;
       case 'sky': cycleWeather(); break;
-      case 'bed': walkTo(L.station.bed, 'sleeping'); break;
-      case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
-      case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
+      case 'bed': lookAt('indoor'); walkTo(L.station.bed, 'sleeping'); break;
+      case 'wardrobe': lookAt('indoor'); walkTo(L.station.wardrobe, 'wardrobe'); break;
+      case 'trampoline': lookAt('outdoor'); walkTo(L.station.trampoline, 'jumping'); break;
       case 'playpen':
-        // The baby reacts straight away; her brother comes over to join in,
-        // and the moment overlay opens immediately alongside both.
+        // The cot straddles the threshold, so looking at it works from either
+        // side; keep whichever rest the child is already in.
         delightBaby();
         walkTo(L.station.playpen, 'waving');
-        showMoment();
         break;
       case 'mascot':
         // The winter set includes the wand pose used by the opening sequence.
@@ -785,7 +861,10 @@ function start(ctx) {
         audio.chime();
         break;
       default:
-        walkTo(L.station.home);       // tapping open ground brings him outside
+        // Tapping open ground brings him there, and the camera follows to
+        // whichever half of the world was touched.
+        lookAt(restFor(px));
+        walkTo(clamp01(px / L.worldW));
     }
   }
   canvas.addEventListener('pointerdown', onPointerDown);
@@ -804,6 +883,7 @@ function start(ctx) {
       }
     }
 
+    updateCamera(t);
     updateBaby(dt, t);
 
     // Timed activities return to idle on their own.
@@ -830,7 +910,7 @@ function start(ctx) {
     // Rain
     if (weather === 'rainy') {
       while (drops.length < CONFIG.weather.rainDrops) {
-        drops.push({ x: Math.random() * L.w, y: Math.random() * -L.h, v: 0.8 + Math.random() * 0.5 });
+        drops.push({ x: Math.random() * L.worldW, y: Math.random() * -L.h, v: 0.8 + Math.random() * 0.5 });
       }
       const fall = CONFIG.weather.rainSpeedFrac * L.h * dt;
       for (const d of drops) {
@@ -839,7 +919,7 @@ function start(ctx) {
         const roof = roofYAt(d.x);
         if (d.y >= Math.min(roof, L.groundY)) {
           d.y = Math.random() * -L.h * 0.4;
-          d.x = Math.random() * L.w;
+          d.x = Math.random() * L.worldW;
         }
       }
     } else if (drops.length) {
@@ -850,7 +930,7 @@ function start(ctx) {
     if (weather === 'snowy') {
       while (flakes.length < CONFIG.weather.snowFlakes) {
         flakes.push({
-          x: Math.random() * L.w, y: Math.random() * -L.h,
+          x: Math.random() * L.worldW, y: Math.random() * -L.h,
           v: 0.6 + Math.random() * 0.8,
           r: L.unit * (0.004 + Math.random() * 0.007),
           wob: Math.random() * Math.PI * 2,
@@ -860,12 +940,12 @@ function start(ctx) {
       for (const f of flakes) {
         f.y += fall * f.v;
         f.wob += dt * 1.4;
-        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.w * dt;
+        f.x += Math.sin(f.wob) * CONFIG.weather.snowDriftFrac * L.worldW * dt;
         // Like rain, snow stops at the roof rather than falling through it.
         const roof = roofYAt(f.x);
         if (f.y >= Math.min(roof, L.groundY)) {
           f.y = Math.random() * -L.h * 0.3;
-          f.x = Math.random() * L.w;
+          f.x = Math.random() * L.worldW;
         }
       }
       snowDepth = Math.min(1, snowDepth + dt * 1000 / CONFIG.weather.snowSettleMs);
@@ -922,7 +1002,7 @@ function start(ctx) {
     grad.addColorStop(0, top);
     grad.addColorStop(1, bottom);
     g.fillStyle = grad;
-    g.fillRect(0, 0, L.w, L.horizonY + 1);
+    g.fillRect(0, 0, L.worldW, L.horizonY + 1);
 
     if (night) {
       for (const s of stars) {
@@ -930,12 +1010,13 @@ function start(ctx) {
         g.globalAlpha = a;
         g.fillStyle = CONFIG.colors.star;
         g.beginPath();
-        g.arc(s.x * L.w, s.y * L.horizonY, s.r, 0, Math.PI * 2);
+        g.arc(s.x * L.worldW, s.y * L.horizonY, s.r, 0, Math.PI * 2);
         g.fill();
       }
       g.globalAlpha = 1;
     }
-    drawSunOrMoon(t);
+    // The sun/moon is drawn later, in screen space, so it stays reachable
+    // from either camera rest.
     for (const c of clouds) drawCloud(c);
   }
 
@@ -1000,7 +1081,7 @@ function start(ctx) {
   }
 
   function drawCloud(c) {
-    const x = c.x * L.w, y = c.y * L.horizonY, s = c.s * L.unit * 0.07;
+    const x = c.x * L.worldW, y = c.y * L.horizonY, s = c.s * L.unit * 0.07;
     g.fillStyle = night ? CONFIG.colors.cloudNight : CONFIG.colors.cloudDay;
     g.globalAlpha = weather === 'rainy' ? 0.95 : 0.85;
     g.beginPath();
@@ -1014,13 +1095,13 @@ function start(ctx) {
 
   function drawGround() {
     g.fillStyle = night ? CONFIG.colors.grassNight : CONFIG.colors.grassDay;
-    g.fillRect(0, L.horizonY, L.w, L.h - L.horizonY);
+    g.fillRect(0, L.horizonY, L.worldW, L.h - L.horizonY);
     // A soft band of lighter grass at the horizon gives the ground some depth.
     const grad = g.createLinearGradient(0, L.horizonY, 0, L.groundY);
     grad.addColorStop(0, night ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.28)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
-    g.fillRect(0, L.horizonY, L.w, L.groundY - L.horizonY);
+    g.fillRect(0, L.horizonY, L.worldW, L.groundY - L.horizonY);
     drawSnowOnGround();
   }
 
@@ -1041,11 +1122,11 @@ function start(ctx) {
     g.lineTo(0, topY);
     const bumps = 7;
     for (let i = 0; i <= bumps; i++) {
-      const x = (i / bumps) * L.w;
+      const x = (i / bumps) * L.worldW;
       const wave = Math.sin(i * 1.7) * L.unit * 0.012 * snowDepth;
       g.lineTo(x, topY + wave);
     }
-    g.lineTo(L.w, L.h);
+    g.lineTo(L.worldW, L.h);
     g.closePath();
     g.fill();
     g.restore();
@@ -1535,7 +1616,7 @@ function start(ctx) {
   }
 
   function mascotBox() {
-    const x = mascotX * L.w;
+    const x = mascotX * L.worldW;
     let y = L.groundY;
     if (activity === 'jumping') y = matY() - jumpOffset(now());
     return { x: x - L.mascotW / 2, y: y - L.mascotH, w: L.mascotW, h: L.mascotH };
@@ -1588,7 +1669,7 @@ function start(ctx) {
     const drawW = drawH * (img.naturalWidth / img.naturalHeight);
     const h = L.mascotH;
 
-    let x = mascotX * L.w;
+    let x = mascotX * L.worldW;
     let y = L.groundY;
     let rot = 0;
 
@@ -1630,7 +1711,7 @@ function start(ctx) {
   function drawMagic(t) {
     if (activity !== 'magic' || !sparkles.length) return;
     const p = clamp01((t - activityStart) / CONFIG.magicMs);
-    const cx = mascotX * L.w;
+    const cx = mascotX * L.worldW;
     const cy = L.groundY - L.mascotH * 0.62;
     g.save();
     for (const sparkle of sparkles) {
@@ -1816,7 +1897,7 @@ function start(ctx) {
   function drawLeaves() {
     if (weather !== 'windy') return;
     for (const lf of leaves) {
-      const x = lf.x * L.w;
+      const x = lf.x * L.worldW;
       const y = (lf.y + Math.sin(lf.wob) * 0.03) * L.h;
       const s = L.unit * 0.018 * lf.s;
       g.save();
@@ -1922,18 +2003,30 @@ function start(ctx) {
     update(dt, t);
 
     g.clearRect(0, 0, L.w, L.h);
+
+    // Everything in the world is drawn through the camera. Only the sun/moon
+    // and the overlays live in screen space.
+    g.save();
+    g.translate(-camX, 0);
     drawSky(t);
     drawGround();
     drawTrampoline(t);
+    // The house first: the cot stands on the grass just outside the wall,
+    // under the eave, so it has to draw in front of the house rather than
+    // behind it — otherwise the wall hides the baby from the outdoor rest,
+    // which is the one thing the threshold position exists to prevent.
+    drawHouse(t);
     drawPenBack();
     drawBaby(t);
     drawPenFront(t);
-    drawHouse(t);
     drawMascot(t);
     drawMagic(t);
     drawRain();
     drawSnowfall();
     drawLeaves();
+    g.restore();
+
+    drawSunOrMoon(t);
     drawPicker(t);
     drawMoment(t);
 
