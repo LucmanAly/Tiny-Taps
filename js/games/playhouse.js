@@ -1,15 +1,27 @@
 // Play House: an open-ended little world rather than a round-based game.
-// The child controls the weather and the time of day, and sends the mascot to
-// the bed, the wardrobe or the trampoline. Nothing can be answered wrongly.
+// Nothing here can be answered wrongly, and nothing keeps score.
 //
-// The world itself is entirely procedural: the house, furniture, trampoline,
-// sky, sun, moon, rain, wind and grass are all drawn on canvas, so the only
-// artwork this game costs is the mascot himself.
+// The organising idea, since v4.0: the child's finger is the third character.
+// Everything else in this world is a request the boy carries out on their
+// behalf — but a toy is a thing you pick up yourself and give to somebody. The
+// baby drifts through moods, signals them with her body, and *keeps* whatever
+// she is given. Giving is the verb, and the reason to give is that it visibly
+// changes how his little sister is.
 //
-// The mascot now has three outfits (winter / rain / summer), each with its own
-// stand, walk, jump and sleep poses. Tapping the wardrobe cycles them. Poses
-// are loaded per outfit rather than all at once, and the next outfit is
-// prefetched quietly in the background so a change never shows a gap.
+// The world is 1.42 screen-widths wide with two camera rest positions, indoors
+// and outdoors. The camera never moves because the child asked it to, only ever
+// as a consequence of something they just did — a toddler does not navigate.
+// The cot sits at the threshold, inside both rests, so the baby is always on
+// screen and never has to teleport between scenes.
+//
+// The scenery is entirely procedural: house, furniture, trampoline, sky, sun,
+// moon, rain, wind and grass are all drawn on canvas. Only the two children,
+// the toys and two props cost any artwork.
+//
+// The boy has three outfits (winter / rain / summer), each with its own stand,
+// walk, jump, sleep, carry and kneeling-offer poses. Poses load per outfit
+// rather than all at once, and the next outfit is prefetched quietly in the
+// background so a change never shows a gap.
 
 import { preloadImages } from '../engine/intro.js';
 
@@ -165,21 +177,6 @@ const CONFIG = {
     cardHeightFrac: 0.80,         // of canvas height
     scrimAlpha: 0.55,
   },
-  // A "Play Together" moment: fades in, holds long enough to actually look
-  // at, fades out and clears itself — nothing to tap, nothing to get wrong.
-  moment: {
-    openMs: 320,
-    holdMs: 1900,
-    closeMs: 380,
-    // Much darker than the wardrobe picker's scrim: the world behind it
-    // includes the boy still finishing his walk toward the pen, and a
-    // half-see-through scrim let him (and the baby's own in-pen sprite) show
-    // through, doubling up oddly against the illustration of the same two
-    // characters. Near-opaque hides that completely.
-    scrimAlpha: 0.94,
-    maxWidthFrac: 0.55,           // of canvas width, contain-fit within this box
-    maxHeightFrac: 0.80,          // of canvas height
-  },
   waveMs: 1400,
   magicMs: 1500,
 
@@ -333,29 +330,6 @@ const PROPS = {
   bushLarge: 'assets/prop_bush_large.PNG',
 };
 
-/* ---------------- "Play Together" moments ----------------
-   Ten composite illustrations of the two of them playing, sliced from a 3x3
-   grid plus one standalone image. Unlike every other pose in this file, each
-   one shows both children together at a fixed relative pose — there is no
-   independent boy-sprite/baby-sprite positioning to be done, so these are
-   used whole, as a big illustrated moment that appears over the sandbox,
-   plays a sound and a one-word cue, and fades back on its own. Triggered by
-   tapping the playpen; cycled through in shuffled order so all ten are seen
-   before any repeats. */
-
-const MOMENTS = [
-  { id: 'teddy', file: 'assets/moment_teddy.PNG', cue: 'Share!', sound: a => a.gentleGift() },
-  { id: 'crawl', file: 'assets/moment_crawl.PNG', cue: 'Crawl!', sound: a => { a.footstep(); setTimeout(() => a.footstep(), 140); } },
-  { id: 'hug', file: 'assets/moment_hug.PNG', cue: 'Cuddle!', sound: a => a.chime() },
-  { id: 'rattle', file: 'assets/moment_rattle.PNG', cue: 'Shake!', sound: a => a.rattleShake() },
-  { id: 'peekaboo', file: 'assets/moment_peekaboo.PNG', cue: 'Peekaboo!', sound: a => { a.pop(); setTimeout(() => a.chime(), 160); } },
-  { id: 'clap', file: 'assets/moment_clap.PNG', cue: 'Clap!', sound: a => a.clapClap() },
-  { id: 'duck', file: 'assets/moment_duck.PNG', cue: 'Duck!', sound: a => a.quack() },
-  { id: 'bubbles', file: 'assets/moment_bubbles.PNG', cue: 'Bubbles!', sound: a => a.shimmer(783.99) },
-  { id: 'ride', file: 'assets/moment_ride.PNG', cue: 'Ride!', sound: a => a.whoosh() },
-  { id: 'lift', file: 'assets/moment_lift.PNG', cue: 'Up!', sound: a => { a.boing(); setTimeout(() => a.chime(), 180); } },
-];
-
 function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
@@ -416,9 +390,6 @@ function start(ctx) {
   let giveAt = 0;                 // when the kneeling offer completes (0 = none)
   let picker = null;              // { openedAt } while the child is choosing
   let cards = {};                 // outfit id -> garment image (or missing)
-  let moments = {};                // moment id -> illustration (or missing)
-  let momentBag = [];              // shuffled ids still to show before a repeat
-  let moment = null;                // { id, openedAt } while a moment is on screen
   let stepAt = 0;                 // next footstep sound
 
   let drops = [];
@@ -588,11 +559,6 @@ function start(ctx) {
     return lerp(L.roofPeak, L.eaveY, clamp01(d));
   }
 
-  /* ---- interactions ---- */
-  // speech.speak() is a permanent no-op app-wide (how every other game's
-  // descriptive narration was silenced); speech.speakWord() is the one real
-  // channel, reserved for essential single-word cues. Weather words and these
-  // moment cues are exactly that, so this calls the real one.
   /* ---- camera ----
      Two rest positions, and no control the child has to learn: the camera
      moves because of what they just did, never because they asked it to.
@@ -625,6 +591,10 @@ function start(ctx) {
     if (p >= 1) { camX = camTarget; camAt = 0; }
   }
 
+  // speech.speak() is a permanent no-op app-wide (it is how every other game's
+  // descriptive narration was silenced); speakWord() is the one real channel,
+  // reserved for essential single-word cues. A weather word and the name of a
+  // toy changing hands are exactly that, so this calls the real one.
   function say(word) { speech.speakWord(word, { interrupt: true }); }
 
   const WALK_MIN = 0.06, WALK_MAX = 0.94;
@@ -960,7 +930,7 @@ function start(ctx) {
   // wants something, he goes and does it himself, through exactly the same
   // code path a tap would have used.
   function maybeModel(t) {
-    const busy = activity !== 'idle' || held || drag || picker || moment
+    const busy = activity !== 'idle' || held || drag || picker
       || night || fetchToy || L.portrait;
     if (busy || mood === 'content') { if (busy) idleSince = 0; return; }
     if (!idleSince) { idleSince = t; return; }
@@ -1030,34 +1000,6 @@ function start(ctx) {
     if (!held) return;
     lookAt(restFor(L.station.playpen * L.worldW));
     walkTo(L.station.playpen, 'giving');
-  }
-
-  /* ---- "Play Together" moments ---- */
-
-  // A shuffle bag rather than plain random: guarantees every one of the ten
-  // is seen once before any of them repeats, instead of the same handful
-  // showing up again and again by chance.
-  function nextMomentId() {
-    if (!momentBag.length) {
-      momentBag = MOMENTS.map(m => m.id);
-      for (let i = momentBag.length - 1; i > 0; i--) {
-        const j = (Math.random() * (i + 1)) | 0;
-        [momentBag[i], momentBag[j]] = [momentBag[j], momentBag[i]];
-      }
-    }
-    return momentBag.pop();
-  }
-
-  // Opens immediately on the pen tap, rather than waiting for the walk-over
-  // to finish: the illustration already shows the two of them together up
-  // close, so waiting would just mean he visibly walks over in the
-  // background while a static picture of the same thing plays in front.
-  function showMoment() {
-    const id = nextMomentId();
-    const entry = MOMENTS.find(m => m.id === id);
-    moment = { id, openedAt: now() };
-    entry.sound(audio);
-    say(entry.cue);
   }
 
   function updateBaby(dt, t) {
@@ -1161,10 +1103,6 @@ function start(ctx) {
       else closePicker();
       return;
     }
-
-    // A moment is a beat to watch, not a choice to make — it clears itself,
-    // and nothing else can trigger underneath it while it's showing.
-    if (moment) return;
 
     // Asleep, every tap simply wakes him. A child who wants him up should not
     // have to find him under the covers to do it.
@@ -2289,57 +2227,6 @@ function start(ctx) {
     g.restore();
   }
 
-  function drawMoment(t) {
-    if (!moment) return;
-    const cfg = CONFIG.moment;
-    const c = CONFIG.colors;
-    const age = t - moment.openedAt;
-
-    // Fades in, holds fully visible, fades out, then clears itself — no tap
-    // needed to dismiss it, since it's something to watch rather than choose.
-    let alpha;
-    if (age < cfg.openMs) {
-      alpha = easeOutCubic(clamp01(age / cfg.openMs));
-    } else if (age < cfg.openMs + cfg.holdMs) {
-      alpha = 1;
-    } else if (age < cfg.openMs + cfg.holdMs + cfg.closeMs) {
-      alpha = 1 - clamp01((age - cfg.openMs - cfg.holdMs) / cfg.closeMs);
-    } else {
-      moment = null;
-      return;
-    }
-
-    const entry = MOMENTS.find(m => m.id === moment.id);
-    const img = moments[moment.id];
-
-    g.save();
-    g.fillStyle = `rgba(24,20,44,${cfg.scrimAlpha * alpha})`;
-    g.fillRect(0, 0, L.w, L.h);
-    g.globalAlpha = alpha;
-
-    const maxW = L.w * cfg.maxWidthFrac, maxH = L.h * cfg.maxHeightFrac;
-    if (img && img.naturalWidth) {
-      // Contain-fit: these illustrations are native-resolution "hero" art,
-      // not a small in-world sprite, so they are never stretched larger than
-      // their own pixels warrant.
-      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
-      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-      const dx = (L.w - dw) / 2, dy = (L.h - dh) / 2 - L.h * 0.03;
-      g.drawImage(img, dx, dy, dw, dh);
-
-      g.fillStyle = c.ink;
-      g.font = `700 ${Math.max(16, L.unit * 0.07)}px ${getComputedStyle(document.body).fontFamily}`;
-      g.textAlign = 'center';
-      g.fillText(entry.cue, L.w / 2, dy + dh + L.unit * 0.08);
-    } else {
-      // A moment whose art failed to load still says its cue rather than
-      // showing nothing at all.
-      g.fillStyle = '#fffaf0';
-      g.fillText(entry.cue, L.w / 2, L.h / 2);
-    }
-    g.restore();
-  }
-
   function drawPicker(t) {
     if (!picker) return;
     const cfg = CONFIG.picker;
@@ -2589,7 +2476,6 @@ function start(ctx) {
 
     drawSunOrMoon(t);
     drawPicker(t);
-    drawMoment(t);
 
     raf = requestAnimationFrame(frame);
   }
@@ -2618,16 +2504,12 @@ function start(ctx) {
 
   preloadImages(PROPS, 0).then(loaded => { if (alive) props = loaded || {}; });
 
-  preloadImages(Object.fromEntries(MOMENTS.map(m => [m.id, m.file])), 0)
-    .then(loaded => { if (alive) moments = loaded || {}; });
-
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
 
   return () => {
     alive = false;
     picker = null;
-    moment = null;
     cancelAnimationFrame(raf);
     audio.stopWeatherBed();  // leaving must never leave weather playing
     unlockOrientation();     // leave the rest of the app free to rotate
