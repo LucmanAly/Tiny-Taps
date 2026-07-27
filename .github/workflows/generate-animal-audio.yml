@@ -48,17 +48,18 @@ jobs:
         env:
           PIPER_VOICE: ${{ inputs.voice }}
           PIPER_DATA_DIR: .cache/piper
+          REGENERATE_AUDIO: '1'
         run: npm run generate:animal-audio
 
       - name: Commit generated audio
         run: |
           if [ -z "$(git status --porcelain -- assets/audio/animals)" ]; then
-            echo "No new audio files were generated."
+            echo "No audio files changed."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/audio/animals
-          git commit -m "Generate animal name audio with Piper"
+          git commit -m "Regenerate animal name audio with Piper"
           git push
