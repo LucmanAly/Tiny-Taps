@@ -1,0 +1,44 @@
+name: Generate animal audio
+
+on:
+  workflow_dispatch:
+    inputs:
+      voice_name:
+        description: ElevenLabs voice name to use
+        required: false
+        default: Rachel
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate MP3 files
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_NAME: ${{ inputs.voice_name }}
+        run: npm run generate:animal-audio
+
+      - name: Commit generated audio
+        run: |
+          if git diff --quiet -- assets/audio/animals; then
+            echo "No new audio files were generated."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/animals
+          git commit -m "Generate animal name audio"
+          git push
