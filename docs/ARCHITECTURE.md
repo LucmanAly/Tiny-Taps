@@ -27,7 +27,7 @@ legacy narration. `speak()` returns a resolved promise without producing audio;
 old calls remain harmless so unrelated games do not need invasive rewrites.
 `speakWord()` is the only active computer-speech function during gameplay.
 
-There are exactly three gameplay triggers:
+There are exactly four gameplay triggers:
 
 1. `js/games/counting.js` calls `speakWord(WORDS[counted])` when an uncounted
    animal is tapped. The utterance is only `one` through `ten`.
@@ -35,6 +35,9 @@ There are exactly three gameplay triggers:
    utterance is only `Big` or `Small`; idle reprompting does not repeat it.
 3. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
    stroke. The utterance is only the completed letter, number word, shape, or animal.
+4. `js/games/animals.js` calls `speakWord(order[i].name)` when the photo card
+   is tapped. The utterance is only the name of the animal currently shown, and
+   tapping again simply repeats it — there is no round or correctness state.
 
 Settings uses `speakWord()` for parent-facing voice/rate previews; that is not a
 gameplay trigger. `scripts/check.mjs` enforces the permitted game modules and one

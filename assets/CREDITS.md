@@ -31,4 +31,13 @@ Taps does not substitute fabricated roars or unrelated ambient effects.
 
 UI sounds (pops, chimes, fanfares) are synthesized in-app via WebAudio.
 Spoken prompts use the device's text-to-speech.
-All artwork is original for this app (hand-built SVG).
+Most artwork is original for this app (hand-built SVG); the Play House
+mascot/baby art and the Animals photos below are the exceptions.
+
+# Photo Credits
+
+The 33 animal photos used by the Animals game (`assets/animals-photos/`) are
+AI-generated illustrations, supplied by the app's developer as four grid
+sheets and sliced into individual files. The unsliced originals are archived
+verbatim in `assets/new-assets/` for provenance. They are not sourced from a
+third-party stock or photography service and carry no external license terms.

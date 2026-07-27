@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.7';
+const VERSION = 'tiny-taps-v3.8';
 
 const ASSETS = [
   '.',
@@ -49,6 +49,7 @@ const ASSETS = [
   'js/games/wash.js',
   'js/games/trace.js',
   'js/games/playhouse.js',
+  'js/games/animals.js',
   'assets/art/dog.svg', 'assets/art/cat.svg', 'assets/art/cow.svg',
   'assets/art/duck.svg', 'assets/art/sheep.svg', 'assets/art/horse.svg',
   'assets/art/rooster.svg', 'assets/art/pig.svg', 'assets/art/lion.svg',
@@ -91,6 +92,25 @@ const ASSETS = [
   'assets/moment_rattle.PNG', 'assets/moment_peekaboo.PNG', 'assets/moment_clap.PNG',
   'assets/moment_duck.PNG', 'assets/moment_bubbles.PNG', 'assets/moment_ride.PNG',
   'assets/moment_lift.PNG',
+  // Animals: one photo per animal, sliced from four uploaded grid sheets
+  // (the originals are archived, unsliced, in assets/new-assets/).
+  'assets/animals-photos/whale.jpg', 'assets/animals-photos/shark.jpg',
+  'assets/animals-photos/jellyfish.jpg', 'assets/animals-photos/eagle.jpg',
+  'assets/animals-photos/sparrow.jpg', 'assets/animals-photos/penguin.jpg',
+  'assets/animals-photos/octopus.jpg', 'assets/animals-photos/sea-turtle.jpg',
+  'assets/animals-photos/crocodile.jpg', 'assets/animals-photos/rabbit.jpg',
+  'assets/animals-photos/kitten.jpg', 'assets/animals-photos/puppy.jpg',
+  'assets/animals-photos/bear-cub.jpg', 'assets/animals-photos/elephant.jpg',
+  'assets/animals-photos/lion-cub.jpg', 'assets/animals-photos/monkey.jpg',
+  'assets/animals-photos/horse.jpg', 'assets/animals-photos/cow.jpg',
+  'assets/animals-photos/panda.jpg', 'assets/animals-photos/giraffe.jpg',
+  'assets/animals-photos/zebra.jpg', 'assets/animals-photos/piglet.jpg',
+  'assets/animals-photos/lamb.jpg', 'assets/animals-photos/fox.jpg',
+  'assets/animals-photos/koala.jpg', 'assets/animals-photos/deer-fawn.jpg',
+  'assets/animals-photos/squirrel.jpg', 'assets/animals-photos/t-rex.jpg',
+  'assets/animals-photos/brachiosaurus.jpg', 'assets/animals-photos/pterodactyl.jpg',
+  'assets/animals-photos/triceratops.jpg', 'assets/animals-photos/stegosaurus.jpg',
+  'assets/animals-photos/velociraptor.jpg',
 ];
 
 self.addEventListener('install', e => {

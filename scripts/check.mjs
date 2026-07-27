@@ -27,7 +27,12 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const assetBlock = sw.match(/const ASSETS = \[([\s\S]*?)\];/);
 if (!assetBlock) errors.push('Could not find service-worker ASSETS list');
 else {
-  for (const match of assetBlock[1].matchAll(/['"]([^'"]+)['"]/g)) {
+  // Strip `//` line comments before pairing quotes — an apostrophe or a
+  // quoted phrase inside a comment (e.g. "the baby's four poses") would
+  // otherwise be read as a string-literal delimiter and desync every
+  // quote pairing after it.
+  const withoutComments = assetBlock[1].replace(/\/\/[^\n]*/g, '');
+  for (const match of withoutComments.matchAll(/['"]([^'"]+)['"]/g)) {
     const asset = match[1];
     if (asset === '.') continue;
     if (!fs.existsSync(path.join(root, asset))) errors.push(`Service worker references missing ${asset}`);
@@ -44,9 +49,10 @@ for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
 
-// Computer speech during gameplay is restricted to exactly three triggers:
-// Counting taps, Big/Small round start, and Trace It completion.
-const voiceGames = new Set(['js/games/counting.js', 'js/games/bigsmall.js', 'js/games/trace.js']);
+// Computer speech during gameplay is restricted to exactly four triggers:
+// Counting taps, Big/Small round start, Trace It completion, and Animals'
+// photo tap.
+const voiceGames = new Set(['js/games/counting.js', 'js/games/bigsmall.js', 'js/games/trace.js', 'js/games/animals.js']);
 for (const file of files.filter(f => f.includes(`${path.sep}games${path.sep}`))) {
   const rel = path.relative(root, file);
   const source = fs.readFileSync(file, 'utf8');
@@ -64,6 +70,7 @@ const exactVoiceCalls = new Map([
   ['js/games/counting.js', 'speech.speakWord(WORDS[counted])'],
   ['js/games/bigsmall.js', "ctx.speech.speakWord(target.size === 'big' ? 'Big' : 'Small')"],
   ['js/games/trace.js', 'speech.speakWord(current.spoken'],
+  ['js/games/animals.js', 'speech.speakWord(order[i].name)'],
 ]);
 for (const [rel, expected] of exactVoiceCalls) {
   const source = fs.readFileSync(path.join(root, rel), 'utf8');
