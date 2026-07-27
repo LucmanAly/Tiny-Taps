@@ -305,6 +305,39 @@ export function babble() {
   });
 }
 
+// A proper laugh: five quick blips alternating up and down in pitch (rather
+// than babble()'s single upward run), each with its own small upward glide,
+// so it reads as a rhythmic chuckle. Used for the baby's biggest delighted
+// moments — still an oscillator, so still an approximation, but a busier one.
+export function giggle() {
+  ensureCtx();
+  const base = 700 + Math.random() * 60;
+  [0, 1, 2, 3, 4].forEach(i => {
+    const jitter = 0.96 + Math.random() * 0.08;
+    const f = base * (i % 2 === 0 ? 1 : 1.16) * jitter;
+    tone(f, i * 0.09, 0.11,
+      { type: 'triangle', vol: 0.16 - i * 0.012, glide: f * 1.12 });
+  });
+}
+
+// A calm, content sound — two soft rising tones, slower and lower than
+// giggle(). Used when the baby is settled but still awake (e.g. back in the
+// pen after a cart ride).
+export function coo() {
+  ensureCtx();
+  tone(480, 0, 0.32, { type: 'sine', vol: 0.14, glide: 520 });
+  tone(500, 0.22, 0.34, { type: 'sine', vol: 0.12, glide: 560 });
+}
+
+// The "drifting off to sleep" cue: two slow, quiet *descending* tones —
+// coo()'s mirror image in contour, so it reads as settling down rather than
+// perking up.
+export function sleepyCoo() {
+  ensureCtx();
+  tone(450, 0, 0.4, { type: 'sine', vol: 0.10, glide: 340 });
+  tone(430, 0.28, 0.42, { type: 'sine', vol: 0.08, glide: 300 });
+}
+
 export function whoosh() {
   ensureCtx();
   tone(300, 0, 0.30, { type: 'sine', vol: 0.09, glide: 1250 });

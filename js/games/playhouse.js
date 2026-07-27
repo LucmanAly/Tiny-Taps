@@ -76,6 +76,24 @@ const CONFIG = {
     heightFrac: 0.17,                                      // of unit
   },
 
+  // The baby's cart: a station like the others, but statefully richer — it
+  // parks either outdoors (near the playpen) or indoors (in the walkway
+  // between the bed and the wardrobe), and the mascot appears to push it
+  // between the two docks rather than teleporting.
+  cart: {
+    // The indoor dock has to fit in the real gap between the bed and the
+    // wardrobe, which — worked out from their own layout fractions — is
+    // only about 4% of the canvas width. The cart's own size below is kept
+    // small enough to actually fit there; the outdoor dock uses the same
+    // size for consistency rather than resizing on the way through the door.
+    outdoorXLandscape: 0.55, outdoorXPortrait: 0.60,
+    indoorXLandscape: 0.252, indoorXPortrait: 0.29,
+    widthFrac: 0.075, heightFrac: 0.11,     // of unit
+    hitPadFrac: 0.04,                       // of unit — tighter than the generic 0.05; this spot is cramped
+    pushOffsetFrac: 0.05,                   // of canvas width, gap kept ahead of the mascot while pushing
+    settleMs: 1400,                         // time from arriving indoors to falling asleep
+  },
+
   baby: {
     heightFrac: 0.58,          // of the boy's drawn height
     bobHz: 0.6,
@@ -88,6 +106,18 @@ const CONFIG = {
 
   jump: { count: 3, heightFrac: 0.55, durationMs: 620 },
   sleep: { fadeMs: 420, zzzMs: 2200, widthFrac: 0.74, headFrac: 0.10, sinkFrac: 0.17 },
+  // A purely decorative door at the boundary between the house interior and
+  // the yard — the cutaway itself never changes, this just swings open when
+  // the mascot crosses that line (walking to a station on the other side, or
+  // pushing the cart) and when tapped directly.
+  door: {
+    widthFrac: 0.09,          // of unit
+    heightFrac: 0.55,         // of house wall height
+    tapLingerMs: 800,         // stays open this long after a direct tap
+    crossLingerMs: 700,       // stays open this long after the mascot crosses
+    crossBandFrac: 0.09,      // of unit either side of the boundary that counts as "crossing"
+    easeRate: 6,              // per-second approach rate for the open/close swing
+  },
   wardrobeOpenMs: 1500,
   outfitOpenAtFrac: 0.5,          // through the door-opening animation
   picker: {
@@ -154,6 +184,9 @@ const CONFIG = {
     wardrobe: '#a3714a', wardrobeDark: '#7d5334', wardrobeDoor: '#b98352',
     tramFrame: '#8a8098', tramMat: '#5aa8e0', tramSpring: '#c9c3d6',
     penRail: '#e08a5a', penRailDark: '#bd6a3e', penBar: '#f6c177', penMat: '#8fd9c4',
+    doorFrame: '#7d5334', doorPanel: '#c98a54', doorPanelDark: '#a3714a',
+    cartFrame: '#8a8098', cartFrameDark: '#635c73', cartWheel: '#5c5468',
+    cartBasket: '#ffd3e0', cartBasketDark: '#e8a9bd', cartCanopy: '#ff9fce', cartCanopyDark: '#e075a8',
     ink: '#3a3357',
   },
 };
@@ -235,6 +268,24 @@ const BABY_POSES = {
   sleep: 'assets/baby_sleep.PNG',
 };
 
+/* ---------------- interior decor ----------------
+   A handful of toy/prop icons sliced at runtime from the one uploaded sheet
+   that actually matches this game's own art (a plain 3-column x 4-row grid
+   of individual illustrations) — nothing new to source, just wiring in art
+   that was already delivered but never used. Row 3's third icon is a
+   baby-girl illustration in a different style from this game's own baby
+   sprite and is deliberately skipped, as are the bushes on row 4. */
+const DECOR_SHEET_COLS = 3;
+const DECOR_SHEET_ROWS = 4;
+const DECOR_ICONS = {
+  teddy: { col: 0, row: 0 },
+  ball: { col: 1, row: 0 },
+  duck: { col: 2, row: 0 },
+  rattle: { col: 0, row: 1 },
+  blanket: { col: 1, row: 1 },
+  toybin: { col: 0, row: 2 },
+};
+
 /* ---------------- "Play Together" moments ----------------
    Ten composite illustrations of the two of them playing, sliced from a 3x3
    grid plus one standalone image. Unlike every other pose in this file, each
@@ -289,17 +340,26 @@ function start(ctx) {
   let walkPhase = 0;              // drives the bob, only advances while moving
   let openPickerAt = 0;           // when the wardrobe finishes opening (0 = none)
   let baby = {};                  // pose id -> image, empty until loaded
+  let decorSheet = null;          // the interior-decor icon sheet, once loaded
   let babyPose = 'sit';           // sit | crawl | happy  (sleep is derived from night)
   let babyUntil = 0;              // when the current baby pose gives way
   let babyX = 0.5;                // position across the pen, 0..1
   let babyTargetX = 0.5;
   let babyFacing = 1;
+  let babyLocation = 'pen';       // 'pen' | 'cart' — where she currently is
+  let cartMode = 'outdoor';       // 'outdoor' | 'indoor' | 'transit'
+  let cartX = 0;                  // fraction of width; synced to the current dock in layout()
+  let pushTarget = null;          // 'indoor' | 'outdoor' while cartMode === 'transit'
+  let cartAsleep = false;
+  let cartSettleAt = 0;           // 0 = no pending settle-to-sleep
   let picker = null;              // { openedAt } while the child is choosing
   let cards = {};                 // outfit id -> garment image (or missing)
   let moments = {};                // moment id -> illustration (or missing)
   let momentBag = [];              // shuffled ids still to show before a repeat
   let moment = null;                // { id, openedAt } while a moment is on screen
   let stepAt = 0;                 // next footstep sound
+  let doorOpen = 0;                // eased 0..1 render value for the door swing
+  let doorOpenUntil = 0;           // door eases toward open while t < this
 
   let drops = [];
   let flakes = [];
@@ -392,6 +452,17 @@ function start(ctx) {
     L.pen = { x: penCx - penW / 2, y: groundY - penH, w: penW, h: penH };
     L.babyH = mascotH * CONFIG.baby.heightFrac;
 
+    const cartCfg = CONFIG.cart;
+    L.cart = {
+      outdoorX: portrait ? cartCfg.outdoorXPortrait : cartCfg.outdoorXLandscape,
+      indoorX: portrait ? cartCfg.indoorXPortrait : cartCfg.indoorXLandscape,
+      w: unit * cartCfg.widthFrac, h: unit * cartCfg.heightFrac,
+    };
+    // Re-synced every layout, not just once: a docked cart has no
+    // in-progress journey to preserve across a resize, unlike the mascot's
+    // one-time opening position below.
+    if (cartMode !== 'transit') cartX = cartMode === 'indoor' ? L.cart.indoorX : L.cart.outdoorX;
+
     // Open beside the playpen rather than at a hard-coded fraction, which
     // otherwise leaves him standing inside it.
     if (!placed) {
@@ -472,6 +543,48 @@ function start(ctx) {
       // outfit appears to come out of the wardrobe rather than through it.
       openPickerAt = activityStart + CONFIG.wardrobeOpenMs * CONFIG.outfitOpenAtFrac;
     }
+    // The two legs of a cart journey: walk to wherever it's currently
+    // parked, grab it, then walk on to the destination dock while
+    // `cartMode === 'transit'` couples the cart's position to his own (see
+    // the `update()` walking branch). Neither leg is a resting `activity` —
+    // each immediately re-enters `walkTo`, or resolves back to 'idle'.
+    if (next === 'grabCart') {
+      cartMode = 'transit';
+      audio.pop();
+      const destX = pushTarget === 'indoor' ? L.cart.indoorX : L.cart.outdoorX;
+      walkTo(destX, 'placeCart');
+      return;
+    }
+    if (next === 'placeCart') {
+      cartMode = pushTarget;
+      cartX = pushTarget === 'indoor' ? L.cart.indoorX : L.cart.outdoorX;
+      pushTarget = null;
+      activity = 'idle';
+      audio.chime();
+      if (cartMode === 'indoor') {
+        cartSettleAt = now() + CONFIG.cart.settleMs;
+        // Step aside rather than staying parked right in front of it — the
+        // whole point of bringing her in is to see her settle, and the
+        // indoor dock is tight enough that standing there would hide her.
+        walkTo(Math.max(0.05, cartX - 0.09));
+      } else {
+        // Reversible, like everything else here: back outside, she rejoins
+        // the pen and resumes her normal idle wandering.
+        babyLocation = 'pen';
+        babyPose = 'sit';
+        babyUntil = now() + 300;
+        cartAsleep = false;
+        audio.coo();
+      }
+    }
+  }
+
+  // Walks the mascot to wherever the cart is currently parked, then (via the
+  // 'grabCart'/'placeCart' pending chain above) on to the opposite dock.
+  function pushCart(target) {
+    pushTarget = target;
+    const dockX = cartMode === 'outdoor' ? L.cart.outdoorX : L.cart.indoorX;
+    walkTo(dockX, 'grabCart');
   }
 
   /* ---- outfits ---- */
@@ -623,7 +736,7 @@ function start(ctx) {
   function delightBaby() {
     babyPose = 'happy';
     babyUntil = now() + CONFIG.baby.happyMs;
-    audio.babble();
+    audio.giggle();
   }
 
   /* ---- "Play Together" moments ---- */
@@ -655,6 +768,7 @@ function start(ctx) {
   }
 
   function updateBaby(dt, t) {
+    if (babyLocation !== 'pen') return;              // she's in the cart instead
     if (night && babyPose !== 'happy') return;      // asleep: no wandering
     if (t < babyUntil) {
       if (babyPose === 'crawl') {
@@ -680,6 +794,23 @@ function start(ctx) {
     }
   }
 
+  // Eases the door's render value toward open/closed rather than snapping,
+  // so both a direct tap and a walk-crossing produce the same soft swing.
+  function updateDoor(dt, t) {
+    const target = t < doorOpenUntil ? 1 : 0;
+    doorOpen += (target - doorOpen) * clamp01(dt * CONFIG.door.easeRate);
+  }
+
+  // Only the arrival timer, below, puts her to sleep — day/night doesn't
+  // touch the cart, so the two sleep systems never have to coordinate.
+  function updateCart(dt, t) {
+    if (cartSettleAt && t >= cartSettleAt) {
+      cartAsleep = true;
+      cartSettleAt = 0;
+      audio.sleepyCoo();
+    }
+  }
+
   function cycleWeather() {
     const order = CONFIG.weather.order;
     weather = order[(order.indexOf(weather) + 1) % order.length];
@@ -695,6 +826,26 @@ function start(ctx) {
     say(night ? 'Night time!' : 'Morning!');
   }
 
+  // The door's hit box mirrors the frame drawDoor() actually paints, so what
+  // you can tap always matches what you can see.
+  function doorBox() {
+    const dw = L.unit * CONFIG.door.widthFrac;
+    const dh = (L.groundY - L.wallTop) * CONFIG.door.heightFrac;
+    const trim = dw * 0.16;
+    return {
+      x: L.houseRight - dw * 0.5 - trim, y: L.groundY - dh - trim * 0.6,
+      w: dw + trim * 2, h: dh + trim * 0.6,
+    };
+  }
+
+  // The cart's live box for hit-testing and drawing — it isn't a fixed piece
+  // of furniture like L.bed/L.pen, its position depends on cartX, which
+  // moves while pushed.
+  function cartBox() {
+    const cx = cartX * L.w;
+    return { x: cx - L.cart.w / 2, y: L.groundY - L.cart.h, w: L.cart.w, h: L.cart.h };
+  }
+
   function hit(px, py) {
     // Furniture is tested before the mascot, and deliberately so: he stands in
     // front of whatever he has walked to, and checking him first meant that
@@ -704,11 +855,18 @@ function start(ctx) {
     // Every box is generously padded, because these are small pieces of
     // furniture on a phone and a toddler aiming near one clearly means it.
     const pad = L.unit * 0.05;
-    const inBox = (b) => px >= b.x - pad && px <= b.x + b.w + pad
-                      && py >= b.y - pad && py <= b.y + b.h + pad;
+    const inBox = (b, p = pad) => px >= b.x - p && px <= b.x + b.w + p
+                      && py >= b.y - p && py <= b.y + b.h + p;
     if (Math.hypot(px - L.sunX, py - L.sunY) <= L.sunR * 1.8) return 'sun';
+    // Tested before the bed/wardrobe, not after: the indoor dock sits in the
+    // genuinely cramped gap between them, close enough that their own
+    // generous padding would otherwise swallow most taps aimed at the cart.
+    // Its own pad is tighter, so this only reclaims taps actually near it —
+    // the bulk of the bed/wardrobe stays exactly as tappable as before.
+    if (inBox(cartBox(), L.unit * CONFIG.cart.hitPadFrac)) return 'cart';
     if (inBox(L.bed)) return 'bed';
     if (inBox(L.wardrobe)) return 'wardrobe';
+    if (inBox(doorBox())) return 'door';
     // The trampoline is short, so it also claims the space above its mat —
     // that is where a child aiming at "the bouncy thing" will actually tap.
     if (px >= L.tram.x - pad && px <= L.tram.x + L.tram.w + pad
@@ -762,6 +920,24 @@ function start(ctx) {
       case 'sky': cycleWeather(); break;
       case 'bed': walkTo(L.station.bed, 'sleeping'); break;
       case 'wardrobe': walkTo(L.station.wardrobe, 'wardrobe'); break;
+      // Purely atmospheric: a knock-and-open, nothing else changes. The
+      // mascot doesn't walk anywhere and no other state is touched.
+      case 'door': doorOpenUntil = now() + CONFIG.door.tapLingerMs; audio.pop(); break;
+      case 'cart': {
+        if (cartMode === 'transit') break;   // mid-journey: let it finish
+        const goingIndoor = cartMode === 'outdoor';
+        if (goingIndoor && babyLocation === 'pen') {
+          babyLocation = 'cart';
+          audio.giggle();
+        } else if (!goingIndoor) {
+          cartAsleep = false;   // any tap wakes her — never a dead end
+          audio.pop();
+        } else {
+          audio.pop();
+        }
+        pushCart(goingIndoor ? 'indoor' : 'outdoor');
+        break;
+      }
       case 'trampoline': walkTo(L.station.trampoline, 'jumping'); break;
       case 'playpen':
         // The baby reacts straight away; her brother comes over to join in,
@@ -802,9 +978,22 @@ function start(ctx) {
         walkPhase += dt * CONFIG.mascot.bobHz;
         if (t > stepAt) { audio.footstep(); stepAt = t + 300; }
       }
+      // Crossing the interior/yard boundary swings the door open, whether
+      // he's walking to a station or pushing the cart through it.
+      if (Math.abs(mascotX * L.w - L.houseRight) < L.unit * CONFIG.door.crossBandFrac) {
+        doorOpenUntil = t + CONFIG.door.crossLingerMs;
+      }
+      // The cart leads him in his direction of travel while he's pushing it —
+      // this alone is what "pushing" looks like; no separate sprite pose or
+      // activity value is needed, the ordinary walk pose carries it. If a tap
+      // elsewhere interrupts the walk, this line simply stops running and the
+      // cart stays put, still tappable to resume the journey.
+      if (cartMode === 'transit') cartX = mascotX + facing * CONFIG.cart.pushOffsetFrac;
     }
 
     updateBaby(dt, t);
+    updateDoor(dt, t);
+    updateCart(dt, t);
 
     // Timed activities return to idle on their own.
     if (activity === 'waving' && t - activityStart > CONFIG.waveMs) activity = 'idle';
@@ -1101,12 +1290,21 @@ function start(ctx) {
 
     drawBed();
     drawWardrobe(t);
+    // A few toys and props resting against the bed and wardrobe, filling in
+    // the room without crowding the open walkway between them (that gap is
+    // reserved for the cart's indoor parking spot).
+    drawDecor(floorY);
 
     // Side walls, drawn after the contents so they frame the cutaway.
     const wallT = L.wallT;
     g.fillStyle = night ? c.wallNight : c.wallDay;
     g.fillRect(left - wallT, L.wallTop, wallT, wallH);
     g.fillRect(right, L.wallTop, wallT, wallH);
+
+    // The door sits right on the interior/yard boundary, on top of the wall
+    // strip just drawn — purely atmospheric, it never changes what's on
+    // screen, it just swings when the mascot crosses or it's tapped directly.
+    drawDoor(t);
 
     // Stone foundation the walls stand on.
     g.fillStyle = '#9d9384';
@@ -1119,6 +1317,41 @@ function start(ctx) {
 
     drawChimney(t);
     drawRoof();
+  }
+
+  // A door frame straddling the interior/yard boundary, with a panel that
+  // narrows toward its hinge as it swings open — the same trick drawWardrobe()
+  // uses for its own doors. `doorOpen` (0..1) is eased in update().
+  function drawDoor(t) {
+    const c = CONFIG.colors;
+    const dw = L.unit * CONFIG.door.widthFrac;
+    const dh = (L.groundY - L.wallTop) * CONFIG.door.heightFrac;
+    const dx = L.houseRight - dw * 0.5;
+    const dy = L.groundY - dh;
+    const trim = dw * 0.16;
+
+    g.fillStyle = c.doorFrame;
+    roundRect(dx - trim, dy - trim * 0.6, dw + trim * 2, dh + trim * 0.6, trim * 0.5);
+    g.fill();
+
+    // A dark doorway behind the panel, revealed as it swings open.
+    g.fillStyle = 'rgba(40,28,18,0.4)';
+    g.fillRect(dx, dy, dw, dh);
+
+    // The panel itself, hinged on the interior-facing (left) edge.
+    const shrink = 1 - doorOpen * 0.85;
+    g.fillStyle = c.doorPanel;
+    roundRect(dx, dy, dw * shrink, dh, dw * 0.1);
+    g.fill();
+    g.fillStyle = c.doorPanelDark;
+    g.fillRect(dx, dy, Math.max(1, dw * shrink * 0.12), dh);
+
+    // Handle, tracking the panel's free (swinging) edge.
+    g.fillStyle = '#f0d9a8';
+    const hr = Math.max(1.2, dw * 0.09);
+    g.beginPath();
+    g.arc(dx + dw * shrink * 0.86, dy + dh * 0.52, hr, 0, Math.PI * 2);
+    g.fill();
   }
 
   function drawWindow() {
@@ -1353,6 +1586,67 @@ function start(ctx) {
     g.fill();
   }
 
+  // Source rect within decorSheet for one icon, in the sheet's own pixel
+  // space — a plain grid slice, no per-icon measuring needed.
+  function decorSheetRect(id) {
+    const icon = DECOR_ICONS[id];
+    if (!decorSheet || !icon) return null;
+    const cw = decorSheet.naturalWidth / DECOR_SHEET_COLS;
+    const ch = decorSheet.naturalHeight / DECOR_SHEET_ROWS;
+    return { sx: icon.col * cw, sy: icon.row * ch, sw: cw, sh: ch };
+  }
+
+  // Each icon sits on a plain white backdrop rather than a transparent one,
+  // so drawing the sheet slice directly would paint a hard white card behind
+  // it. Punched out once per icon into a cached offscreen canvas instead —
+  // the same "measure once on an offscreen canvas" approach boundsOf() uses
+  // above for pose bounding boxes.
+  const DECOR_CUTOUTS = new Map();
+  function decorCutout(id) {
+    if (DECOR_CUTOUTS.has(id)) return DECOR_CUTOUTS.get(id);
+    const r = decorSheetRect(id);
+    if (!r) return null;
+    const c = document.createElement('canvas');
+    c.width = r.sw; c.height = r.sh;
+    const cg = c.getContext('2d', { willReadFrequently: true });
+    cg.drawImage(decorSheet, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
+    const shot = cg.getImageData(0, 0, r.sw, r.sh);
+    const d = shot.data;
+    for (let i = 0; i < d.length; i += 4) {
+      // Near-white counts as background; fade the last stretch before that
+      // so anti-aliased edges don't leave a hard white fringe.
+      const bright = Math.min(d[i], d[i + 1], d[i + 2]);
+      if (bright > 232) d[i + 3] = 0;
+      else if (bright > 200) d[i + 3] = Math.round(d[i + 3] * (232 - bright) / 32);
+    }
+    cg.putImageData(shot, 0, 0);
+    DECOR_CUTOUTS.set(id, c);
+    return c;
+  }
+
+  // Draws one decor icon floor-anchored at (x, y), `size` tall — same
+  // baseline convention as drawBaby/drawMascot.
+  function drawDecorIcon(id, x, y, size) {
+    const cut = decorCutout(id);
+    if (!cut) return;
+    const w = size * (cut.width / cut.height);
+    g.drawImage(cut, x - w / 2, y - size, w, size);
+  }
+
+  // A few of the interior-decor icons, resting against the bed and wardrobe
+  // themselves rather than out in the open floor between them — that gap is
+  // where the cart docks indoors, and keeping it clear avoids the two ever
+  // overlapping.
+  function drawDecor(floorY) {
+    if (!decorSheet) return;
+    const iconH = L.unit * 0.085;
+    drawDecorIcon('teddy', L.bed.x + L.bed.w * 0.15, floorY, iconH);
+    drawDecorIcon('toybin', L.bed.x + L.bed.w * 0.90, floorY, iconH * 0.85);
+    drawDecorIcon('rattle', L.wardrobe.x + L.wardrobe.w * 0.18, floorY, iconH * 0.55);
+    drawDecorIcon('blanket', L.wardrobe.x + L.wardrobe.w * 0.55, floorY, iconH * 0.5);
+    drawDecorIcon('ball', L.wardrobe.x + L.wardrobe.w * 0.85, floorY, iconH * 0.6);
+  }
+
   function drawTrampoline(t) {
     const c = CONFIG.colors, tr = L.tram;
     const cx = tr.x + tr.w / 2;
@@ -1492,6 +1786,7 @@ function start(ctx) {
   }
 
   function drawBaby(t) {
+    if (babyLocation !== 'pen') return;   // she's in the cart instead — see drawCart()
     const img = babyImage();
     if (!img) return;               // art missing: the pen simply stands empty
     const pen = L.pen;
@@ -1532,6 +1827,103 @@ function start(ctx) {
       g.fillText('z', x + p * L.unit * 0.05, y - p * L.unit * 0.11);
     }
     g.restore();
+  }
+
+  // Composed like drawTrampoline/drawPenBack: wheels, a push handle, a basin
+  // (a darker well then a lighter surface, the same depth trick the
+  // trampoline mat uses), and a canopy. When the baby's aboard,
+  // drawBabyInCart() runs between the basin and the canopy fills so she
+  // visibly sits inside it — mirroring how drawBaby() sits between
+  // drawPenBack/drawPenFront.
+  function drawCart(t) {
+    const c = CONFIG.colors, box = cartBox();
+    const basinY = box.y + box.h * 0.44;
+    const basinH = box.h * 0.40;
+    const wheelY = box.y + box.h * 0.95;
+    const wheelR = box.w * 0.16;
+
+    // Wheels, with a small highlight so they read as round rather than flat.
+    g.fillStyle = c.cartWheel;
+    [box.x + box.w * 0.24, box.x + box.w * 0.76].forEach(wx => {
+      g.beginPath();
+      g.arc(wx, wheelY, wheelR, 0, Math.PI * 2);
+      g.fill();
+    });
+    g.fillStyle = 'rgba(255,255,255,0.4)';
+    [box.x + box.w * 0.24, box.x + box.w * 0.76].forEach(wx => {
+      g.beginPath();
+      g.arc(wx - wheelR * 0.3, wheelY - wheelR * 0.3, wheelR * 0.3, 0, Math.PI * 2);
+      g.fill();
+    });
+
+    // Struts connecting the basin to the wheels.
+    g.strokeStyle = c.cartFrameDark;
+    g.lineWidth = Math.max(1.5, box.w * 0.045);
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(box.x + box.w * 0.30, basinY + basinH);
+    g.lineTo(box.x + box.w * 0.24, wheelY);
+    g.moveTo(box.x + box.w * 0.70, basinY + basinH);
+    g.lineTo(box.x + box.w * 0.76, wheelY);
+    g.stroke();
+
+    // Push handle, rising from the back-left of the basin — the visual cue
+    // for "this is pushed," whether it's actually moving or just parked.
+    g.strokeStyle = c.cartFrame;
+    g.lineWidth = Math.max(2, box.w * 0.07);
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(box.x + box.w * 0.16, basinY + basinH * 0.30);
+    g.quadraticCurveTo(box.x - box.w * 0.10, box.y - box.h * 0.02,
+      box.x + box.w * 0.04, box.y - box.h * 0.10);
+    g.stroke();
+
+    // Basin: a darker well, then the lighter surface on top of it — the
+    // same depth trick drawTrampoline() uses for its mat.
+    g.fillStyle = c.cartBasketDark;
+    roundRect(box.x + box.w * 0.14, basinY, box.w * 0.72, basinH, box.w * 0.14);
+    g.fill();
+    g.fillStyle = c.cartBasket;
+    roundRect(box.x + box.w * 0.19, basinY + basinH * 0.14, box.w * 0.62, basinH * 0.72, box.w * 0.11);
+    g.fill();
+
+    if (babyLocation === 'cart') drawBabyInCart(t, box, basinY, basinH);
+
+    // Canopy: a dome over the basin's back-top corner, drawn as a half-
+    // ellipse (rather than a free-form path) so it reads clearly as a hood
+    // instead of merging into the basin below it.
+    const hoodCx = box.x + box.w * 0.32;
+    const hoodCy = basinY + basinH * 0.05;
+    const hoodRx = box.w * 0.30, hoodRy = box.h * 0.30;
+    g.fillStyle = c.cartCanopy;
+    g.beginPath();
+    g.ellipse(hoodCx, hoodCy, hoodRx, hoodRy, 0, Math.PI, Math.PI * 2);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = c.cartCanopyDark;
+    g.lineWidth = Math.max(1.2, box.w * 0.03);
+    g.beginPath();
+    g.ellipse(hoodCx, hoodCy, hoodRx, hoodRy, 0, Math.PI, Math.PI * 2);
+    g.stroke();
+  }
+
+  // Same floor-anchored convention as drawBaby(), but sized off the basin
+  // itself (rather than the boy's own height) so it always fits the basin
+  // regardless of how big or small the cart's own CONFIG fractions are.
+  function drawBabyInCart(t, box, basinY, basinH) {
+    const img = cartAsleep ? (baby.sleep || baby.happy || baby.sit) : (baby.happy || baby.sit);
+    if (!img) return;
+    const drawH = basinH * 1.35;
+    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+    const x = box.x + box.w * 0.5;
+    const y = basinY + basinH * 0.92;
+
+    g.save();
+    g.translate(x, y);
+    g.drawImage(img, -drawW / 2, -drawH, drawW, drawH);
+    g.restore();
+
+    if (cartAsleep) drawBabyZzz(t, x, y - drawH);
   }
 
   function mascotBox() {
@@ -1929,6 +2321,11 @@ function start(ctx) {
     drawBaby(t);
     drawPenFront(t);
     drawHouse(t);
+    // Furniture before the mascot, same convention as the trampoline/pen
+    // above and drawBed/drawWardrobe inside drawHouse() — he stands in front
+    // of whatever he's near, including the cart, rather than it drawing over
+    // him.
+    drawCart(t);
     drawMascot(t);
     drawMagic(t);
     drawRain();
@@ -1961,6 +2358,9 @@ function start(ctx) {
 
   preloadImages(Object.fromEntries(MOMENTS.map(m => [m.id, m.file])), 0)
     .then(loaded => { if (alive) moments = loaded || {}; });
+
+  preloadImages({ decor: 'assets/playhouse_objects_sheet.png' }, 0)
+    .then(loaded => { if (alive) decorSheet = (loaded && loaded.decor) || null; });
 
   raf = requestAnimationFrame(frame);
   setReprompt(null);      // free play: never nag
