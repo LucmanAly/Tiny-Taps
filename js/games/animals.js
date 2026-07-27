@@ -1,14 +1,22 @@
 // Animals: a photo flashcard deck, not a round-based game. One animal fills
-// the card at a time; tapping it speaks the name aloud, and it can be tapped
-// again to hear it repeated. Prev/next simply move through the deck — no
-// scoring, no correct/incorrect state, nothing here can be done wrongly.
+// the card at a time; tapping it plays the bundled spoken name, and it can be
+// tapped again to hear it repeated. Prev/next simply move through the deck —
+// no scoring, no correct/incorrect state, nothing here can be done wrongly.
 
 import { preloadImages } from '../engine/intro.js';
 import { shuffle } from '../engine/rand.js';
 import { fadeSwap, addTap } from '../engine/ui.js';
 
+function voiceSlug(name) {
+  return name
+    .toLowerCase()
+    .replace(/\./g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
 // Ids match the sliced photo filenames in assets/animals-photos/. Names are
-// what gets spoken and printed under the card.
+// what gets printed under the card and spoken by the bundled Piper clips.
 const ANIMALS = [
   { id: 'whale', name: 'Whale' },
   { id: 'shark', name: 'Shark' },
@@ -43,7 +51,12 @@ const ANIMALS = [
   { id: 'triceratops', name: 'Triceratops' },
   { id: 'stegosaurus', name: 'Stegosaurus' },
   { id: 'velociraptor', name: 'Velociraptor' },
-].map(a => ({ ...a, photo: `assets/animals-photos/${a.id}.jpg` }));
+].map(a => ({
+  ...a,
+  photo: `assets/animals-photos/${a.id}.jpg`,
+  voiceKey: `animal-name:${voiceSlug(a.name)}`,
+  voice: `assets/audio/animals/${voiceSlug(a.name)}.mp3`,
+}));
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -101,6 +114,9 @@ function start(ctx) {
     img.src = a.photo;
     img.alt = a.name;
     label.textContent = a.name;
+    // Warm the current clip so a tap plays immediately, without decoding all
+    // 33 files at once on lower-memory phones and tablets.
+    audio.load(a.voiceKey, a.voice);
   }
 
   // Photo and name change together as one unit, so a fade never shows a
@@ -110,18 +126,23 @@ function start(ctx) {
     fadeSwap(card, render);
   }
 
-  addTap(card, () => {
+  addTap(card, async () => {
     if (!alive) return;
+    const a = order[i];
     card.classList.remove('wiggle');
     void card.offsetWidth;
     card.classList.add('wiggle');
-    speech.speakWord(order[i].name);
+    speech.stop();
     audio.pop();
+    const loaded = await audio.load(a.voiceKey, a.voice);
+    if (!alive) return;
+    if (loaded) await audio.play(a.voiceKey);
+    else speech.speakWord(a.name); // safety fallback for a damaged/missing file
   });
   addTap(prevBtn, () => { if (alive) go(-1); });
   addTap(nextBtn, () => { if (alive) go(1); });
 
-  // Warm the whole deck up front — it's under 1.1MB total, so there's no
+  // Warm the whole photo deck up front — it's under 1.1MB total, so there's no
   // reason to make the child wait mid-browse for a photo to arrive.
   preloadImages(Object.fromEntries(ANIMALS.map(a => [a.id, a.photo])), 0)
     .then(() => { if (alive) render(); });
