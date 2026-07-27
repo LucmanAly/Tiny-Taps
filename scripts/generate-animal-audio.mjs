@@ -1,24 +1,12 @@
-import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { spawnSync } from 'node:child_process';
 
-const RAW_API_KEY = process.env.ELEVENLABS_API_KEY || '';
-const API_KEY = RAW_API_KEY.trim();
-const VOICE_NAME = process.env.ELEVENLABS_VOICE_NAME || 'Rachel';
-const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
+const VOICE = process.env.PIPER_VOICE || 'en_US-amy-medium';
+const PIPER_DATA_DIR = path.resolve(process.env.PIPER_DATA_DIR || '.cache/piper');
 const OUTPUT_DIR = path.resolve('assets/audio/animals');
 const ANIMALS_FILE = new URL('./animals.json', import.meta.url);
-
-if (!API_KEY) {
-  console.error('Missing ELEVENLABS_API_KEY environment variable.');
-  process.exit(1);
-}
-
-console.log(
-  `Credential diagnostic: received=${RAW_API_KEY.length} chars, trimmed=${API_KEY.length} chars, leading_or_trailing_whitespace=${RAW_API_KEY.length !== API_KEY.length}`
-);
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function slugify(name) {
   return name
@@ -45,91 +33,80 @@ async function exists(filePath) {
   }
 }
 
-async function getVoiceId() {
-  const response = await fetch('https://api.elevenlabs.io/v1/voices', {
-    headers: { 'xi-api-key': API_KEY }
+function run(command, args) {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
   });
 
-  if (!response.ok) {
-    const body = await response.text();
-    if (response.status === 401) {
-      throw new Error(
-        `ElevenLabs rejected ELEVENLABS_API_KEY (401). The workflow received a ${API_KEY.length}-character value. If this is unexpectedly short, GitHub contains a nickname or truncated hint instead of the full key. Response: ${body}`
-      );
-    }
-    throw new Error(`Could not load voices: ${response.status} ${body}`);
+  if (result.status !== 0) {
+    const details = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
+    throw new Error(`${command} failed with exit code ${result.status}${details ? `:\n${details}` : ''}`);
   }
-
-  const data = await response.json();
-  const voices = Array.isArray(data.voices) ? data.voices : [];
-  if (!voices.length) throw new Error('No ElevenLabs voices are available for this account.');
-
-  const preferred = voices.find(
-    (voice) => voice.name?.toLowerCase() === VOICE_NAME.toLowerCase()
-  );
-
-  const selected = preferred || voices[0];
-  console.log(`Using voice: ${selected.name} (${selected.voice_id})`);
-  return selected.voice_id;
 }
 
-async function generateClip(voiceId, animal, destination) {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`,
-    {
-      method: 'POST',
-      headers: {
-        'xi-api-key': API_KEY,
-        'content-type': 'application/json',
-        accept: 'audio/mpeg'
-      },
-      body: JSON.stringify({
-        text: speechText(animal),
-        model_id: MODEL_ID,
-        voice_settings: {
-          stability: 0.42,
-          similarity_boost: 0.78,
-          style: 0.55,
-          use_speaker_boost: true
-        }
-      })
-    }
-  );
+async function generateClip(animal, wavPath, mp3Path) {
+  run('python3', [
+    '-m',
+    'piper',
+    '-m',
+    VOICE,
+    '--data-dir',
+    PIPER_DATA_DIR,
+    '-f',
+    wavPath,
+    '--',
+    speechText(animal)
+  ]);
 
-  if (!response.ok) {
-    throw new Error(`${animal}: ${response.status} ${await response.text()}`);
-  }
+  run('ffmpeg', [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    wavPath,
+    '-codec:a',
+    'libmp3lame',
+    '-b:a',
+    '96k',
+    mp3Path
+  ]);
 
-  const audio = Buffer.from(await response.arrayBuffer());
-  await writeFile(destination, audio);
+  await rm(wavPath, { force: true });
 }
 
 async function main() {
   const animals = JSON.parse(await readFile(ANIMALS_FILE, 'utf8'));
   await mkdir(OUTPUT_DIR, { recursive: true });
-  const voiceId = await getVoiceId();
+  await mkdir(PIPER_DATA_DIR, { recursive: true });
+
+  console.log(`Using local Piper voice: ${VOICE}`);
+  console.log('No API key or paid service is required.');
 
   let generated = 0;
   let skipped = 0;
   const failures = [];
 
   for (const [index, animal] of animals.entries()) {
-    const filename = `${slugify(animal)}.mp3`;
-    const destination = path.join(OUTPUT_DIR, filename);
+    const slug = slugify(animal);
+    const mp3Path = path.join(OUTPUT_DIR, `${slug}.mp3`);
+    const wavPath = path.join(OUTPUT_DIR, `${slug}.tmp.wav`);
 
-    if (await exists(destination)) {
-      console.log(`[${index + 1}/${animals.length}] Skipping ${filename}`);
+    if (await exists(mp3Path)) {
+      console.log(`[${index + 1}/${animals.length}] Skipping ${slug}.mp3`);
       skipped += 1;
       continue;
     }
 
     try {
-      console.log(`[${index + 1}/${animals.length}] Generating ${filename}: ${speechText(animal)}`);
-      await generateClip(voiceId, animal, destination);
+      console.log(`[${index + 1}/${animals.length}] Generating ${slug}.mp3: ${speechText(animal)}`);
+      await generateClip(animal, wavPath, mp3Path);
       generated += 1;
-      await sleep(500);
     } catch (error) {
-      console.error(`Failed: ${error.message}`);
+      await rm(wavPath, { force: true });
+      await rm(mp3Path, { force: true });
+      console.error(`Failed: ${animal}: ${error.message}`);
       failures.push({ animal, error: error.message });
     }
   }
