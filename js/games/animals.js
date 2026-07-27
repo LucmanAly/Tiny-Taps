@@ -82,7 +82,14 @@ function start(ctx) {
 
   const card = document.createElement('div');
   card.className = 'animals-card';
-  card.style.touchAction = 'pan-y';
+  // 'none', not 'pan-y': the stage never scrolls (every other tappable game
+  // element uses 'none' too — see addTap()'s comment in engine/ui.js). With
+  // any panning left to the browser, iOS can hand a real finger's natural
+  // jitter off to native gesture handling before a matching pointerup ever
+  // reaches us, silently swallowing the tap that's supposed to speak the
+  // animal's name — invisible with a mouse or a synthetic, jitter-free tap,
+  // but reproducible on an actual touchscreen.
+  card.style.touchAction = 'none';
   const img = document.createElement('img');
   img.className = 'animals-photo';
   img.alt = '';
