@@ -7,6 +7,7 @@ const VOICE = process.env.PIPER_VOICE || 'en_US-amy-medium';
 const PIPER_DATA_DIR = path.resolve(process.env.PIPER_DATA_DIR || '.cache/piper');
 const OUTPUT_DIR = path.resolve('assets/audio/animals');
 const ANIMALS_FILE = new URL('./animals.json', import.meta.url);
+const REGENERATE = process.env.REGENERATE_AUDIO === '1';
 
 function slugify(name) {
   return name
@@ -16,12 +17,8 @@ function slugify(name) {
     .replace(/^_+|_+$/g, '');
 }
 
-function articleFor(name) {
-  return /^[aeiou]/i.test(name.trim()) ? 'an' : 'a';
-}
-
 function speechText(name) {
-  return `It's ${articleFor(name)}... ${name.toUpperCase()}!`;
+  return name;
 }
 
 async function exists(filePath) {
@@ -83,6 +80,7 @@ async function main() {
 
   console.log(`Using local Piper voice: ${VOICE}`);
   console.log('No API key or paid service is required.');
+  console.log(REGENERATE ? 'Existing animal clips will be replaced.' : 'Existing animal clips will be skipped.');
 
   let generated = 0;
   let skipped = 0;
@@ -93,7 +91,7 @@ async function main() {
     const mp3Path = path.join(OUTPUT_DIR, `${slug}.mp3`);
     const wavPath = path.join(OUTPUT_DIR, `${slug}.tmp.wav`);
 
-    if (await exists(mp3Path)) {
+    if (!REGENERATE && await exists(mp3Path)) {
       console.log(`[${index + 1}/${animals.length}] Skipping ${slug}.mp3`);
       skipped += 1;
       continue;
