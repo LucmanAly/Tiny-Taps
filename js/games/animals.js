@@ -1,11 +1,10 @@
 // Animals: a photo flashcard deck, not a round-based game. One animal fills
-// the card at a time; tapping it plays the bundled spoken name, and it can be
-// tapped again to hear it repeated. Prev/next simply move through the deck —
-// no scoring, no correct/incorrect state, nothing here can be done wrongly.
+// the card at a time; tapping it plays the bundled spoken name. Swipe left or
+// right to move through the deck, wrapping in both directions.
 
 import { preloadImages } from '../engine/intro.js';
 import { shuffle } from '../engine/rand.js';
-import { fadeSwap, addTap } from '../engine/ui.js';
+import { fadeSwap } from '../engine/ui.js';
 
 function voiceSlug(name) {
   return name
@@ -79,9 +78,11 @@ function start(ctx) {
 
   const order = shuffle(ANIMALS);
   let i = 0;
+  let pointerStart = null;
 
   const card = document.createElement('div');
   card.className = 'animals-card';
+  card.style.touchAction = 'pan-y';
   const img = document.createElement('img');
   img.className = 'animals-photo';
   img.alt = '';
@@ -90,23 +91,9 @@ function start(ctx) {
   card.appendChild(img);
   card.appendChild(label);
 
-  const nav = document.createElement('div');
-  nav.className = 'animals-nav';
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'big-btn animals-arrow';
-  prevBtn.textContent = '‹';
-  prevBtn.setAttribute('aria-label', 'Previous animal');
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'big-btn animals-arrow';
-  nextBtn.textContent = '›';
-  nextBtn.setAttribute('aria-label', 'Next animal');
-  nav.appendChild(prevBtn);
-  nav.appendChild(nextBtn);
-
   const wrap = document.createElement('div');
   wrap.className = 'animals-wrap';
   wrap.appendChild(card);
-  wrap.appendChild(nav);
   stage.appendChild(wrap);
 
   function render() {
@@ -114,19 +101,18 @@ function start(ctx) {
     img.src = a.photo;
     img.alt = a.name;
     label.textContent = a.name;
-    // Warm the current clip so a tap plays immediately, without decoding all
-    // 33 files at once on lower-memory phones and tablets.
     audio.load(a.voiceKey, a.voice);
   }
 
-  // Photo and name change together as one unit, so a fade never shows a
-  // mismatched pairing mid-transition.
   function go(delta) {
+    if (!alive) return;
     i = (i + delta + order.length) % order.length;
+    speech.stop();
+    audio.stopPlayback();
     fadeSwap(card, render);
   }
 
-  addTap(card, async () => {
+  async function speakCurrent() {
     if (!alive) return;
     const a = order[i];
     card.classList.remove('wiggle');
@@ -137,19 +123,40 @@ function start(ctx) {
     const loaded = await audio.load(a.voiceKey, a.voice);
     if (!alive) return;
     if (loaded) await audio.play(a.voiceKey);
-    else speech.speakWord(a.name); // safety fallback for a damaged/missing file
-  });
-  addTap(prevBtn, () => { if (alive) go(-1); });
-  addTap(nextBtn, () => { if (alive) go(1); });
+    else speech.speakWord(a.name);
+  }
 
-  // Warm the whole photo deck up front — it's under 1.1MB total, so there's no
-  // reason to make the child wait mid-browse for a photo to arrive.
+  card.addEventListener('pointerdown', e => {
+    if (!alive || !e.isPrimary) return;
+    pointerStart = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    try { card.setPointerCapture(e.pointerId); } catch (_) { /* optional */ }
+  });
+
+  card.addEventListener('pointerup', e => {
+    if (!alive || !pointerStart || pointerStart.id !== e.pointerId) return;
+    const dx = e.clientX - pointerStart.x;
+    const dy = e.clientY - pointerStart.y;
+    pointerStart = null;
+    try { card.releasePointerCapture(e.pointerId); } catch (_) { /* optional */ }
+
+    const horizontalSwipe = Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy) * 1.25;
+    if (horizontalSwipe) {
+      // Swipe left = next; swipe right = previous. The modulo in go() means
+      // swiping right from the first card opens the last card, and vice versa.
+      go(dx < 0 ? 1 : -1);
+    } else if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+      speakCurrent();
+    }
+  });
+
+  card.addEventListener('pointercancel', () => { pointerStart = null; });
+
   preloadImages(Object.fromEntries(ANIMALS.map(a => [a.id, a.photo])), 0)
     .then(() => { if (alive) render(); });
-  render();   // shows immediately; the preload above just warms the cache
+  render();
 
-  setReprompt(null);      // free play: never nag
-  return () => { alive = false; };
+  setReprompt(null);
+  return () => { alive = false; pointerStart = null; };
 }
 
 export default {
