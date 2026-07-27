@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v3.8';
+const VERSION = 'tiny-taps-v3.9';
 
 const ASSETS = [
   '.',
@@ -68,6 +68,24 @@ const ASSETS = [
   'assets/audio/elephant.mp3', 'assets/audio/frog.mp3', 'assets/audio/owl.mp3',
   'assets/audio/bear.mp3', 'assets/audio/bee.mp3', 'assets/audio/bunny.mp3',
   'assets/audio/monkey.mp3', 'assets/audio/zebra.mp3',
+  // Bundled Piper voice clips for the Animals flashcard deck.
+  'assets/audio/animals/whale.mp3', 'assets/audio/animals/shark.mp3',
+  'assets/audio/animals/jellyfish.mp3', 'assets/audio/animals/eagle.mp3',
+  'assets/audio/animals/sparrow.mp3', 'assets/audio/animals/penguin.mp3',
+  'assets/audio/animals/octopus.mp3', 'assets/audio/animals/turtle.mp3',
+  'assets/audio/animals/crocodile.mp3', 'assets/audio/animals/rabbit.mp3',
+  'assets/audio/animals/kitten.mp3', 'assets/audio/animals/puppy.mp3',
+  'assets/audio/animals/bear.mp3', 'assets/audio/animals/elephant.mp3',
+  'assets/audio/animals/lion.mp3', 'assets/audio/animals/monkey.mp3',
+  'assets/audio/animals/horse.mp3', 'assets/audio/animals/cow.mp3',
+  'assets/audio/animals/panda.mp3', 'assets/audio/animals/giraffe.mp3',
+  'assets/audio/animals/zebra.mp3', 'assets/audio/animals/pig.mp3',
+  'assets/audio/animals/sheep.mp3', 'assets/audio/animals/fox.mp3',
+  'assets/audio/animals/koala.mp3', 'assets/audio/animals/deer.mp3',
+  'assets/audio/animals/squirrel.mp3', 'assets/audio/animals/t_rex.mp3',
+  'assets/audio/animals/brachiosaurus.mp3', 'assets/audio/animals/pterodactyl.mp3',
+  'assets/audio/animals/triceratops.mp3', 'assets/audio/animals/stegosaurus.mp3',
+  'assets/audio/animals/velociraptor.mp3',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   // Intro mascot art. Note the exact casing (.PNG) — GitHub Pages serves from
   // a case-sensitive filesystem, so these must match the files byte for byte.
