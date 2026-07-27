@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-const API_KEY = process.env.ELEVENLABS_API_KEY;
+const API_KEY = process.env.ELEVENLABS_API_KEY?.trim();
 const VOICE_NAME = process.env.ELEVENLABS_VOICE_NAME || 'Rachel';
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
 const OUTPUT_DIR = path.resolve('assets/audio/animals');
@@ -46,7 +46,13 @@ async function getVoiceId() {
   });
 
   if (!response.ok) {
-    throw new Error(`Could not load voices: ${response.status} ${await response.text()}`);
+    const body = await response.text();
+    if (response.status === 401) {
+      throw new Error(
+        `ElevenLabs rejected ELEVENLABS_API_KEY (401). Create a brand-new key, copy the full key from the creation dialog, and replace the GitHub repository secret. Do not use the key nickname or the final-four-character hint. Response: ${body}`
+      );
+    }
+    throw new Error(`Could not load voices: ${response.status} ${body}`);
   }
 
   const data = await response.json();
