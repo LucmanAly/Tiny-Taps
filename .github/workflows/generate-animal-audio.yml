@@ -3,10 +3,10 @@ name: Generate animal audio
 on:
   workflow_dispatch:
     inputs:
-      voice_name:
-        description: ElevenLabs voice name to use
+      voice:
+        description: Piper voice model
         required: false
-        default: Rachel
+        default: en_US-amy-medium
 
 permissions:
   contents: write
@@ -24,10 +24,31 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Piper and FFmpeg
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install piper-tts==1.5.0
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Download Piper voice
+        env:
+          PIPER_VOICE: ${{ inputs.voice }}
+          PIPER_DATA_DIR: .cache/piper
+        run: |
+          mkdir -p "$PIPER_DATA_DIR"
+          python -m piper.download_voices --data-dir "$PIPER_DATA_DIR" "$PIPER_VOICE"
+
       - name: Generate MP3 files
         env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_NAME: ${{ inputs.voice_name }}
+          PIPER_VOICE: ${{ inputs.voice }}
+          PIPER_DATA_DIR: .cache/piper
         run: npm run generate:animal-audio
 
       - name: Commit generated audio
@@ -40,5 +61,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/audio/animals
-          git commit -m "Generate animal name audio"
+          git commit -m "Generate animal name audio with Piper"
           git push
