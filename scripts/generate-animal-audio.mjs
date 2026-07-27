@@ -2,7 +2,8 @@ import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-const API_KEY = process.env.ELEVENLABS_API_KEY?.trim();
+const RAW_API_KEY = process.env.ELEVENLABS_API_KEY || '';
+const API_KEY = RAW_API_KEY.trim();
 const VOICE_NAME = process.env.ELEVENLABS_VOICE_NAME || 'Rachel';
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
 const OUTPUT_DIR = path.resolve('assets/audio/animals');
@@ -12,6 +13,10 @@ if (!API_KEY) {
   console.error('Missing ELEVENLABS_API_KEY environment variable.');
   process.exit(1);
 }
+
+console.log(
+  `Credential diagnostic: received=${RAW_API_KEY.length} chars, trimmed=${API_KEY.length} chars, leading_or_trailing_whitespace=${RAW_API_KEY.length !== API_KEY.length}`
+);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -49,7 +54,7 @@ async function getVoiceId() {
     const body = await response.text();
     if (response.status === 401) {
       throw new Error(
-        `ElevenLabs rejected ELEVENLABS_API_KEY (401). Create a brand-new key, copy the full key from the creation dialog, and replace the GitHub repository secret. Do not use the key nickname or the final-four-character hint. Response: ${body}`
+        `ElevenLabs rejected ELEVENLABS_API_KEY (401). The workflow received a ${API_KEY.length}-character value. If this is unexpectedly short, GitHub contains a nickname or truncated hint instead of the full key. Response: ${body}`
       );
     }
     throw new Error(`Could not load voices: ${response.status} ${body}`);
