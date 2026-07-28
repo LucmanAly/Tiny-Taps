@@ -75,6 +75,11 @@ const WORDS = [
   { id: 'frog', name: 'Frog' },
   { id: 'owl', name: 'Owl' },
   { id: 'duckling', name: 'Duckling' },
+  { id: 'baby-shark', name: 'Baby Shark', extension: 'png' },
+  { id: 'daddy-shark', name: 'Daddy Shark', extension: 'png' },
+  { id: 'mommy-shark', name: 'Mommy Shark', extension: 'png' },
+  { id: 'grandpa-shark', name: 'Grandpa Shark', extension: 'png' },
+  { id: 'grandma-shark', name: 'Grandma Shark', extension: 'png' },
   { id: 'bed', name: 'Bed' },
   { id: 'shoe', name: 'Shoe' },
   { id: 'hat', name: 'Hat' },
@@ -98,7 +103,7 @@ const WORDS = [
   { id: 'chair', name: 'Chair' },
 ].map(w => ({
   ...w,
-  photo: `assets/words-photos/${w.id}.jpg`,
+  photo: `assets/words-photos/${w.id}.${w.extension ?? 'jpg'}`,
   voiceKey: `animal-name:${voiceSlug(w.name)}`,
   voice: null,
 }));
@@ -178,7 +183,7 @@ function start(ctx) {
     const loaded = a.voice ? await audio.load(a.voiceKey, a.voice) : false;
     if (!alive) return;
     if (loaded) await audio.play(a.voiceKey, { rate: speech.getUserRate() });
-    else speech.speakWord(a.name);
+    else speech.speakWord(order[i].name);
   }
 
   card.addEventListener('pointerdown', e => {
