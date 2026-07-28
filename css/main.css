@@ -418,13 +418,61 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 .rec-btn.recording { background: #f04e3e; color: #fff; }
 .rec-btn:disabled { opacity: 0.4; }
 .rec-status { width: 100%; color: #6b6389; font-size: 0.85em; min-height: 1.2em; }
-.set-games {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.6vmin 2vmin;
+.set-games-hint { color: #6b6389; font-size: 0.85em; margin: 0.4vmin 0 1vmin; }
+.set-group-label {
+  font-weight: 800;
+  font-size: 0.85em;
+  color: #6b6389;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 1.4vmin 0 0.4vmin;
 }
-.set-game { display: flex; align-items: center; gap: 0.8vmin; padding: 0.5vmin 0; }
-.set-game input { width: 20px; height: 20px; }
+.set-game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vmin;
+  min-height: 44px;
+  padding: 0.4vmin;
+  border-radius: 14px;
+  background: rgba(58,51,87,0.04);
+}
+.set-game-row {
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  padding: 0.6vmin 0.8vmin;
+  border-radius: 10px;
+  background: #fff;
+}
+.set-drag-handle {
+  touch-action: none;
+  border: none;
+  background: none;
+  font-size: max(2.4vmin, 18px);
+  line-height: 1;
+  color: #6b6389;
+  padding: 1vmin 0.6vmin;
+  cursor: grab;
+}
+.set-game-icon { width: 5.5vmin; height: 5.5vmin; min-width: 28px; min-height: 28px; flex: none; }
+.set-game-icon svg { width: 100%; height: 100%; }
+.set-game-title { flex: 1; font-weight: 700; }
+.set-game-show { display: flex; align-items: center; }
+.set-game-show input { width: 20px; height: 20px; }
+.set-game-placeholder {
+  border-radius: 10px;
+  background: rgba(58,51,87,0.1);
+  border: 2px dashed rgba(58,51,87,0.25);
+}
+.set-game-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+  opacity: 0.95;
+}
 .set-check { display: flex; gap: 1.2vmin; align-items: flex-start; padding: 0.8vmin 0; }
 .set-check input { width: 20px; height: 20px; flex: none; }
 .progress-open, .progress-reset { padding: 1.1vmin 2vmin; margin: 1vmin 0; }

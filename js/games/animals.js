@@ -118,19 +118,23 @@ const OBJECTS = [
   { id: 'chair', name: 'Chair' },
 ].map(wordCard);
 
+const ITEMS = [...ANIMALS, ...EXTRA_ANIMALS, ...SHARK_FAMILY, ...OBJECTS];
+
+// The exact 3-way partition of every flashcard, checked by scripts/check.mjs.
 export const FIRST_WORD_CATEGORIES = {
   animals: [...ANIMALS, ...EXTRA_ANIMALS],
   'shark-family': SHARK_FAMILY,
   objects: OBJECTS,
 };
-const CATEGORIES = FIRST_WORD_CATEGORIES;
+// In-game deck picker adds a mixed "All" option on top of that partition.
+const CATEGORIES = { ...FIRST_WORD_CATEGORIES, all: ITEMS };
 const CATEGORY_OPTIONS = [
   { id: 'animals', label: 'Animals', icon: '🐾' },
   { id: 'shark-family', label: 'Shark Family', icon: '🦈' },
   { id: 'objects', label: 'Objects', icon: '🧸' },
+  { id: 'all', label: 'All', icon: '🔀' },
 ];
 const CATEGORY_KEY = 'tiny-taps:first-words-category';
-const ITEMS = [...CATEGORIES.animals, ...SHARK_FAMILY, ...OBJECTS];
 
 function savedCategory() {
   try {

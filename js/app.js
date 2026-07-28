@@ -21,6 +21,8 @@ const LS_VOLUME = 'tinytaps-volume';
 const LS_HIDDEN = 'tinytaps-hidden';
 const LS_PROFILE = 'tinytaps-profile';
 const LS_MIX = 'tinytaps-mix';
+const LS_HOME_GAMES = 'tinytaps-home-games';
+const LS_MORE_GAMES = 'tinytaps-more-games';
 
 const PROFILES = {
   little: {
@@ -40,6 +42,7 @@ const PROFILES = {
 
 function profileId() { return localStorage.getItem(LS_PROFILE) || 'little'; }
 function profileGames() {
+  if (profileId() === 'custom') return reconcileGameGroups().home;
   const p = PROFILES[profileId()] || PROFILES.little;
   return p.games.length ? p.games : games.map(g => g.id);
 }
@@ -51,6 +54,34 @@ function hiddenGames() {
 
 function setHiddenGames(set) {
   localStorage.setItem(LS_HIDDEN, JSON.stringify([...set]));
+}
+
+// Custom profile's home/more grouping and order, kept in localStorage as two
+// plain id arrays. Hidden games stay in whichever array they're already in
+// (hiding/showing is orthogonal, same as it is for the preset profiles) so a
+// parent's arrangement survives toggling a game's visibility.
+function idList(key) {
+  try {
+    const list = JSON.parse(localStorage.getItem(key) || 'null');
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+function homeGames() { return idList(LS_HOME_GAMES); }
+function setHomeGames(list) { localStorage.setItem(LS_HOME_GAMES, JSON.stringify(list)); }
+function moreGames() { return idList(LS_MORE_GAMES); }
+function setMoreGames(list) { localStorage.setItem(LS_MORE_GAMES, JSON.stringify(list)); }
+
+// Reconciles the stored home/more id lists against the live game registry:
+// drops ids for games that no longer exist, and appends any game the parent
+// has never placed (new install, or a game added after this shipped) to Home.
+function reconcileGameGroups() {
+  const knownIds = new Set(games.map(g => g.id));
+  const home = homeGames().filter(id => knownIds.has(id));
+  const homeSet = new Set(home);
+  const more = moreGames().filter(id => knownIds.has(id) && !homeSet.has(id));
+  const placed = new Set([...home, ...more]);
+  for (const g of games) if (!placed.has(g.id)) home.push(g.id);
+  return { home, more };
 }
 
 // Per-game accent tints so a pre-reader can navigate by color.
@@ -188,8 +219,21 @@ function showMenu(showAll = false) {
   el('div', 'menu-title', s).textContent = showAll ? 'All games' : profile.label;
   const grid = el('div', 'menu-grid', s);
   const hidden = hiddenGames();
-  const featured = new Set(profileGames());
-  const visible = games.filter(g => !hidden.has(g.id) && (showAll || featured.has(g.id)));
+
+  let visible, hasMore;
+  if (profileId() === 'custom') {
+    const byId = new Map(games.map(g => [g.id, g]));
+    const { home, more } = reconcileGameGroups();
+    const homeVisible = home.map(id => byId.get(id)).filter(g => g && !hidden.has(g.id));
+    const moreVisible = more.map(id => byId.get(id)).filter(g => g && !hidden.has(g.id));
+    visible = showAll ? [...homeVisible, ...moreVisible] : homeVisible;
+    hasMore = moreVisible.length > 0;
+  } else {
+    const featured = new Set(profileGames());
+    visible = games.filter(g => !hidden.has(g.id) && (showAll || featured.has(g.id)));
+    hasMore = games.some(g => !hidden.has(g.id) && !featured.has(g.id));
+  }
+
   for (const game of visible) {
     const card = el('button', 'menu-card', grid);
     card.style.backgroundColor = ACCENTS[game.id] || '#ffffff';
@@ -199,7 +243,7 @@ function showMenu(showAll = false) {
       startGame(game);
     });
   }
-  if (!showAll && games.some(g => !hidden.has(g.id) && !featured.has(g.id))) {
+  if (!showAll && hasMore) {
     const more = el('button', 'menu-card more-card', grid);
     more.innerHTML = '<div class="card-icon more-dots">•••</div><div class="card-label">More Games</div>';
     addTap(more, () => showMenu(true));
@@ -337,13 +381,166 @@ async function appSize() {
   } catch (e) { return null; }
 }
 
+// Drag-and-drop editor for the two "custom" game groups (Home / More Games).
+// Built with Pointer Events rather than native HTML5 drag-and-drop, which
+// doesn't work reliably for touch on iOS Safari — matching how every other
+// gesture in this app is handled (see addTap() in engine/ui.js).
+function setupGameGroups(panel) {
+  const homeList = panel.querySelector('#set-home-list');
+  const moreList = panel.querySelector('#set-more-list');
+  const byId = new Map(games.map(g => [g.id, g]));
+  let { home, more } = reconcileGameGroups();
+  let dragState = null;
+
+  function persist() {
+    setHomeGames(home);
+    setMoreGames(more);
+    localStorage.setItem(LS_PROFILE, 'custom');
+  }
+
+  function renderRow(id, listEl) {
+    const g = byId.get(id);
+    if (!g) return;
+    const hidden = hiddenGames();
+    const row = el('div', 'set-game-row', listEl);
+    row.dataset.id = id;
+    row.innerHTML = `
+      <button type="button" class="set-drag-handle" aria-label="Drag ${g.title} to reorder">☰</button>
+      <span class="set-game-icon">${g.icon}</span>
+      <span class="set-game-title">${g.title}</span>
+      <label class="set-game-show"><input type="checkbox" ${hidden.has(id) ? '' : 'checked'}></label>`;
+    row.querySelector('.set-game-show input').addEventListener('change', e => {
+      const h = hiddenGames();
+      if (e.target.checked) h.delete(id);
+      else h.add(id);
+      // Never allow hiding every game.
+      if (h.size >= games.length) { h.delete(id); e.target.checked = true; }
+      setHiddenGames(h);
+      localStorage.setItem(LS_PROFILE, 'custom');
+    });
+    row.querySelector('.set-drag-handle').addEventListener('pointerdown', e => startDrag(e, row, id));
+  }
+
+  function renderAll() {
+    homeList.innerHTML = '';
+    moreList.innerHTML = '';
+    home.forEach(id => renderRow(id, homeList));
+    more.forEach(id => renderRow(id, moreList));
+  }
+
+  function positionGhost(x, y) {
+    const { ghost, offsetX, offsetY } = dragState;
+    ghost.style.left = `${x - offsetX}px`;
+    ghost.style.top = `${y - offsetY}px`;
+  }
+
+  // Both game groups can be long, and the settings panel scrolls — so a drag
+  // needs to be able to carry a row past the edge of the visible panel, not
+  // just among currently-visible rows. Auto-scroll the panel while the
+  // pointer sits near its top/bottom edge, same idea as any mobile
+  // reorderable list.
+  const SCROLL_EDGE = 60;
+  const SCROLL_SPEED = 12;
+  function autoScrollStep() {
+    if (!dragState) return;
+    if (dragState.scrollDir) panel.scrollTop += dragState.scrollDir * SCROLL_SPEED;
+    requestAnimationFrame(autoScrollStep);
+  }
+
+  function startDrag(e, row, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = row.getBoundingClientRect();
+    const ghost = row.cloneNode(true);
+    ghost.className = 'set-game-row set-game-ghost';
+    ghost.style.width = `${rect.width}px`;
+    document.body.appendChild(ghost);
+
+    const placeholder = el('div', 'set-game-placeholder');
+    placeholder.style.height = `${rect.height}px`;
+    row.replaceWith(placeholder);
+
+    dragState = {
+      id, ghost, placeholder,
+      offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+      pointerId: e.pointerId,
+      scrollDir: 0,
+    };
+    positionGhost(e.clientX, e.clientY);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onCancel);
+    requestAnimationFrame(autoScrollStep);
+  }
+
+  function onMove(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    positionGhost(e.clientX, e.clientY);
+
+    const panelRect = panel.getBoundingClientRect();
+    if (e.clientY < panelRect.top + SCROLL_EDGE) dragState.scrollDir = -1;
+    else if (e.clientY > panelRect.bottom - SCROLL_EDGE) dragState.scrollDir = 1;
+    else dragState.scrollDir = 0;
+
+    const { placeholder } = dragState;
+    const overEl = document.elementFromPoint(e.clientX, e.clientY);
+    if (!overEl) return;
+    const overRow = overEl.closest('.set-game-row');
+    const overListEl = overEl.closest('.set-game-list');
+    if (overRow && overRow !== placeholder) {
+      const list = overRow.parentElement;
+      const before = e.clientY < overRow.getBoundingClientRect().top + overRow.offsetHeight / 2;
+      list.insertBefore(placeholder, before ? overRow : overRow.nextSibling);
+    } else if (overListEl && !overListEl.contains(placeholder)) {
+      overListEl.appendChild(placeholder);
+    }
+  }
+
+  function endDrag() {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    dragState.ghost.remove();
+    dragState = null;
+  }
+
+  function onCancel(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    endDrag();
+    renderAll(); // restore the original arrangement
+  }
+
+  function onUp(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const { id, placeholder } = dragState;
+    const targetList = placeholder.parentElement;
+
+    const readList = listEl => [...listEl.children].map(child => (child === placeholder ? id : child.dataset.id));
+    let newHome = readList(homeList);
+    let newMore = readList(moreList);
+
+    // Never allow the Home group to become empty.
+    if (targetList !== homeList && newHome.length === 0) {
+      newHome = [id];
+      newMore = newMore.filter(x => x !== id);
+    }
+
+    endDrag();
+    home = newHome;
+    more = newMore;
+    persist();
+    renderAll();
+  }
+
+  renderAll();
+}
+
 function showSettings() {
   const overlay = el('div', 'credits-overlay', document.body);
   const panel = el('div', 'credits-panel settings-panel', overlay);
 
   const vol = Number(localStorage.getItem(LS_VOLUME) || 0.9);
   const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-  const hidden = hiddenGames();
 
   panel.innerHTML = `
     <button class="settings-close" aria-label="Close settings">✕ Close</button>
@@ -371,7 +568,11 @@ function showSettings() {
     active even though general computer narration is off.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
     <div id="rec-rows"></div>
     <h3>Games on the menu</h3>
-    <div class="set-games" id="set-games"></div>
+    <p class="set-games-hint">Drag ☰ to reorder a game, or move it between the two groups.</p>
+    <div class="set-group-label">On Home Screen</div>
+    <div class="set-game-list" id="set-home-list"></div>
+    <div class="set-group-label">More Games</div>
+    <div class="set-game-list" id="set-more-list"></div>
     <div class="settings-version">Tiny Taps v${VERSION} · <span id="set-size">measuring…</span></div>`;
 
   // Filled in asynchronously; the panel is usable either way.
@@ -477,20 +678,7 @@ function showSettings() {
     });
   });
 
-  const gamesBox = panel.querySelector('#set-games');
-  games.forEach(g => {
-    const lab = el('label', 'set-game', gamesBox);
-    lab.innerHTML = `<input type="checkbox" ${hidden.has(g.id) ? '' : 'checked'}> ${g.title}`;
-    lab.querySelector('input').addEventListener('change', e => {
-      const h = hiddenGames();
-      if (e.target.checked) h.delete(g.id);
-      else h.add(g.id);
-      // Never allow hiding everything.
-      if (h.size >= games.length) { h.delete(g.id); e.target.checked = true; }
-      setHiddenGames(h);
-      localStorage.setItem(LS_PROFILE, 'custom');
-    });
-  });
+  setupGameGroups(panel);
 
   panel.querySelector('.settings-close').addEventListener('pointerdown', () => {
     if (activeRecorder) { try { activeRecorder.stop(); } catch (e) { /* ok */ } }
