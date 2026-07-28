@@ -7,6 +7,7 @@ const VOICE = process.env.PIPER_VOICE || 'en_US-amy-medium';
 const PIPER_DATA_DIR = path.resolve(process.env.PIPER_DATA_DIR || '.cache/piper');
 const OUTPUT_DIR = path.resolve('assets/audio/animals');
 const ANIMALS_FILE = new URL('./animals.json', import.meta.url);
+const WORDS_FILE = new URL('./words.json', import.meta.url);
 const REGENERATE = process.env.REGENERATE_AUDIO === '1';
 
 function slugify(name) {
@@ -42,7 +43,7 @@ function run(command, args) {
   }
 }
 
-async function generateClip(animal, wavPath, mp3Path) {
+async function generateClip(name, wavPath, mp3Path) {
   run('python3', [
     '-m',
     'piper',
@@ -53,7 +54,7 @@ async function generateClip(animal, wavPath, mp3Path) {
     '-f',
     wavPath,
     '--',
-    speechText(animal)
+    speechText(name)
   ]);
 
   run('ffmpeg', [
@@ -75,37 +76,39 @@ async function generateClip(animal, wavPath, mp3Path) {
 
 async function main() {
   const animals = JSON.parse(await readFile(ANIMALS_FILE, 'utf8'));
+  const words = JSON.parse(await readFile(WORDS_FILE, 'utf8'));
+  const names = [...new Set([...animals, ...words])];
   await mkdir(OUTPUT_DIR, { recursive: true });
   await mkdir(PIPER_DATA_DIR, { recursive: true });
 
   console.log(`Using local Piper voice: ${VOICE}`);
   console.log('No API key or paid service is required.');
-  console.log(REGENERATE ? 'Existing animal clips will be replaced.' : 'Existing animal clips will be skipped.');
+  console.log(REGENERATE ? 'Existing flashcard clips will be replaced.' : 'Existing flashcard clips will be skipped.');
 
   let generated = 0;
   let skipped = 0;
   const failures = [];
 
-  for (const [index, animal] of animals.entries()) {
-    const slug = slugify(animal);
+  for (const [index, name] of names.entries()) {
+    const slug = slugify(name);
     const mp3Path = path.join(OUTPUT_DIR, `${slug}.mp3`);
     const wavPath = path.join(OUTPUT_DIR, `${slug}.tmp.wav`);
 
     if (!REGENERATE && await exists(mp3Path)) {
-      console.log(`[${index + 1}/${animals.length}] Skipping ${slug}.mp3`);
+      console.log(`[${index + 1}/${names.length}] Skipping ${slug}.mp3`);
       skipped += 1;
       continue;
     }
 
     try {
-      console.log(`[${index + 1}/${animals.length}] Generating ${slug}.mp3: ${speechText(animal)}`);
-      await generateClip(animal, wavPath, mp3Path);
+      console.log(`[${index + 1}/${names.length}] Generating ${slug}.mp3: ${speechText(name)}`);
+      await generateClip(name, wavPath, mp3Path);
       generated += 1;
     } catch (error) {
       await rm(wavPath, { force: true });
       await rm(mp3Path, { force: true });
-      console.error(`Failed: ${animal}: ${error.message}`);
-      failures.push({ animal, error: error.message });
+      console.error(`Failed: ${name}: ${error.message}`);
+      failures.push({ name, error: error.message });
     }
   }
 

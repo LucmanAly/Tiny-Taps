@@ -1,4 +1,4 @@
-name: Generate animal audio
+name: Generate flashcard audio
 
 on:
   workflow_dispatch:
@@ -7,6 +7,12 @@ on:
         description: Piper voice model
         required: false
         default: en_US-amy-medium
+  push:
+    paths:
+      - '.github/workflows/generate-animal-audio.yml'
+      - 'scripts/animals.json'
+      - 'scripts/words.json'
+      - 'scripts/generate-animal-audio.mjs'
 
 permissions:
   contents: write
@@ -38,7 +44,7 @@ jobs:
 
       - name: Download Piper voice
         env:
-          PIPER_VOICE: ${{ inputs.voice }}
+          PIPER_VOICE: ${{ inputs.voice || 'en_US-amy-medium' }}
           PIPER_DATA_DIR: .cache/piper
         run: |
           mkdir -p "$PIPER_DATA_DIR"
@@ -46,9 +52,9 @@ jobs:
 
       - name: Generate MP3 files
         env:
-          PIPER_VOICE: ${{ inputs.voice }}
+          PIPER_VOICE: ${{ inputs.voice || 'en_US-amy-medium' }}
           PIPER_DATA_DIR: .cache/piper
-          REGENERATE_AUDIO: '1'
+          REGENERATE_AUDIO: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
         run: npm run generate:animal-audio
 
       - name: Commit generated audio
