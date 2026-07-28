@@ -39,6 +39,27 @@ else {
   }
 }
 
+const daddySharkAsset = 'assets/art/daddy-shark-coloring.svg';
+const daddySharkAddon = 'js/games/coloring-daddy-shark-addon.js';
+for (const required of [daddySharkAsset, daddySharkAddon]) {
+  if (!sw.includes(`'${required}'`)) errors.push(`Service worker does not cache ${required}`);
+}
+
+const daddySharkSvg = fs.readFileSync(path.join(root, daddySharkAsset), 'utf8');
+const daddySharkRegions = [...daddySharkSvg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
+const expectedDaddySharkRegions = [
+  'head', 'muzzle', 'belly', 'right-fin-tail', 'mouth', 'left-fin', 'dorsal-fin',
+];
+if (daddySharkRegions.join(',') !== expectedDaddySharkRegions.join(',')) {
+  errors.push('Daddy Shark SVG must expose exactly the seven expected coloring regions');
+}
+if (daddySharkSvg.includes('<image') || daddySharkSvg.includes('preserveAspectRatio="none"')) {
+  errors.push('Daddy Shark SVG must remain editable vector art without distortion');
+}
+if (!daddySharkSvg.includes('data-fixed="true" pointer-events="none"')) {
+  errors.push('Daddy Shark fixed face, tooth, and outline details must pass taps through');
+}
+
 const animals = fs.readFileSync(path.join(root, 'js/data/animals.js'), 'utf8');
 for (const match of animals.matchAll(/(?:art|sound):\s*['"]([^'"]+)['"]/g)) {
   if (!fs.existsSync(path.join(root, match[1]))) errors.push(`Animal data references missing ${match[1]}`);
