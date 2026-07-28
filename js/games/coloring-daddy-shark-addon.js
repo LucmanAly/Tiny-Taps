@@ -7,30 +7,36 @@ import * as audio from '../engine/audio.js';
 
 const PALETTE = ['#f04e3e', '#ff8c2e', '#ffcf3d', '#4db84d', '#3d7ef0', '#9b5fe0', '#ff9fce', '#8a5a3c'];
 const LINE = '#3a3357';
+const TONGUE = '#e0392b';
 
 const DADDY_SHARK_SVG = `
 <svg data-coloring-shark="daddy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Daddy Shark coloring picture">
   <!-- The dorsal fin, both side fins/hands, head, body and tail deliberately
        share one data-region so a single tap colors all of them together. -->
   <g data-region="daddy-blue-parts" fill="#fff" stroke="${LINE}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M89 42 C90 25 97 12 104 8 C112 20 115 31 112 44 Z"/>
-    <path d="M54 104 C39 103 25 112 18 125 C34 131 49 128 61 118 Z"/>
-    <path d="M146 104 C162 103 177 113 184 126 C168 131 151 127 139 118 Z"/>
-    <path d="M100 35 C66 35 42 59 42 92 C42 119 60 136 81 140 C86 157 99 171 117 178 C113 159 117 144 128 132 C146 122 158 108 158 89 C158 58 134 35 100 35 Z"/>
-    <path d="M120 151 C140 153 159 144 174 132 C172 146 167 157 159 164 C167 171 171 181 169 190 C155 182 145 174 138 165 C131 164 125 161 119 157 Z"/>
+    <path d="M89 40 C90 23 97 10 104 6 C112 18 115 29 112 42 Z"/>
+    <path d="M46 118 C30 118 16 128 9 142 C26 148 42 144 54 133 Z"/>
+    <path d="M150 118 C166 118 180 128 187 142 C170 148 154 144 142 133 Z"/>
+    <path d="M100 28 C66 28 42 52 40 86 C38 108 44 128 60 145 C74 158 90 165 103 165 C118 163 130 155 138 143 C148 128 152 108 150 88 C148 55 128 28 100 28 Z"/>
+    <path d="M138 143 C154 148 172 143 187 128 C185 142 178 155 167 163 C177 166 185 176 184 187 C168 181 155 171 146 159 C142 154 139 149 138 143 Z"/>
   </g>
 
-  <path data-region="daddy-belly" d="M43 98 C57 112 77 119 100 119 C123 119 143 112 157 98 C154 119 142 132 126 138 C117 149 114 163 118 178 C101 171 88 157 81 140 C62 136 48 121 43 98 Z"
+  <!-- Belly only tracks the shark's front contour so it doesn't double up
+       with the body outline running up its back. -->
+  <path data-region="daddy-belly" d="M50 92 C46 112 50 130 64 146 C78 160 92 166 103 166 C116 164 127 157 135 146 C122 152 108 155 96 153 C78 150 62 138 54 118 C50 110 49 100 50 92 Z"
         fill="#fff" stroke="${LINE}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
 
-  <path data-region="daddy-mouth" d="M70 104 C80 113 90 118 100 118 C111 118 121 113 130 104 C129 123 116 136 100 136 C84 136 71 123 70 104 Z"
+  <path data-region="daddy-mouth" d="M64 98 C68 116 81 130 100 132 C119 130 132 116 136 98 C124 106 113 111 100 111 C87 111 76 106 64 98 Z"
         fill="#fff" stroke="${LINE}" stroke-width="4.5" stroke-linejoin="round"/>
 
-  <!-- Teeth remain white while the mouth itself is colorable. -->
-  <path d="M75 108 L82 117 L89 108 L96 117 L103 108 L110 117 L117 108 L124 115"
-        fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="miter" stroke-linecap="square"/>
-  <path d="M80 130 L87 121 L94 130 L101 121 L108 130 L115 121 L121 128"
-        fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="miter" stroke-linecap="square"/>
+  <!-- Fixed red tongue sits behind the teeth, same idea as the always-white teeth below. -->
+  <path d="M72 104 C82 111 91 114 100 114 C109 114 118 111 128 104 C126 116 114 126 100 126 C86 126 74 116 72 104 Z" fill="${TONGUE}"/>
+
+  <!-- Teeth stay inset from the mouth corners and remain white while the mouth itself is colorable. -->
+  <path d="M76 106 L80.5 115 L85 106 Z M89 106 L93.5 116 L98 106 Z M102 106 L106.5 116 L111 106 Z M114 106 L118.5 115 L123 106 Z"
+        fill="#fff" stroke="${LINE}" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M80 124 L84.5 116 L89 124 Z M92 125 L96.5 116 L101 125 Z M104 125 L108.5 116 L113 125 Z M116 124 L120 116 L124 124 Z"
+        fill="#fff" stroke="${LINE}" stroke-width="1.6" stroke-linejoin="round"/>
 
   <ellipse cx="78" cy="83" rx="15" ry="18" fill="#fff" stroke="${LINE}" stroke-width="4"/>
   <ellipse cx="122" cy="83" rx="15" ry="18" fill="#fff" stroke="${LINE}" stroke-width="4"/>
@@ -38,8 +44,9 @@ const DADDY_SHARK_SVG = `
   <ellipse cx="120" cy="86" rx="8" ry="10" fill="#171522"/>
   <circle cx="77" cy="82" r="3" fill="#fff"/>
   <circle cx="117" cy="82" r="3" fill="#fff"/>
-  <circle cx="96" cy="98" r="2.7" fill="${LINE}"/>
-  <circle cx="104" cy="98" r="2.7" fill="${LINE}"/>
+  <circle cx="93" cy="96" r="2.4" fill="${LINE}"/>
+  <circle cx="100" cy="96" r="2.4" fill="${LINE}"/>
+  <circle cx="107" cy="96" r="2.4" fill="${LINE}"/>
 </svg>`;
 
 let activePic = null;
