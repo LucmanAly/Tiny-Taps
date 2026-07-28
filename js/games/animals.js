@@ -132,6 +132,9 @@ function start(ctx) {
   const order = shuffle(ITEMS);
   let i = 0;
   let pointerStart = null;
+  const objectMask = document.createElement('canvas');
+  const objectMaskCtx = objectMask.getContext('2d', { willReadFrequently: true });
+  let objectMaskSrc = '';
 
   const card = document.createElement('div');
   card.className = 'animals-card';
@@ -142,10 +145,11 @@ function start(ctx) {
   // reaches us, silently swallowing the tap that's supposed to speak the
   // animal's name — invisible with a mouse or a synthetic, jitter-free tap,
   // but reproducible on an actual touchscreen.
-  card.style.touchAction = 'none';
+  stage.style.touchAction = 'none';
   const img = document.createElement('img');
   img.className = 'animals-photo';
   img.alt = '';
+  img.draggable = false;
   const label = document.createElement('div');
   label.className = 'animals-label';
   card.appendChild(img);
@@ -158,10 +162,52 @@ function start(ctx) {
 
   function render() {
     const a = order[i];
+    objectMaskSrc = '';
     img.src = a.photo;
     img.alt = a.name;
     label.textContent = a.name;
     if (a.voice) audio.load(a.voiceKey, a.voice);
+  }
+
+  function prepareObjectMask() {
+    if (!objectMaskCtx || !img.complete || !img.naturalWidth || !img.naturalHeight) return false;
+    if (objectMaskSrc === img.currentSrc) return true;
+    objectMask.width = img.naturalWidth;
+    objectMask.height = img.naturalHeight;
+    objectMaskCtx.clearRect(0, 0, objectMask.width, objectMask.height);
+    objectMaskCtx.drawImage(img, 0, 0);
+    objectMaskSrc = img.currentSrc;
+    return true;
+  }
+
+  // PNG cards can have a large transparent square around the pictured object.
+  // Map the touch through object-fit: contain and check the source pixel so
+  // only the visible object speaks; opaque JPG photos naturally count across
+  // their whole displayed image.
+  function touchesObject(clientX, clientY) {
+    const rect = img.getBoundingClientRect();
+    if (
+      clientX < rect.left || clientX > rect.right ||
+      clientY < rect.top || clientY > rect.bottom
+    ) return false;
+    if (!prepareObjectMask()) return true;
+
+    const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const drawnWidth = img.naturalWidth * scale;
+    const drawnHeight = img.naturalHeight * scale;
+    const x = clientX - rect.left - (rect.width - drawnWidth) / 2;
+    const y = clientY - rect.top - (rect.height - drawnHeight) / 2;
+    if (x < 0 || y < 0 || x >= drawnWidth || y >= drawnHeight) return false;
+
+    try {
+      const sourceX = Math.min(img.naturalWidth - 1, Math.floor(x / scale));
+      const sourceY = Math.min(img.naturalHeight - 1, Math.floor(y / scale));
+      return objectMaskCtx.getImageData(sourceX, sourceY, 1, 1).data[3] >= 24;
+    } catch (_) {
+      // Same-origin bundled images should always be readable. If a future
+      // source is not, keep the image rectangle usable rather than going mute.
+      return true;
+    }
   }
 
   function go(delta) {
@@ -186,30 +232,40 @@ function start(ctx) {
     else speech.speakWord(order[i].name);
   }
 
-  card.addEventListener('pointerdown', e => {
+  stage.addEventListener('pointerdown', e => {
     if (!alive || !e.isPrimary) return;
-    pointerStart = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    try { card.setPointerCapture(e.pointerId); } catch (_) { /* optional */ }
+    pointerStart = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      onObject: touchesObject(e.clientX, e.clientY),
+    };
+    try { stage.setPointerCapture(e.pointerId); } catch (_) { /* optional */ }
   });
 
-  card.addEventListener('pointerup', e => {
+  stage.addEventListener('pointerup', e => {
     if (!alive || !pointerStart || pointerStart.id !== e.pointerId) return;
     const dx = e.clientX - pointerStart.x;
     const dy = e.clientY - pointerStart.y;
+    const startedOnObject = pointerStart.onObject;
     pointerStart = null;
-    try { card.releasePointerCapture(e.pointerId); } catch (_) { /* optional */ }
+    try { stage.releasePointerCapture(e.pointerId); } catch (_) { /* optional */ }
 
     const horizontalSwipe = Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy) * 1.25;
     if (horizontalSwipe) {
       // Swipe left = next; swipe right = previous. The modulo in go() means
       // swiping right from the first card opens the last card, and vice versa.
       go(dx < 0 ? 1 : -1);
-    } else if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+    } else if (
+      startedOnObject &&
+      Math.abs(dx) < 18 && Math.abs(dy) < 18 &&
+      touchesObject(e.clientX, e.clientY)
+    ) {
       speakCurrent();
     }
   });
 
-  card.addEventListener('pointercancel', () => { pointerStart = null; });
+  stage.addEventListener('pointercancel', () => { pointerStart = null; });
 
   preloadImages(Object.fromEntries(ITEMS.map(a => [a.id, a.photo])), 0)
     .then(() => { if (alive) render(); });

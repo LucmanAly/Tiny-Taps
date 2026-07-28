@@ -24,7 +24,7 @@ nothing to buy, works offline once loaded:
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
 19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
-20. **My First Words** — a full-photo flashcard deck spanning animals and everyday words (food, vehicles, household objects, the sun and moon); tap the card to hear its name, swipe to move through the deck
+20. **My First Words** — a full-photo flashcard deck spanning animals and everyday words (food, vehicles, household objects, the sun and moon); tap the pictured object to hear its name, or swipe anywhere on the game screen to move through the deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
