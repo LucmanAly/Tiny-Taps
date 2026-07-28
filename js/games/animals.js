@@ -1,6 +1,6 @@
-// Animals: a photo flashcard deck, not a round-based game. One animal fills
-// the card at a time; tapping it plays the bundled spoken name. Swipe left or
-// right to move through the deck, wrapping in both directions.
+// My First Words: a photo flashcard deck, not a round-based game. One card
+// fills the screen at a time; tapping it speaks its name. Swipe left or right
+// to move through the deck, wrapping in both directions.
 
 import { preloadImages } from '../engine/intro.js';
 import { shuffle } from '../engine/rand.js';
@@ -57,6 +57,54 @@ const ANIMALS = [
   voice: `assets/audio/animals/${voiceSlug(a.name)}.mp3`,
 }));
 
+// Everyday words beyond the animal kingdom, sliced from four uploaded photo
+// sheets. No bundled recording for these yet, so `voice: null` — tapping
+// falls back to the browser's spoken voice (see speakCurrent()).
+const WORDS = [
+  { id: 'snake', name: 'Snake' },
+  { id: 'ant', name: 'Ant' },
+  { id: 'grasshopper', name: 'Grasshopper' },
+  { id: 'tiger', name: 'Tiger' },
+  { id: 'hippo', name: 'Hippo' },
+  { id: 'camel', name: 'Camel' },
+  { id: 'kangaroo', name: 'Kangaroo' },
+  { id: 'rhino', name: 'Rhino' },
+  { id: 'bee', name: 'Bee' },
+  { id: 'butterfly', name: 'Butterfly' },
+  { id: 'goldfish', name: 'Goldfish' },
+  { id: 'frog', name: 'Frog' },
+  { id: 'owl', name: 'Owl' },
+  { id: 'duckling', name: 'Duckling' },
+  { id: 'bed', name: 'Bed' },
+  { id: 'shoe', name: 'Shoe' },
+  { id: 'hat', name: 'Hat' },
+  { id: 'apple', name: 'Apple' },
+  { id: 'banana', name: 'Banana' },
+  { id: 'flower', name: 'Flower' },
+  { id: 'sun', name: 'Sun' },
+  { id: 'moon', name: 'Moon' },
+  { id: 'star', name: 'Star' },
+  { id: 'house', name: 'House' },
+  { id: 'train', name: 'Train' },
+  { id: 'airplane', name: 'Airplane' },
+  { id: 'boat', name: 'Boat' },
+  { id: 'bicycle', name: 'Bicycle' },
+  { id: 'car', name: 'Car' },
+  { id: 'bus', name: 'Bus' },
+  { id: 'ball', name: 'Ball' },
+  { id: 'book', name: 'Book' },
+  { id: 'cup', name: 'Cup' },
+  { id: 'spoon', name: 'Spoon' },
+  { id: 'chair', name: 'Chair' },
+].map(w => ({
+  ...w,
+  photo: `assets/words-photos/${w.id}.jpg`,
+  voiceKey: `animal-name:${voiceSlug(w.name)}`,
+  voice: null,
+}));
+
+const ITEMS = [...ANIMALS, ...WORDS];
+
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -76,7 +124,7 @@ function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
 
-  const order = shuffle(ANIMALS);
+  const order = shuffle(ITEMS);
   let i = 0;
   let pointerStart = null;
 
@@ -108,7 +156,7 @@ function start(ctx) {
     img.src = a.photo;
     img.alt = a.name;
     label.textContent = a.name;
-    audio.load(a.voiceKey, a.voice);
+    if (a.voice) audio.load(a.voiceKey, a.voice);
   }
 
   function go(delta) {
@@ -127,7 +175,7 @@ function start(ctx) {
     card.classList.add('wiggle');
     speech.stop();
     audio.pop();
-    const loaded = await audio.load(a.voiceKey, a.voice);
+    const loaded = a.voice ? await audio.load(a.voiceKey, a.voice) : false;
     if (!alive) return;
     if (loaded) await audio.play(a.voiceKey);
     else speech.speakWord(a.name);
@@ -158,7 +206,7 @@ function start(ctx) {
 
   card.addEventListener('pointercancel', () => { pointerStart = null; });
 
-  preloadImages(Object.fromEntries(ANIMALS.map(a => [a.id, a.photo])), 0)
+  preloadImages(Object.fromEntries(ITEMS.map(a => [a.id, a.photo])), 0)
     .then(() => { if (alive) render(); });
   render();
 
@@ -168,7 +216,7 @@ function start(ctx) {
 
 export default {
   id: 'animals',
-  title: 'Animals',
+  title: 'My First Words',
   icon: ICON,
   start,
 };

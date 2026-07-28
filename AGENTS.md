@@ -41,7 +41,7 @@ The current registry contains 18 games:
 16. Sort It — drag animals to their habitat; `js/games/sort.js` `start`.
 17. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 18. Trace It — trace letters, shapes, numbers, and animal-specific paths; `js/games/trace.js` `start`.
-19. Animals — a full-photo flashcard deck; tap the card to hear the animal's name, no scoring; `js/games/animals.js` `start`.
+19. My First Words — a full-photo flashcard deck (animals plus everyday words); tap the card to hear its name, no scoring; `js/games/animals.js` `start`.
 
 ## Core conventions
 
@@ -52,7 +52,7 @@ The current registry contains 18 games:
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
 - Computer voice uses `speech.speakWord` for exactly four gameplay triggers:
   Counting tapped number, Big/Small round-start target, Trace It completed item
-  name, Animals photo-card tap.
+  name, My First Words photo-card tap.
 - Those triggers contain one word/name only. Do not add instructions or computer praise.
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
 - Authentic animal recordings and Web Audio effects are not computer narration.

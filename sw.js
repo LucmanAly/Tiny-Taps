@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v4.1';
+const VERSION = 'tiny-taps-v4.2';
 
 const ASSETS = [
   '.',
@@ -129,6 +129,26 @@ const ASSETS = [
   'assets/animals-photos/brachiosaurus.jpg', 'assets/animals-photos/pterodactyl.jpg',
   'assets/animals-photos/triceratops.jpg', 'assets/animals-photos/stegosaurus.jpg',
   'assets/animals-photos/velociraptor.jpg',
+  // My First Words: everyday-word photos beyond the animal kingdom, sliced
+  // from four more uploaded grid sheets.
+  'assets/words-photos/snake.jpg', 'assets/words-photos/ant.jpg',
+  'assets/words-photos/grasshopper.jpg', 'assets/words-photos/tiger.jpg',
+  'assets/words-photos/hippo.jpg', 'assets/words-photos/camel.jpg',
+  'assets/words-photos/kangaroo.jpg', 'assets/words-photos/rhino.jpg',
+  'assets/words-photos/bee.jpg', 'assets/words-photos/butterfly.jpg',
+  'assets/words-photos/goldfish.jpg', 'assets/words-photos/frog.jpg',
+  'assets/words-photos/owl.jpg', 'assets/words-photos/duckling.jpg',
+  'assets/words-photos/bed.jpg', 'assets/words-photos/shoe.jpg',
+  'assets/words-photos/hat.jpg', 'assets/words-photos/apple.jpg',
+  'assets/words-photos/banana.jpg', 'assets/words-photos/flower.jpg',
+  'assets/words-photos/sun.jpg', 'assets/words-photos/moon.jpg',
+  'assets/words-photos/star.jpg', 'assets/words-photos/house.jpg',
+  'assets/words-photos/train.jpg', 'assets/words-photos/airplane.jpg',
+  'assets/words-photos/boat.jpg', 'assets/words-photos/bicycle.jpg',
+  'assets/words-photos/car.jpg', 'assets/words-photos/bus.jpg',
+  'assets/words-photos/ball.jpg', 'assets/words-photos/book.jpg',
+  'assets/words-photos/cup.jpg', 'assets/words-photos/spoon.jpg',
+  'assets/words-photos/chair.jpg',
 ];
 
 self.addEventListener('install', e => {
