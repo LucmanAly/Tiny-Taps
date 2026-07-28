@@ -514,7 +514,7 @@ function start(ctx) {
 
   /* ---- interactions ---- */
   // speech.speak() is a permanent no-op app-wide (how every other game's
-  // descriptive narration was silenced); speech.speakWord() is the one real
+  // descriptive narration was silenced); speech.speakWord is the one real
   // channel, reserved for essential single-word cues. Weather words and these
   // moment cues are exactly that, so this calls the real one.
   function say(word) { speech.speakWord(word, { interrupt: true }); }

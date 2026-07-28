@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v4.5';
+const VERSION = 'tiny-taps-v4.6';
 
 const ASSETS = [
   '.',
@@ -86,6 +86,27 @@ const ASSETS = [
   'assets/audio/animals/brachiosaurus.mp3', 'assets/audio/animals/pterodactyl.mp3',
   'assets/audio/animals/triceratops.mp3', 'assets/audio/animals/stegosaurus.mp3',
   'assets/audio/animals/velociraptor.mp3',
+  // The remaining My First Words names use the same bundled Piper voice.
+  'assets/audio/animals/snake.mp3', 'assets/audio/animals/ant.mp3',
+  'assets/audio/animals/grasshopper.mp3', 'assets/audio/animals/tiger.mp3',
+  'assets/audio/animals/hippo.mp3', 'assets/audio/animals/camel.mp3',
+  'assets/audio/animals/kangaroo.mp3', 'assets/audio/animals/rhino.mp3',
+  'assets/audio/animals/bee.mp3', 'assets/audio/animals/butterfly.mp3',
+  'assets/audio/animals/goldfish.mp3', 'assets/audio/animals/frog.mp3',
+  'assets/audio/animals/owl.mp3', 'assets/audio/animals/duckling.mp3',
+  'assets/audio/animals/baby_shark.mp3', 'assets/audio/animals/daddy_shark.mp3',
+  'assets/audio/animals/mommy_shark.mp3', 'assets/audio/animals/grandpa_shark.mp3',
+  'assets/audio/animals/grandma_shark.mp3', 'assets/audio/animals/bed.mp3',
+  'assets/audio/animals/shoe.mp3', 'assets/audio/animals/hat.mp3',
+  'assets/audio/animals/apple.mp3', 'assets/audio/animals/banana.mp3',
+  'assets/audio/animals/flower.mp3', 'assets/audio/animals/sun.mp3',
+  'assets/audio/animals/moon.mp3', 'assets/audio/animals/star.mp3',
+  'assets/audio/animals/house.mp3', 'assets/audio/animals/train.mp3',
+  'assets/audio/animals/airplane.mp3', 'assets/audio/animals/boat.mp3',
+  'assets/audio/animals/bicycle.mp3', 'assets/audio/animals/car.mp3',
+  'assets/audio/animals/bus.mp3', 'assets/audio/animals/ball.mp3',
+  'assets/audio/animals/book.mp3', 'assets/audio/animals/cup.mp3',
+  'assets/audio/animals/spoon.mp3', 'assets/audio/animals/chair.mp3',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   // Intro mascot art. Note the exact casing (.PNG) — GitHub Pages serves from
   // a case-sensitive filesystem, so these must match the files byte for byte.

@@ -49,10 +49,10 @@ for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
 
-// Computer speech during gameplay is restricted to exactly four triggers:
-// Counting taps, Big/Small round start, Trace It completion, and Animals'
-// photo tap.
-const voiceGames = new Set(['js/games/counting.js', 'js/games/bigsmall.js', 'js/games/trace.js', 'js/games/animals.js']);
+// Computer speech during gameplay is restricted to four game modules:
+// Counting taps, Big/Small round start, Trace It completion, and Play House
+// interaction cues. My First Words uses bundled Piper recordings instead.
+const voiceGames = new Set(['js/games/counting.js', 'js/games/bigsmall.js', 'js/games/trace.js', 'js/games/playhouse.js']);
 for (const file of files.filter(f => f.includes(`${path.sep}games${path.sep}`))) {
   const rel = path.relative(root, file);
   const source = fs.readFileSync(file, 'utf8');
@@ -70,7 +70,7 @@ const exactVoiceCalls = new Map([
   ['js/games/counting.js', 'speech.speakWord(WORDS[counted])'],
   ['js/games/bigsmall.js', "ctx.speech.speakWord(target.size === 'big' ? 'Big' : 'Small')"],
   ['js/games/trace.js', 'speech.speakWord(current.spoken'],
-  ['js/games/animals.js', 'speech.speakWord(order[i].name)'],
+  ['js/games/playhouse.js', 'speech.speakWord(word'],
 ]);
 for (const [rel, expected] of exactVoiceCalls) {
   const source = fs.readFileSync(path.join(root, rel), 'utf8');

@@ -57,9 +57,9 @@ const ANIMALS = [
   voice: `assets/audio/animals/${voiceSlug(a.name)}.mp3`,
 }));
 
-// Everyday words beyond the animal kingdom, sliced from four uploaded photo
-// sheets. No bundled recording for these yet, so `voice: null` — tapping
-// falls back to the browser's spoken voice (see speakCurrent()).
+// Everyday words beyond the animal kingdom, sliced from uploaded photo sheets.
+// They use the same bundled Piper voice as the animal cards so pronunciation
+// never changes with the device's browser or installed system voices.
 const WORDS = [
   { id: 'snake', name: 'Snake' },
   { id: 'ant', name: 'Ant' },
@@ -105,7 +105,7 @@ const WORDS = [
   ...w,
   photo: `assets/words-photos/${w.id}.${w.extension ?? 'jpg'}`,
   voiceKey: `animal-name:${voiceSlug(w.name)}`,
-  voice: null,
+  voice: `assets/audio/animals/${voiceSlug(w.name)}.mp3`,
 }));
 
 const ITEMS = [...ANIMALS, ...WORDS];
@@ -225,11 +225,11 @@ function start(ctx) {
     void card.offsetWidth;
     card.classList.add('wiggle');
     speech.stop();
+    audio.unlock();
     audio.pop();
-    const loaded = a.voice ? await audio.load(a.voiceKey, a.voice) : false;
-    if (!alive) return;
-    if (loaded) await audio.play(a.voiceKey, { rate: speech.getUserRate() });
-    else speech.speakWord(order[i].name);
+    const loaded = await audio.load(a.voiceKey, a.voice);
+    if (!alive || order[i] !== a || !loaded) return;
+    await audio.play(a.voiceKey, { rate: speech.getUserRate() });
   }
 
   stage.addEventListener('pointerdown', e => {

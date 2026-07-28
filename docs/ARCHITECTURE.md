@@ -27,7 +27,7 @@ legacy narration. `speak()` returns a resolved promise without producing audio;
 old calls remain harmless so unrelated games do not need invasive rewrites.
 `speakWord()` is the only active computer-speech function during gameplay.
 
-There are exactly four gameplay triggers:
+There are exactly four gameplay modules:
 
 1. `js/games/counting.js` calls `speakWord(WORDS[counted])` when an uncounted
    animal is tapped. The utterance is only `one` through `ten`.
@@ -35,9 +35,13 @@ There are exactly four gameplay triggers:
    utterance is only `Big` or `Small`; idle reprompting does not repeat it.
 3. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
    stroke. The utterance is only the completed letter, number word, shape, or animal.
-4. `js/games/animals.js` calls `speakWord(order[i].name)` when the photo card
-   is tapped. The utterance is only the name of the animal currently shown, and
-   tapping again simply repeats it — there is no round or correctness state.
+4. `js/games/playhouse.js` routes its short weather, outfit, and sibling-moment
+   cues through one `speakWord(word)` helper.
+
+`js/games/animals.js` does not use browser speech. Every My First Words card
+loads a bundled Piper MP3 from `assets/audio/animals/`, giving animal photos,
+everyday-word photos, and shark-family PNGs one consistent voice. A failed clip
+load remains silent rather than falling back to a device-dependent system voice.
 
 Settings uses `speakWord()` for parent-facing voice/rate previews; that is not a
 gameplay trigger. `scripts/check.mjs` enforces the permitted game modules and one
@@ -55,13 +59,14 @@ them through `js/engine/audio.js`, then registers their buffer names with
 They never synthesize fallback phrases. Quick games throttle recorded praise;
 slower completions can pass `{ quick: false }`. Celebrations call parent praise
 through `js/engine/celebrate.js` `big()`. This must remain separate from the
-three computer-voice triggers.
+computer-voice triggers.
 
 ### Other audio
 
 `js/engine/audio.js` owns Web Audio effects, decoded buffers, global volume, and
-per-game mute state. Authentic animal MP3s are data/media sounds, not computer
-narration. `js/data/animals.js` records which animals have sound files.
+per-game mute state. Authentic animal sounds and the bundled My First Words
+Piper MP3s are data/media sounds, not browser narration. `js/data/animals.js`
+records which animals have authentic sound files.
 
 ## Navigation and lifecycle
 
