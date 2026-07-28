@@ -5,11 +5,17 @@
 
 import * as audio from '../engine/audio.js';
 
-const PALETTE = ['#f04e3e', '#ff8c2e', '#ffcf3d', '#4db84d', '#3d7ef0', '#9b5fe0', '#ff9fce', '#8a5a3c'];
+const PALETTE = ['#0062E0', '#FF8800', '#75D018', '#FFDE00', '#FF3B94', '#FFFFFF', '#BD0D19', '#000000'];
 const LINE = '#3a3357';
 
 const DADDY_SHARK_SVG = `
 <svg data-coloring-shark="daddy" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Daddy Shark coloring picture">
+  <defs>
+    <clipPath id="daddy-mouth-clip">
+      <path d="M70 104 C80 113 90 118 100 118 C111 118 121 113 130 104 C129 123 116 136 100 136 C84 136 71 123 70 104 Z"/>
+    </clipPath>
+  </defs>
+
   <!-- The dorsal fin, both side fins/hands, head, body and tail deliberately
        share one data-region so a single tap colors all of them together. -->
   <g data-region="daddy-blue-parts" fill="#fff" stroke="${LINE}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
@@ -26,11 +32,11 @@ const DADDY_SHARK_SVG = `
   <path data-region="daddy-mouth" d="M70 104 C80 113 90 118 100 118 C111 118 121 113 130 104 C129 123 116 136 100 136 C84 136 71 123 70 104 Z"
         fill="#fff" stroke="${LINE}" stroke-width="4.5" stroke-linejoin="round"/>
 
-  <!-- Teeth remain white while the mouth itself is colorable. -->
-  <path d="M75 108 L82 117 L89 108 L96 117 L103 108 L110 117 L117 108 L124 115"
-        fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="miter" stroke-linecap="square"/>
-  <path d="M80 130 L87 121 L94 130 L101 121 L108 130 L115 121 L121 128"
-        fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="miter" stroke-linecap="square"/>
+  <!-- Keep every tooth inside the mouth, even at the curved corners. -->
+  <g fill="#fff" clip-path="url(#daddy-mouth-clip)" pointer-events="none">
+    <path d="M76 107 L84 116 L91 108 L99 118 L107 108 L115 116 L124 107 Z"/>
+    <path d="M80 132 L88 122 L96 132 L104 122 L112 132 L120 124 L122 132 Z"/>
+  </g>
 
   <ellipse cx="78" cy="83" rx="15" ry="18" fill="#fff" stroke="${LINE}" stroke-width="4"/>
   <ellipse cx="122" cy="83" rx="15" ry="18" fill="#fff" stroke="${LINE}" stroke-width="4"/>

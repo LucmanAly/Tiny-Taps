@@ -21,7 +21,7 @@ function savePicture(svg) {
   try { localStorage.setItem(GALLERY_KEY, JSON.stringify(list)); } catch (e) { /* full */ }
 }
 
-const PALETTE = ['#f04e3e', '#ff8c2e', '#ffcf3d', '#4db84d', '#3d7ef0', '#9b5fe0', '#ff9fce', '#8a5a3c'];
+const PALETTE = ['#0062E0', '#FF8800', '#75D018', '#FFDE00', '#FF3B94', '#FFFFFF', '#BD0D19', '#000000'];
 const LINE = '#3a3357';
 const SW = 5;
 
