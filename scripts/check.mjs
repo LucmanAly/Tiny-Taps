@@ -77,10 +77,11 @@ for (const [rel, expected] of exactVoiceCalls) {
   if (!source.includes(expected)) errors.push(`${rel} does not use its required single-name voice value`);
 }
 
-const [{ ANIMALS }, { TRACE_ANIMALS }, { nextPathPoint }] = await Promise.all([
+const [{ ANIMALS }, { TRACE_ANIMALS }, { nextPathPoint }, { FIRST_WORD_CATEGORIES }] = await Promise.all([
   import('../js/data/animals.js'),
   import('../js/data/trace-items.js'),
   import('../js/games/trace.js'),
+  import('../js/games/animals.js'),
 ]);
 if (TRACE_ANIMALS.length !== ANIMALS.length) errors.push('Trace animal catalog does not cover every animal');
 const traceSignatures = new Set();
@@ -102,6 +103,22 @@ const line = { pts: Array.from({ length: 101 }, (_, i) => ({ x: i, y: 0, len: i 
 let linePoint = 0;
 for (let x = 6; x <= 102; x += 6) linePoint = nextPathPoint(line, linePoint, { x: Math.min(x, 100), y: 0 }, 6);
 if (linePoint !== 100) errors.push('Trace does not follow valid sampled movement to completion');
+
+const firstWordCategoryNames = Object.keys(FIRST_WORD_CATEGORIES);
+if (firstWordCategoryNames.join(',') !== 'animals,shark-family,objects') {
+  errors.push('My First Words categories must be Animals, Shark Family, and Objects');
+}
+const animalWordIds = FIRST_WORD_CATEGORIES.animals.map(item => item.id);
+const sharkFamilyIds = FIRST_WORD_CATEGORIES['shark-family'].map(item => item.id);
+const objectWordIds = FIRST_WORD_CATEGORIES.objects.map(item => item.id);
+if (!animalWordIds.includes('shark')) errors.push('Generic shark is missing from the Animals deck');
+if (sharkFamilyIds.includes('shark') || sharkFamilyIds.length !== 5) {
+  errors.push('Shark Family must contain only the five colored family sharks');
+}
+const allFirstWordIds = [...animalWordIds, ...sharkFamilyIds, ...objectWordIds];
+if (allFirstWordIds.length !== 73 || new Set(allFirstWordIds).size !== allFirstWordIds.length) {
+  errors.push('My First Words categories must partition all 73 cards exactly once');
+}
 
 const puzzleSource = fs.readFileSync(path.join(root, 'js/games/puzzle.js'), 'utf8');
 if (puzzleSource.includes('Complete the pattern') || puzzleSource.includes('spatial-board')) {

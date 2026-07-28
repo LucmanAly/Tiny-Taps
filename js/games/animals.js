@@ -14,6 +14,15 @@ function voiceSlug(name) {
     .replace(/^_+|_+$/g, '');
 }
 
+function wordCard(word) {
+  return {
+    ...word,
+    photo: `assets/words-photos/${word.id}.${word.extension ?? 'jpg'}`,
+    voiceKey: `animal-name:${voiceSlug(word.name)}`,
+    voice: `assets/audio/animals/${voiceSlug(word.name)}.mp3`,
+  };
+}
+
 // Ids match the sliced photo filenames in assets/animals-photos/. Names are
 // what gets printed under the card and spoken by the bundled Piper clips.
 const ANIMALS = [
@@ -60,7 +69,7 @@ const ANIMALS = [
 // Everyday words beyond the animal kingdom, sliced from uploaded photo sheets.
 // They use the same bundled Piper voice as the animal cards so pronunciation
 // never changes with the device's browser or installed system voices.
-const WORDS = [
+const EXTRA_ANIMALS = [
   { id: 'snake', name: 'Snake' },
   { id: 'ant', name: 'Ant' },
   { id: 'grasshopper', name: 'Grasshopper' },
@@ -75,11 +84,17 @@ const WORDS = [
   { id: 'frog', name: 'Frog' },
   { id: 'owl', name: 'Owl' },
   { id: 'duckling', name: 'Duckling' },
+].map(wordCard);
+
+const SHARK_FAMILY = [
   { id: 'baby-shark', name: 'Baby Shark', extension: 'png' },
   { id: 'daddy-shark', name: 'Daddy Shark', extension: 'png' },
   { id: 'mommy-shark', name: 'Mommy Shark', extension: 'png' },
   { id: 'grandpa-shark', name: 'Grandpa Shark', extension: 'png' },
   { id: 'grandma-shark', name: 'Grandma Shark', extension: 'png' },
+].map(wordCard);
+
+const OBJECTS = [
   { id: 'bed', name: 'Bed' },
   { id: 'shoe', name: 'Shoe' },
   { id: 'hat', name: 'Hat' },
@@ -101,14 +116,29 @@ const WORDS = [
   { id: 'cup', name: 'Cup' },
   { id: 'spoon', name: 'Spoon' },
   { id: 'chair', name: 'Chair' },
-].map(w => ({
-  ...w,
-  photo: `assets/words-photos/${w.id}.${w.extension ?? 'jpg'}`,
-  voiceKey: `animal-name:${voiceSlug(w.name)}`,
-  voice: `assets/audio/animals/${voiceSlug(w.name)}.mp3`,
-}));
+].map(wordCard);
 
-const ITEMS = [...ANIMALS, ...WORDS];
+export const FIRST_WORD_CATEGORIES = {
+  animals: [...ANIMALS, ...EXTRA_ANIMALS],
+  'shark-family': SHARK_FAMILY,
+  objects: OBJECTS,
+};
+const CATEGORIES = FIRST_WORD_CATEGORIES;
+const CATEGORY_OPTIONS = [
+  { id: 'animals', label: 'Animals', icon: '🐾' },
+  { id: 'shark-family', label: 'Shark Family', icon: '🦈' },
+  { id: 'objects', label: 'Objects', icon: '🧸' },
+];
+const CATEGORY_KEY = 'tiny-taps:first-words-category';
+const ITEMS = [...CATEGORIES.animals, ...SHARK_FAMILY, ...OBJECTS];
+
+function savedCategory() {
+  try {
+    const saved = localStorage.getItem(CATEGORY_KEY);
+    if (CATEGORIES[saved]) return saved;
+  } catch (_) { /* storage can be unavailable in private browsing */ }
+  return 'animals';
+}
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -129,7 +159,8 @@ function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
 
-  const order = shuffle(ITEMS);
+  let category = savedCategory();
+  let order = shuffle(CATEGORIES[category]);
   let i = 0;
   let pointerStart = null;
   const objectMask = document.createElement('canvas');
@@ -159,6 +190,72 @@ function start(ctx) {
   wrap.className = 'animals-wrap';
   wrap.appendChild(card);
   stage.appendChild(wrap);
+
+  const config = document.createElement('div');
+  config.className = 'words-config';
+  const configButton = document.createElement('button');
+  configButton.className = 'words-config-button';
+  configButton.type = 'button';
+  configButton.textContent = '⚙';
+  configButton.setAttribute('aria-label', 'Choose flashcard category');
+  configButton.setAttribute('aria-expanded', 'false');
+  const categoryPanel = document.createElement('div');
+  categoryPanel.className = 'words-category-panel';
+  categoryPanel.hidden = true;
+  const categoryButtons = new Map();
+  for (const option of CATEGORY_OPTIONS) {
+    const button = document.createElement('button');
+    button.className = 'words-category-button';
+    button.type = 'button';
+    button.dataset.category = option.id;
+    button.innerHTML = `<span aria-hidden="true">${option.icon}</span><span>${option.label}</span>`;
+    categoryPanel.appendChild(button);
+    categoryButtons.set(option.id, button);
+  }
+  config.appendChild(categoryPanel);
+  config.appendChild(configButton);
+  stage.appendChild(config);
+
+  function setConfigOpen(open) {
+    categoryPanel.hidden = !open;
+    configButton.setAttribute('aria-expanded', String(open));
+    config.classList.toggle('open', open);
+  }
+
+  function renderCategoryButtons() {
+    for (const [id, button] of categoryButtons) {
+      const selected = id === category;
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+  }
+
+  function selectCategory(nextCategory) {
+    if (!CATEGORIES[nextCategory] || nextCategory === category) {
+      setConfigOpen(false);
+      return;
+    }
+    category = nextCategory;
+    try { localStorage.setItem(CATEGORY_KEY, category); } catch (_) { /* optional */ }
+    order = shuffle(CATEGORIES[category]);
+    i = 0;
+    speech.stop();
+    audio.stopPlayback();
+    renderCategoryButtons();
+    setConfigOpen(false);
+    fadeSwap(card, render);
+  }
+
+  // The category controls sit inside the full-screen swipe surface. Keep their
+  // pointer sequence local so choosing a deck can never turn into a card swipe.
+  for (const eventName of ['pointerdown', 'pointerup', 'pointercancel']) {
+    config.addEventListener(eventName, e => e.stopPropagation());
+  }
+  configButton.addEventListener('click', () => setConfigOpen(categoryPanel.hidden));
+  for (const [id, button] of categoryButtons) {
+    button.addEventListener('click', () => selectCategory(id));
+  }
+  renderCategoryButtons();
 
   function render() {
     const a = order[i];
@@ -234,6 +331,11 @@ function start(ctx) {
 
   stage.addEventListener('pointerdown', e => {
     if (!alive || !e.isPrimary) return;
+    if (!categoryPanel.hidden) {
+      pointerStart = null;
+      setConfigOpen(false);
+      return;
+    }
     pointerStart = {
       id: e.pointerId,
       x: e.clientX,

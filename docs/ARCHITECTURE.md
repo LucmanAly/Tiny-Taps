@@ -206,6 +206,19 @@ After the final stroke, Trace records the outcome, speaks exactly
 `current.spoken`, then runs the normal visual celebration and separate parent
 praise path.
 
+### My First Words
+
+`js/games/animals.js` partitions all 73 cards into three exclusive decks:
+Animals includes the regular animal-photo library plus the additional animal
+word photos, Shark Family includes only the five colored family PNGs, and
+Objects contains the remaining everyday items. The generic shark belongs only
+to Animals.
+
+A safe-bottom-corner configuration button opens the three deck choices. The
+selection is stored locally, immediately reshuffles that deck, and is restored
+on the next visit. Object taps play bundled Piper names; full-screen horizontal
+swipes move only within the selected category.
+
 ## Settings and local state
 
 `js/app.js` `showSettings()` creates the modal dynamically. Its red sticky Close
@@ -241,7 +254,8 @@ Screen launch, in both orientations where the game supports them.
 ## Validation
 
 Run `npm run check` after every change. It verifies relative JS imports, service
-worker assets, animal media references, manifest icons, and the three-game
-computer-speech boundary. Also run JavaScript syntax checks and `git diff --check`.
+worker assets, animal media references, manifest icons, the four-game
+computer-speech boundary, and the exact My First Words category partition. Also
+run JavaScript syntax checks and `git diff --check`.
 For tracing/catalog work, verify all 23 animal IDs have non-empty, unique path
 sets and that pointerdown alone cannot advance or finish a stroke.

@@ -24,7 +24,7 @@ nothing to buy, works offline once loaded:
 17. **Wash the Animal** — rub the mud off with a finger until it shines
 18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
 19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
-20. **My First Words** — a full-photo flashcard deck spanning animals and everyday words (food, vehicles, household objects, the sun and moon); tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the deck
+20. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -85,6 +85,11 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v4.7** — a safe-corner category button in My First Words switches between
+  Animals, Shark Family, and Objects and remembers the selected deck. The
+  generic shark stays in Animals; Shark Family contains only the five colored
+  family characters.
 
 - **v4.6** — one consistent bundled Piper voice for every My First Words card,
   including everyday words and the shark family. Removed the device-dependent
