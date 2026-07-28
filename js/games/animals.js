@@ -177,7 +177,7 @@ function start(ctx) {
     audio.pop();
     const loaded = a.voice ? await audio.load(a.voiceKey, a.voice) : false;
     if (!alive) return;
-    if (loaded) await audio.play(a.voiceKey);
+    if (loaded) await audio.play(a.voiceKey, { rate: speech.getUserRate() });
     else speech.speakWord(a.name);
   }
 
