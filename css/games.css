@@ -448,6 +448,11 @@
   justify-content: space-between;
   gap: 2vmin;
 }
+.number-book-actions {
+  display: flex;
+  align-items: center;
+  gap: max(1vmin, 8px);
+}
 .number-book-progress {
   padding: 0.75vmin 2.2vmin;
   border-radius: 999px;
@@ -457,7 +462,8 @@
   font-weight: 850;
   box-shadow: 0 3px 10px rgba(58,51,87,0.08);
 }
-.number-book-reset {
+.number-book-reset,
+.number-book-settings-button {
   min-height: max(6.2vmin, 44px);
   display: flex;
   align-items: center;
@@ -472,14 +478,123 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-.number-book-reset svg { width: max(2.5vmin, 18px); height: max(2.5vmin, 18px); }
-.number-book-reset:active { transform: scale(0.94); }
+.number-book-settings-button {
+  background: linear-gradient(135deg, #6655da, #9664dc);
+  color: #fff;
+  box-shadow: 0 3px 0 #5141b7, 0 7px 16px rgba(87,69,187,0.2);
+}
+.number-book-reset svg,
+.number-book-settings-button svg {
+  width: max(2.5vmin, 18px);
+  height: max(2.5vmin, 18px);
+}
+.number-book-reset:active,
+.number-book-settings-button:active { transform: scale(0.94); }
+.number-book-settings[hidden] { display: none; }
+.number-book-settings {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(18px, 4vmin);
+  background: rgba(49, 40, 78, 0.28);
+  backdrop-filter: blur(7px);
+}
+.number-book-settings-card {
+  width: min(88vw, 470px);
+  padding: clamp(20px, 4vmin, 34px);
+  border: 3px solid rgba(255,255,255,0.88);
+  border-radius: clamp(24px, 4vmin, 36px);
+  background: linear-gradient(145deg, #fff 0%, #f6f0ff 100%);
+  color: #51486b;
+  box-shadow: 0 24px 60px rgba(49,40,78,0.28);
+  font-family: var(--font);
+}
+.number-book-settings-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.number-book-settings-heading small {
+  color: #7869c7;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+.number-book-settings-heading h2 {
+  margin: 3px 0 24px;
+  color: #40365f;
+  font-size: clamp(25px, 5vmin, 34px);
+  line-height: 1;
+}
+.number-book-settings-close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: #ede6fa;
+  color: #5c5277;
+  font: 800 31px/40px var(--font);
+  cursor: pointer;
+}
+.number-book-delay-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 15px;
+  font-size: clamp(15px, 2.4vmin, 18px);
+  font-weight: 850;
+}
+.number-book-delay-value {
+  min-width: 104px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #6957dc;
+  color: #fff;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+.number-book-delay {
+  width: 100%;
+  height: 34px;
+  margin: 0;
+  accent-color: #6957dc;
+  cursor: pointer;
+}
+.number-book-delay-scale {
+  display: flex;
+  justify-content: space-between;
+  color: #7a718f;
+  font-size: 11px;
+  font-weight: 800;
+}
+.number-book-settings-card p {
+  margin: 22px 0 0;
+  padding: 13px 15px;
+  border-radius: 16px;
+  background: #fff7dc;
+  color: #655d77;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
 @media (orientation: portrait) {
   .number-book-tabs { width: min(86vw, 520px); margin-top: max(9vmin, 52px); }
   .number-book-scene { width: min(92vw, 70vh); }
   .number-book-page,
   .number-book-page-shadow { width: 94%; height: min(82%, 610px); }
   .number-book-footer { width: min(90vw, 620px); }
+  .number-book-actions { gap: 7px; }
+  .number-book-reset,
+  .number-book-settings-button {
+    padding-inline: 13px;
+  }
   .number-book-number { font-size: clamp(86px, 35vw, 205px); }
   .number-book-page[data-size="compact"] .number-book-number { font-size: clamp(72px, 25vw, 108px); }
   .number-book-page[data-size="small"] .number-book-number { font-size: clamp(58px, 20vw, 84px); }
@@ -496,6 +611,12 @@
   .number-book-number { font-size: clamp(82px, 23vmin, 155px); }
   .number-book-words { margin-top: 8px; font-size: max(2.7vmin, 16px); }
   .number-book-tap-hint { bottom: 12px; }
+  .number-book-settings-card {
+    width: min(70vw, 470px);
+    padding: 18px 24px;
+  }
+  .number-book-settings-heading h2 { margin-bottom: 12px; }
+  .number-book-settings-card p { margin-top: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .number-book-page.turning { animation: number-page-fade-out 0.18s ease-out forwards; }
