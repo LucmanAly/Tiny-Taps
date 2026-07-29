@@ -40,9 +40,24 @@ else {
 }
 
 const daddySharkAsset = 'assets/art/daddy-shark-coloring.svg';
-const daddySharkAddon = 'js/games/coloring-daddy-shark-addon.js';
-for (const required of [daddySharkAsset, daddySharkAddon]) {
+const motuColoringAsset = 'assets/art/motu-coloring.svg';
+const johnColoringAsset = 'assets/art/john-the-don-coloring.svg';
+const patluColoringAsset = 'assets/art/patlu-coloring.svg';
+const externalColoringAssets = [
+  daddySharkAsset,
+  motuColoringAsset,
+  johnColoringAsset,
+  patluColoringAsset,
+];
+for (const required of externalColoringAssets) {
   if (!sw.includes(`'${required}'`)) errors.push(`Service worker does not cache ${required}`);
+}
+
+const coloringSource = fs.readFileSync(path.join(root, 'js/games/coloring.js'), 'utf8');
+for (const required of externalColoringAssets) {
+  if (!coloringSource.includes(`src: '${required}'`)) {
+    errors.push(`Coloring game does not include ${required} as a page`);
+  }
 }
 
 const daddySharkSvg = fs.readFileSync(path.join(root, daddySharkAsset), 'utf8');
@@ -58,6 +73,37 @@ if (daddySharkSvg.includes('<image') || daddySharkSvg.includes('preserveAspectRa
 }
 if (!daddySharkSvg.includes('data-fixed="true" pointer-events="none"')) {
   errors.push('Daddy Shark fixed face, tooth, and outline details must pass taps through');
+}
+
+const motuColoringSvg = fs.readFileSync(path.join(root, motuColoringAsset), 'utf8');
+const motuRegions = [...motuColoringSvg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
+const expectedMotuRegions = ['shirt-body', 'skin', 'shirt-sleeves', 'shirt-sleeves', 'vest', 'vest', 'skin', 'shoes', 'skin', 'shoes', 'collar'];
+if (motuRegions.join(',') !== expectedMotuRegions.join(',')) {
+  errors.push('Character SVG must expose the expected grouped coloring regions');
+}
+if (motuColoringSvg.includes('<image') || motuColoringSvg.includes('preserveAspectRatio="none"')) {
+  errors.push('Character SVG must remain editable vector art without distortion');
+}
+if (!motuColoringSvg.includes('data-fixed="true" pointer-events="none"')) {
+  errors.push('Character fixed outlines and facial details must pass taps through');
+}
+
+const additionalColoringRegions = new Map([
+  [johnColoringAsset, ['shirt-body', 'pants', 'skin', 'sleeves', 'shoes', 'shoes', 'skin', 'sleeves', 'sleeves', 'trim', 'sleeves', 'skin', 'trim', 'skin', 'skin', 'trim', 'skin', 'trim', 'sleeves']],
+  [patluColoringAsset, ['outfit', 'face', 'pants', 'pants', 'shoes', 'shoes', 'glasses-lenses', 'glasses-lenses', 'collar']],
+]);
+for (const [asset, expectedRegions] of additionalColoringRegions) {
+  const svg = fs.readFileSync(path.join(root, asset), 'utf8');
+  const regions = [...svg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
+  if (regions.join(',') !== expectedRegions.join(',')) {
+    errors.push(`${asset} must expose the expected grouped coloring regions`);
+  }
+  if (svg.includes('<image') || svg.includes('preserveAspectRatio="none"')) {
+    errors.push(`${asset} must remain editable vector art without distortion`);
+  }
+  if (!svg.includes('data-fixed="true" pointer-events="none"')) {
+    errors.push(`${asset} fixed outlines and facial details must pass taps through`);
+  }
 }
 
 const animals = fs.readFileSync(path.join(root, 'js/data/animals.js'), 'utf8');
