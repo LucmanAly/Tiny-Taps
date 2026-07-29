@@ -167,6 +167,37 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifes
 for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
+const pwaIcons = new Map([
+  ['icons/tiny-taps-touch-180.png', 180],
+  ['icons/tiny-taps-touch-192.png', 192],
+  ['icons/tiny-taps-touch-512.png', 512],
+]);
+function pngDimensions(file) {
+  const data = fs.readFileSync(file);
+  if (data.toString('ascii', 1, 4) !== 'PNG') return null;
+  return [data.readUInt32BE(16), data.readUInt32BE(20)];
+}
+for (const [asset, size] of pwaIcons) {
+  const full = path.join(root, asset);
+  if (!fs.existsSync(full)) {
+    errors.push(`Tiny Taps icon set is missing ${asset}`);
+    continue;
+  }
+  const dimensions = pngDimensions(full);
+  if (!dimensions || dimensions[0] !== size || dimensions[1] !== size) {
+    errors.push(`${asset} must be exactly ${size}x${size}`);
+  }
+  if (!sw.includes(`'${asset}'`)) errors.push(`Service worker does not cache ${asset}`);
+}
+if (!indexHtml.includes('icons/tiny-taps-touch-180.png')
+    || !indexHtml.includes('icons/tiny-taps-touch-192.png')) {
+  errors.push('HTML must use the new Tiny Taps touch icon for Apple and browser icons');
+}
+const manifestIconSources = (manifest.icons || []).map(icon => icon.src);
+if (manifestIconSources.join(',') !==
+    'icons/tiny-taps-touch-192.png,icons/tiny-taps-touch-512.png') {
+  errors.push('PWA manifest must use the new Tiny Taps touch icon set');
+}
 
 // Computer speech during gameplay is restricted to four game modules:
 // Counting taps, Big/Small round start, Trace It completion, and Play House
