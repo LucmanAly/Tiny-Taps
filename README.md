@@ -12,7 +12,7 @@ nothing to buy, works offline once loaded:
 5. **Counting** — tap each animal to count it aloud; badges and a big numeral track the count (1–5 or 1–10 — press-and-hold the corner button)
 6. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
 7. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
-8. **Coloring** — big hand-sketched coloring pages; finished pictures are saved to an in-app gallery
+8. **Coloring** — choose all pages or character portraits, fill complete grouped regions, and save finished pictures to an in-app gallery
 9. **Matching** — flip four cards, find the two matching friends
 10. **Music** — a rainbow xylophone; pure free play
 11. **Bubbles** — pure free play; pop the bubbles
