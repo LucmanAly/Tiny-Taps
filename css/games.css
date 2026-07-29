@@ -396,6 +396,9 @@
   box-shadow: var(--shadow);
   padding: 1.2vmin;
 }
+.color-pic.portrait-page {
+  width: min(94vw, 45vh, 620px);
+}
 .color-pic svg { width: 100%; height: auto; display: block; }
 .color-pic [data-region] { cursor: pointer; }
 .palette-row {
