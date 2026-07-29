@@ -842,11 +842,19 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault());
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  let reloadingForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    localStorage.setItem('tinytaps-offline-ready', '1');
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    location.reload();
+  });
+
   navigator.serviceWorker.register('sw.js').then(reg => {
-    if (!navigator.serviceWorker.controller) {
-      navigator.serviceWorker.addEventListener('controllerchange', () =>
-        localStorage.setItem('tinytaps-offline-ready', '1'), { once: true });
-    } else localStorage.setItem('tinytaps-offline-ready', '1');
+    if (navigator.serviceWorker.controller) {
+      localStorage.setItem('tinytaps-offline-ready', '1');
+      reg.update().catch(() => {});
+    }
   }).catch(() => {});
 }
 
