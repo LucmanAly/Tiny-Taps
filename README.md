@@ -87,6 +87,12 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v5.7** — Number Book correction: renamed the second mode to **10s & Big
+  Numbers**, added five responsive size tiers so every comma-separated value
+  through one trillion fits its page, synchronized page turns with the spoken
+  value, and forced English pronunciation when device voices are still loading
+  or the device uses another system language.
+
 - **v5.6** — Number Book adds a polished page-turn counting game with one
   giant tappable number, natural spoken number names, a complete 0–100 deck,
   a second tens-and-place-values deck through one trillion, and a visible

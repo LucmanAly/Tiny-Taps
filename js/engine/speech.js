@@ -119,6 +119,9 @@ export function speakWord(text, { interrupt = true, rate = 0.92, pitch = 1.08 } 
   return new Promise(resolve => {
     const u = new SpeechSynthesisUtterance(text);
     if (voice) u.voice = voice;
+    // Keep English number/name pronunciation reliable even when the device's
+    // system language is not English or its voice list has not loaded yet.
+    u.lang = voice?.lang || 'en-US';
     u.rate = rate * userRate;
     u.pitch = pitch;
     u.volume = 1;
