@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.9';
+const VERSION = 'tiny-taps-v5.10';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -124,7 +124,8 @@ const ASSETS = [
   // Number Book uses the same bundled Piper voice and never relies on browser
   // speech synthesis, which is missing in some iPhone/PWA environments.
   ...NUMBER_AUDIO_ASSETS,
-  'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/tiny-taps-touch-180.png', 'icons/tiny-taps-touch-192.png',
+  'icons/tiny-taps-touch-512.png',
   // Intro mascot art. Note the exact casing (.PNG) — GitHub Pages serves from
   // a case-sensitive filesystem, so these must match the files byte for byte.
   // These are large; the install below caches every entry independently, so a
