@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.0';
+const VERSION = 'tiny-taps-v5.2';
 
 const ASSETS = [
   '.',
@@ -38,7 +38,6 @@ const ASSETS = [
   'js/games/puzzle.js',
   'js/games/feedme.js',
   'js/games/coloring.js',
-  'js/games/coloring-daddy-shark-addon.js',
   'js/games/memory.js',
   'js/games/music.js',
   'js/games/bubbles.js',
@@ -58,7 +57,8 @@ const ASSETS = [
   'assets/art/bear.svg', 'assets/art/bee.svg', 'assets/art/bunny.svg',
   'assets/art/butterfly.svg', 'assets/art/dinosaur.svg', 'assets/art/fish.svg',
   'assets/art/giraffe.svg', 'assets/art/monkey.svg', 'assets/art/shark.svg',
-  'assets/art/daddy-shark-coloring.svg',
+  'assets/art/daddy-shark-coloring.svg', 'assets/art/motu-coloring.svg',
+  'assets/art/john-the-don-coloring.svg', 'assets/art/patlu-coloring.svg',
   'assets/art/turtle.svg', 'assets/art/zebra.svg',
   'assets/art/food-bone.svg', 'assets/art/food-fish.svg', 'assets/art/food-carrot.svg',
   'assets/art/food-grass.svg', 'assets/art/food-banana.svg', 'assets/art/food-corn.svg',
