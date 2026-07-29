@@ -87,7 +87,7 @@ function reconcileGameGroups() {
 // Per-game accent tints so a pre-reader can navigate by color.
 const ACCENTS = {
   peekaboo: '#f1e6ff', sounds: '#dff5f3', colors: '#ffe7e1', shapes: '#e4efff',
-  counting: '#fff1d6', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
+  counting: '#fff1d6', numberbook: '#eee8ff', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
   shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',
   wash: '#dcf0fa', trace: '#fff4d6', playhouse: '#dbefff', animals: '#e2f5ee',

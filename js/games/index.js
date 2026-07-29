@@ -5,6 +5,7 @@ import sounds from './sounds.js';
 import colors from './colors.js';
 import shapes from './shapes.js';
 import counting from './counting.js';
+import numberbook from './numberbook.js';
 import puzzle from './puzzle.js';
 import feedme from './feedme.js';
 import coloring from './coloring.js';
@@ -27,6 +28,7 @@ export const games = [
   colors,
   shapes,
   counting,
+  numberbook,
   puzzle,
   feedme,
   coloring,

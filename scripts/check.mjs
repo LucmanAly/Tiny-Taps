@@ -168,10 +168,17 @@ for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
 
-// Computer speech during gameplay is restricted to four game modules:
-// Counting taps, Big/Small round start, Trace It completion, and Play House
-// interaction cues. My First Words uses bundled Piper recordings instead.
-const voiceGames = new Set(['js/games/counting.js', 'js/games/bigsmall.js', 'js/games/trace.js', 'js/games/playhouse.js']);
+// Computer speech during gameplay is restricted to five game modules:
+// Counting and Number Book taps, Big/Small round start, Trace It completion,
+// and Play House interaction cues. My First Words uses bundled Piper
+// recordings instead.
+const voiceGames = new Set([
+  'js/games/counting.js',
+  'js/games/numberbook.js',
+  'js/games/bigsmall.js',
+  'js/games/trace.js',
+  'js/games/playhouse.js',
+]);
 for (const file of files.filter(f => f.includes(`${path.sep}games${path.sep}`))) {
   const rel = path.relative(root, file);
   const source = fs.readFileSync(file, 'utf8');
@@ -187,6 +194,7 @@ for (const rel of voiceGames) {
 }
 const exactVoiceCalls = new Map([
   ['js/games/counting.js', 'speech.speakWord(WORDS[counted])'],
+  ['js/games/numberbook.js', 'speech.speakWord(numberWords(value))'],
   ['js/games/bigsmall.js', "ctx.speech.speakWord(target.size === 'big' ? 'Big' : 'Small')"],
   ['js/games/trace.js', 'speech.speakWord(current.spoken'],
   ['js/games/playhouse.js', 'speech.speakWord(word'],
@@ -196,12 +204,44 @@ for (const [rel, expected] of exactVoiceCalls) {
   if (!source.includes(expected)) errors.push(`${rel} does not use its required single-name voice value`);
 }
 
-const [{ ANIMALS }, { TRACE_ANIMALS }, { nextPathPoint }, { FIRST_WORD_CATEGORIES }] = await Promise.all([
+const [
+  { ANIMALS },
+  { TRACE_ANIMALS },
+  { nextPathPoint },
+  { FIRST_WORD_CATEGORIES },
+  { COUNTING_NUMBERS, BIG_NUMBER_SEQUENCE, numberWords, formatNumber },
+] = await Promise.all([
   import('../js/data/animals.js'),
   import('../js/data/trace-items.js'),
   import('../js/games/trace.js'),
   import('../js/games/animals.js'),
+  import('../js/games/numberbook.js'),
 ]);
+if (COUNTING_NUMBERS.length !== 101 || COUNTING_NUMBERS.some((value, index) => value !== index)) {
+  errors.push('Number Book counting mode must contain every whole number from 0 through 100');
+}
+const expectedBigNumbers = [
+  0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
+  1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000,
+  1_000_000_000, 10_000_000_000, 100_000_000_000, 1_000_000_000_000,
+];
+if (BIG_NUMBER_SEQUENCE.join(',') !== expectedBigNumbers.join(',')) {
+  errors.push('Number Book big-number mode must contain tens and place values through one trillion');
+}
+const spokenNumberChecks = new Map([
+  [0, 'zero'],
+  [42, 'forty-two'],
+  [100, 'one hundred'],
+  [1_000, 'one thousand'],
+  [100_000, 'one hundred thousand'],
+  [1_000_000_000_000, 'one trillion'],
+]);
+for (const [value, expected] of spokenNumberChecks) {
+  if (numberWords(value) !== expected) errors.push(`Number Book says ${value} incorrectly`);
+}
+if (formatNumber(1_000_000_000_000) !== '1,000,000,000,000') {
+  errors.push('Number Book must group large display numbers with commas');
+}
 if (TRACE_ANIMALS.length !== ANIMALS.length) errors.push('Trace animal catalog does not cover every animal');
 const traceSignatures = new Set();
 for (const item of TRACE_ANIMALS) {

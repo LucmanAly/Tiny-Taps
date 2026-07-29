@@ -2,7 +2,7 @@
 
 A game for my kids.
 
-Twenty toddler-friendly mini-games in one small web app — no ads, no links,
+Twenty-one toddler-friendly mini-games in one small web app — no ads, no links,
 nothing to buy, works offline once loaded:
 
 1. **Peekaboo** — tap tiles to reveal animals and hear their real sounds; every tap is a win
@@ -10,29 +10,30 @@ nothing to buy, works offline once loaded:
 3. **Colors** — tap the balloon that matches the color
 4. **Shapes** — tap the shape that fits the dashed outline
 5. **Counting** — tap each animal to count it aloud; badges and a big numeral track the count (1–5 or 1–10 — press-and-hold the corner button)
-6. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
-7. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
-8. **Coloring** — choose all pages or character portraits, fill complete grouped regions, and save finished pictures to an in-app gallery
-9. **Matching** — flip four cards, find the two matching friends
-10. **Music** — a rainbow xylophone; pure free play
-11. **Bubbles** — pure free play; pop the bubbles
-12. **Stickers** — big wins award animal stickers into a collection book
-13. **Shadow Match** — tap the animal that matches the silhouette
-14. **Big or Small** — tap the big (or little) version of the animal
-15. **Patterns** — a color sequence marches by; tap what comes next
-16. **Sort It** — drag each animal to its home, the farm or the water
-17. **Wash the Animal** — rub the mud off with a finger until it shines
-18. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-19. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
-20. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
+6. **Number Book** — tap one giant number to hear it and turn the page; switch between every number from 0–100 and tens/place values through one trillion, with an instant reset
+7. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
+8. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
+9. **Coloring** — choose all pages or character portraits, fill complete grouped regions, and save finished pictures to an in-app gallery
+10. **Matching** — flip four cards, find the two matching friends
+11. **Music** — a rainbow xylophone; pure free play
+12. **Bubbles** — pure free play; pop the bubbles
+13. **Stickers** — big wins award animal stickers into a collection book
+14. **Shadow Match** — tap the animal that matches the silhouette
+15. **Big or Small** — tap the big (or little) version of the animal
+16. **Patterns** — a color sequence marches by; tap what comes next
+17. **Sort It** — drag each animal to its home, the farm or the water
+18. **Wash the Animal** — rub the mud off with a finger until it shines
+19. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
+20. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
+21. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
 game shows a single animal, it says hello with its real voice.
 
-Gameplay is intentionally quiet. Counting speaks only each tapped number,
-Big or Small speaks only the target size at round start, and Trace It speaks
-only the completed letter, shape, number, or animal name.
+Gameplay is intentionally quiet. Counting and Number Book speak only a tapped
+number, Big or Small speaks only the target size at round start, and Trace It
+speaks only the completed letter, shape, number, or animal name.
 Recorded parent praise and encouragement remain active. The Home button
 responds immediately to one normal tap.
 
@@ -85,6 +86,11 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v5.6** — Number Book adds a polished page-turn counting game with one
+  giant tappable number, natural spoken number names, a complete 0–100 deck,
+  a second tens-and-place-values deck through one trillion, and a visible
+  reset control. Both modes work fully offline after the app is cached.
 
 - **v4.7** — a safe-corner category button in My First Words switches between
   Animals, Shark Family, and Objects and remembers the selected deck. The
