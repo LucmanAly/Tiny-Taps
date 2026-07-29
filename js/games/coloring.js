@@ -31,10 +31,40 @@ const S = `fill="#fff" stroke="${LINE}" stroke-width="${SW}" stroke-linejoin="ro
 const INK = `fill="none" stroke="${LINE}" stroke-linecap="round"`;
 const PENCIL = `fill="none" stroke="${LINE}" stroke-linecap="round" opacity="0.45"`;
 
+const EXTERNAL_SVG_CACHE = new Map();
+
+function loadExternalSvg(src) {
+  if (!EXTERNAL_SVG_CACHE.has(src)) {
+    EXTERNAL_SVG_CACHE.set(src, fetch(src).then(response => {
+      if (!response.ok) throw new Error(`Could not load ${src}`);
+      return response.text();
+    }));
+  }
+  return EXTERNAL_SVG_CACHE.get(src);
+}
+
 // Each page: an SVG with data-region elements (white until filled). A
 // data-region on a <g> fills every child at once (children carry no fill of
 // their own).
 const PAGES = [
+  {
+    id: 'daddy-shark', name: 'Daddy Shark',
+    src: 'assets/art/daddy-shark-coloring.svg',
+    sound: 'assets/audio/animals/daddy_shark.mp3',
+  },
+  {
+    id: 'motu', name: 'character',
+    src: 'assets/art/motu-coloring.svg',
+  },
+  {
+    id: 'john-the-don', name: 'character',
+    src: 'assets/art/john-the-don-coloring.svg',
+  },
+  {
+    id: 'patlu', name: 'character',
+    src: 'assets/art/patlu-coloring.svg',
+    portrait: true,
+  },
   {
     id: 'frog', name: 'frog',
     svg: `
@@ -306,6 +336,7 @@ function start(ctx) {
   let alive = true;
   let selected = PALETTE[3];
   let touched = false;
+  let pageRequest = 0;
   const nextPage = cycler(PAGES);
 
   const area = document.createElement('div');
@@ -379,18 +410,35 @@ function start(ctx) {
     overlay.querySelector('.gallery-close').addEventListener('pointerdown', () => overlay.remove());
   }
 
-  function newPage(first) {
+  async function newPage(first) {
     if (!alive) return;
+    const request = ++pageRequest;
     touched = false;
     const page = nextPage();
-    pic.innerHTML = page.svg;
+    let svgText = page.svg;
+    if (page.src) {
+      try {
+        svgText = await loadExternalSvg(page.src);
+      } catch (error) {
+        console.error(`Coloring page ${page.src} could not be loaded.`, error);
+        svgText = PAGES.find(candidate => candidate.svg)?.svg;
+      }
+    }
+    if (!alive || request !== pageRequest || !svgText) return;
+
+    pic.innerHTML = svgText;
+    pic.classList.toggle('portrait-page', Boolean(page.portrait));
     pic.classList.remove('pop-in');
     void pic.offsetWidth;
     pic.classList.add('pop-in');
-    pic.querySelectorAll('[data-region]').forEach(region => {
+    const regions = [...pic.querySelectorAll('[data-region]')];
+    regions.forEach(region => {
       region.addEventListener('pointerdown', () => {
         if (!alive) return;
-        region.setAttribute('fill', selected);
+        const regionName = region.getAttribute('data-region');
+        regions
+          .filter(part => part.getAttribute('data-region') === regionName)
+          .forEach(part => part.setAttribute('fill', selected));
         touched = true;
         audio.sparkle();
       });
@@ -398,9 +446,11 @@ function start(ctx) {
     if (first) speech.speak(TXT.colorIntro(page.name), { interrupt: false });
     // One animal on screen: let it say hello with its real sound.
     const a = animal(page.id);
-    if (a && a.sound) {
-      audio.load('animal:' + a.id, a.sound).then(() => {
-        if (alive) audio.play('animal:' + a.id, { maxDuration: 2.2 });
+    const sound = page.sound || (a && a.sound);
+    if (sound) {
+      const audioName = 'coloring:' + page.id;
+      audio.load(audioName, sound).then(() => {
+        if (alive && request === pageRequest) audio.play(audioName, { maxDuration: 2.2 });
       });
     }
   }
