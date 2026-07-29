@@ -43,11 +43,19 @@ const daddySharkAsset = 'assets/art/daddy-shark-coloring.svg';
 const motuColoringAsset = 'assets/art/motu-coloring.svg';
 const johnColoringAsset = 'assets/art/john-the-don-coloring.svg';
 const patluColoringAsset = 'assets/art/patlu-coloring.svg';
+const uploadedColoringAssets = [
+  'assets/art/family-man-coloring.svg',
+  'assets/art/family-woman-coloring.svg',
+  'assets/art/family-baby-camera-coloring.svg',
+  'assets/art/family-boy-coloring.svg',
+  'assets/art/chingam-coloring.svg',
+];
 const externalColoringAssets = [
   daddySharkAsset,
   motuColoringAsset,
   johnColoringAsset,
   patluColoringAsset,
+  ...uploadedColoringAssets,
 ];
 for (const required of externalColoringAssets) {
   if (!sw.includes(`'${required}'`)) errors.push(`Service worker does not cache ${required}`);
@@ -104,6 +112,36 @@ for (const [asset, expectedRegions] of additionalColoringRegions) {
   if (!svg.includes('data-fixed="true" pointer-events="none"')) {
     errors.push(`${asset} fixed outlines and facial details must pass taps through`);
   }
+}
+
+const uploadedColoringGroups = new Map([
+  ['assets/art/family-man-coloring.svg', ['skin', 'shirt', 'pants', 'shoes', 'hair']],
+  ['assets/art/family-woman-coloring.svg', ['skin', 'blouse', 'pants', 'hair']],
+  ['assets/art/family-baby-camera-coloring.svg', ['skin', 'shirt', 'camera', 'camera-lens']],
+  ['assets/art/family-boy-coloring.svg', ['skin', 'shirt', 'hair']],
+  ['assets/art/chingam-coloring.svg', ['skin', 'uniform-shirt', 'uniform-pants', 'cap', 'belt', 'shoes']],
+]);
+for (const [asset, requiredGroups] of uploadedColoringGroups) {
+  const svg = fs.readFileSync(path.join(root, asset), 'utf8');
+  const groups = [...svg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
+  for (const group of requiredGroups) {
+    if (!groups.includes(group)) errors.push(`${asset} is missing grouped ${group} coloring paths`);
+  }
+  if (groups.length < requiredGroups.length * 2) {
+    errors.push(`${asset} does not join enough split paths into logical coloring regions`);
+  }
+  if (svg.includes('<image') || svg.includes('preserveAspectRatio="none"')) {
+    errors.push(`${asset} must remain editable vector art without distortion`);
+  }
+  if (!svg.includes('data-fixed="true" pointer-events="none"')) {
+    errors.push(`${asset} fixed outlines and facial details must pass taps through`);
+  }
+}
+for (const color of ['#8B5CF6', '#17B7D6', '#8B5A2B', '#D8A17D']) {
+  if (!coloringSource.includes(color)) errors.push(`Coloring palette is missing ${color}`);
+}
+if (!coloringSource.includes("id: 'characters'") || !coloringSource.includes("id: 'all'")) {
+  errors.push('Coloring game must expose All Pictures and Characters filters');
 }
 
 const animals = fs.readFileSync(path.join(root, 'js/data/animals.js'), 'utf8');

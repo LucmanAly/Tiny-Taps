@@ -138,8 +138,11 @@ three foods, and uses forgiving drag completion for the correct food.
 
 ### Coloring
 
-`js/games/coloring.js` embeds hand-built SVG pages with large `data-region`
-targets. Palette taps fill regions. Completed SVG snapshots are retained in a
+`js/games/coloring.js` mixes hand-built and cleaned external SVG pages with
+large `data-region` targets. Repeated region names join split vector paths into
+one logical fill (for example, every piece of a leg changes together). A
+persistent in-game filter switches between All Pictures and Characters.
+Palette taps fill regions, and completed SVG snapshots are retained in a
 bounded local gallery.
 
 ### Matching

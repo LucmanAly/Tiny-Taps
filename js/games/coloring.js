@@ -8,6 +8,7 @@ import { S as TXT } from '../data/strings.js';
 
 // Finished pictures, saved as colored SVG snapshots.
 const GALLERY_KEY = 'tinytaps-gallery';
+const CATEGORY_KEY = 'tinytaps-coloring-category';
 
 function savedPictures() {
   try { return JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]'); }
@@ -21,7 +22,20 @@ function savePicture(svg) {
   try { localStorage.setItem(GALLERY_KEY, JSON.stringify(list)); } catch (e) { /* full */ }
 }
 
-const PALETTE = ['#0062E0', '#FF8800', '#75D018', '#FFDE00', '#FF3B94', '#FFFFFF', '#BD0D19', '#000000'];
+const PALETTE = [
+  { color: '#0062E0', name: 'Blue' },
+  { color: '#FF8800', name: 'Orange' },
+  { color: '#75D018', name: 'Green' },
+  { color: '#FFDE00', name: 'Yellow' },
+  { color: '#FF3B94', name: 'Pink' },
+  { color: '#FFFFFF', name: 'White' },
+  { color: '#BD0D19', name: 'Red' },
+  { color: '#000000', name: 'Black' },
+  { color: '#8B5CF6', name: 'Purple' },
+  { color: '#17B7D6', name: 'Cyan' },
+  { color: '#8B5A2B', name: 'Brown' },
+  { color: '#D8A17D', name: 'Kashmiri skin tone' },
+];
 const LINE = '#3a3357';
 const SW = 5;
 
@@ -51,19 +65,53 @@ const PAGES = [
     id: 'daddy-shark', name: 'Daddy Shark',
     src: 'assets/art/daddy-shark-coloring.svg',
     sound: 'assets/audio/animals/daddy_shark.mp3',
+    category: 'characters',
   },
   {
     id: 'motu', name: 'character',
     src: 'assets/art/motu-coloring.svg',
+    category: 'characters',
   },
   {
     id: 'john-the-don', name: 'character',
     src: 'assets/art/john-the-don-coloring.svg',
+    category: 'characters',
   },
   {
     id: 'patlu', name: 'character',
     src: 'assets/art/patlu-coloring.svg',
     portrait: true,
+    category: 'characters',
+  },
+  {
+    id: 'family-man', name: 'character',
+    src: 'assets/art/family-man-coloring.svg',
+    portrait: true,
+    category: 'characters',
+  },
+  {
+    id: 'family-woman', name: 'character',
+    src: 'assets/art/family-woman-coloring.svg',
+    portrait: true,
+    category: 'characters',
+  },
+  {
+    id: 'family-baby-camera', name: 'character',
+    src: 'assets/art/family-baby-camera-coloring.svg',
+    portrait: true,
+    category: 'characters',
+  },
+  {
+    id: 'family-boy', name: 'character',
+    src: 'assets/art/family-boy-coloring.svg',
+    portrait: true,
+    category: 'characters',
+  },
+  {
+    id: 'chingam', name: 'character',
+    src: 'assets/art/chingam-coloring.svg',
+    portrait: true,
+    category: 'characters',
   },
   {
     id: 'frog', name: 'frog',
@@ -331,13 +379,34 @@ const ICON = `
   </g>
 </svg>`;
 
+const CATEGORY_OPTIONS = [
+  { id: 'all', label: 'All Pictures', icon: '🎨' },
+  { id: 'characters', label: 'Characters', icon: '🙂' },
+];
+
+function savedCategory() {
+  try {
+    const saved = localStorage.getItem(CATEGORY_KEY);
+    return CATEGORY_OPTIONS.some(option => option.id === saved) ? saved : 'all';
+  } catch (_) {
+    return 'all';
+  }
+}
+
+function pagesFor(category) {
+  return category === 'characters'
+    ? PAGES.filter(page => page.category === 'characters')
+    : PAGES;
+}
+
 function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt } = ctx;
   let alive = true;
-  let selected = PALETTE[3];
+  let selected = PALETTE[3].color;
   let touched = false;
   let pageRequest = 0;
-  const nextPage = cycler(PAGES);
+  let category = savedCategory();
+  let nextPage = cycler(pagesFor(category));
 
   const area = document.createElement('div');
   area.className = 'color-stage';
@@ -350,12 +419,13 @@ function start(ctx) {
   stage.appendChild(bar);
 
   const dots = [];
-  PALETTE.forEach(c => {
+  PALETTE.forEach(({ color, name }) => {
     const d = document.createElement('button');
     d.className = 'palette-dot';
-    d.style.background = `radial-gradient(circle at 35% 30%, ${c}cc, ${c})`;
+    d.style.background = `radial-gradient(circle at 35% 30%, ${color}cc, ${color})`;
+    d.setAttribute('aria-label', name);
     d.addEventListener('pointerdown', () => {
-      selected = c;
+      selected = color;
       dots.forEach(x => x.classList.remove('selected'));
       d.classList.add('selected');
       audio.pop();
@@ -392,6 +462,68 @@ function start(ctx) {
     showGallery();
   });
   stage.appendChild(galleryBtn);
+
+  const config = document.createElement('div');
+  config.className = 'coloring-config';
+  const configButton = document.createElement('button');
+  configButton.className = 'words-config-button';
+  configButton.type = 'button';
+  configButton.textContent = '⚙';
+  configButton.setAttribute('aria-label', 'Choose coloring pictures');
+  configButton.setAttribute('aria-expanded', 'false');
+  const categoryPanel = document.createElement('div');
+  categoryPanel.className = 'words-category-panel';
+  categoryPanel.hidden = true;
+  const categoryButtons = new Map();
+  for (const option of CATEGORY_OPTIONS) {
+    const button = document.createElement('button');
+    button.className = 'words-category-button';
+    button.type = 'button';
+    button.dataset.category = option.id;
+    button.innerHTML = `<span aria-hidden="true">${option.icon}</span><span>${option.label}</span>`;
+    categoryPanel.appendChild(button);
+    categoryButtons.set(option.id, button);
+  }
+  config.appendChild(categoryPanel);
+  config.appendChild(configButton);
+  stage.appendChild(config);
+
+  function setConfigOpen(open) {
+    categoryPanel.hidden = !open;
+    configButton.setAttribute('aria-expanded', String(open));
+    config.classList.toggle('open', open);
+  }
+
+  function renderCategoryButtons() {
+    for (const [id, button] of categoryButtons) {
+      const isSelected = id === category;
+      button.classList.toggle('selected', isSelected);
+      button.setAttribute('aria-pressed', String(isSelected));
+    }
+  }
+
+  function selectCategory(nextCategory) {
+    if (!CATEGORY_OPTIONS.some(option => option.id === nextCategory) || nextCategory === category) {
+      setConfigOpen(false);
+      return;
+    }
+    category = nextCategory;
+    try { localStorage.setItem(CATEGORY_KEY, category); } catch (_) { /* optional */ }
+    nextPage = cycler(pagesFor(category));
+    renderCategoryButtons();
+    setConfigOpen(false);
+    audio.pop();
+    newPage(false);
+  }
+
+  for (const eventName of ['pointerdown', 'pointerup', 'pointercancel']) {
+    config.addEventListener(eventName, event => event.stopPropagation());
+  }
+  configButton.addEventListener('click', () => setConfigOpen(categoryPanel.hidden));
+  for (const [id, button] of categoryButtons) {
+    button.addEventListener('click', () => selectCategory(id));
+  }
+  renderCategoryButtons();
 
   function showGallery() {
     const pics = savedPictures();

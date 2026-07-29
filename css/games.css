@@ -404,19 +404,19 @@
 .palette-row {
   flex: none;
   display: flex;
-  gap: 2vmin;
+  gap: clamp(6px, 1.2vmin, 10px);
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  width: min(100%, 760px);
   padding: 1.6vmin 2vmin max(2.6vmin, env(safe-area-inset-bottom));
 }
 .palette-dot {
-  width: 9.5vmin;
-  height: 9.5vmin;
-  min-width: 52px;
-  min-height: 52px;
+  width: clamp(46px, 8.2vmin, 66px);
+  height: clamp(46px, 8.2vmin, 66px);
+  flex: 0 0 clamp(46px, 8.2vmin, 66px);
   border-radius: 50%;
-  border: 5px solid #fff;
+  border: 4px solid #fff;
   box-shadow: 0 4px 0 rgba(58,51,87,0.18);
   cursor: pointer;
   transition: transform 0.15s;
@@ -437,6 +437,17 @@
   justify-content: center;
 }
 .done-btn svg { width: 55%; height: 55%; }
+.coloring-config {
+  position: absolute;
+  top: max(1.5vmin, env(safe-area-inset-top));
+  right: calc(max(1.5vmin, env(safe-area-inset-right)) + max(21vmin, 122px));
+  z-index: 510;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 10px;
+}
+.coloring-config .words-category-panel { width: min(64vw, 240px); }
 
 /* ---------- bubbles ---------- */
 .bubble-canvas {

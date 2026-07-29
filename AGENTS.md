@@ -30,7 +30,7 @@ The current registry contains 18 games:
 5. Counting — tap animals in order and hear number words; `js/games/counting.js` `start`.
 6. Puzzle Fit — fit animal silhouettes or missing picture pieces; `js/games/puzzle.js` `start`.
 7. Feed Me — drag the correct food to an animal; `js/games/feedme.js` `start`.
-8. Coloring — fill large picture regions and save finished pages; `js/games/coloring.js` `start`.
+8. Coloring — choose All Pictures or Characters, fill grouped picture regions, and save finished pages; `js/games/coloring.js` `start`.
 9. Matching — find the matching animal-card pair; `js/games/memory.js` `start`.
 10. Music — free-play rainbow xylophone; `js/games/music.js` `start`.
 11. Bubbles — free-play Canvas bubble popping; `js/games/bubbles.js` `start`.
