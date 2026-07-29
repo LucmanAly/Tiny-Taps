@@ -24,6 +24,20 @@ for (const file of files.filter(f => f.endsWith('.js'))) {
 }
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const versionSource = fs.readFileSync(path.join(root, 'js/data/version.js'), 'utf8');
+const releaseVersion = (versionSource.match(/VERSION = '([^']+)'/) || [])[1];
+if (!releaseVersion) errors.push('Could not read displayed release version');
+else {
+  for (const asset of ['css/main.css', 'css/games.css', 'js/app.js']) {
+    if (!indexHtml.includes(`${asset}?v=${releaseVersion}`)) {
+      errors.push(`index.html does not use the ${releaseVersion} cache key for ${asset}`);
+    }
+  }
+  if (!sw.includes(`tiny-taps-v${releaseVersion}`)) {
+    errors.push(`Service-worker cache does not match displayed version ${releaseVersion}`);
+  }
+}
 const assetBlock = sw.match(/const ASSETS = \[([\s\S]*?)\];/);
 if (!assetBlock) errors.push('Could not find service-worker ASSETS list');
 else {
