@@ -1,4 +1,4 @@
-name: Generate flashcard audio
+name: Generate bundled Piper audio
 
 on:
   workflow_dispatch:
@@ -13,6 +13,8 @@ on:
       - 'scripts/animals.json'
       - 'scripts/words.json'
       - 'scripts/generate-animal-audio.mjs'
+      - 'scripts/generate-number-audio.mjs'
+      - 'js/games/numberbook.js'
 
 permissions:
   contents: write
@@ -55,17 +57,19 @@ jobs:
           PIPER_VOICE: ${{ inputs.voice || 'en_US-amy-medium' }}
           PIPER_DATA_DIR: .cache/piper
           REGENERATE_AUDIO: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
-        run: npm run generate:animal-audio
+        run: |
+          npm run generate:animal-audio
+          npm run generate:number-audio
 
       - name: Commit generated audio
         run: |
-          if [ -z "$(git status --porcelain -- assets/audio/animals)" ]; then
+          if [ -z "$(git status --porcelain -- assets/audio/animals assets/audio/numbers)" ]; then
             echo "No audio files changed."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/audio/animals
-          git commit -m "Regenerate animal name audio with Piper"
+          git add assets/audio/animals assets/audio/numbers
+          git commit -m "Generate bundled Piper voice audio"
           git push

@@ -6,6 +6,7 @@
   "description": "Toddler learning mini-games PWA",
   "scripts": {
     "check": "node scripts/check.mjs",
-    "generate:animal-audio": "node scripts/generate-animal-audio.mjs"
+    "generate:animal-audio": "node scripts/generate-animal-audio.mjs",
+    "generate:number-audio": "node scripts/generate-number-audio.mjs"
   }
 }

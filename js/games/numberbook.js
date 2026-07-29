@@ -71,6 +71,14 @@ export function numberSize(value) {
   return 'large';
 }
 
+export function numberVoicePath(value) {
+  return `assets/audio/numbers/${value}.mp3`;
+}
+
+function numberVoiceKey(value) {
+  return `number-book:${value}`;
+}
+
 const MODES = {
   counting: {
     title: 'Counting',
@@ -193,6 +201,11 @@ function start(ctx) {
       tab.classList.toggle('selected', selected);
       tab.setAttribute('aria-pressed', String(selected));
     }
+    // The service worker stores every clip offline. Warm the visible page and
+    // its next page into decoded audio buffers so taps begin promptly.
+    audio.load(numberVoiceKey(value), numberVoicePath(value));
+    const nextValue = mode.numbers[(index + 1) % mode.numbers.length];
+    audio.load(numberVoiceKey(nextValue), numberVoicePath(nextValue));
   }
 
   function turnPage(changePage) {
@@ -219,12 +232,15 @@ function start(ctx) {
     if (!alive || turning) return;
     const mode = MODES[modeId];
     const value = mode.numbers[index];
-    // Keep the voice and the visible page synchronized. Previously the page
-    // changed while the old number was still being spoken, which made the
-    // pronunciation appear wrong—especially for longer place values.
+    // The same bundled Piper voice is used on every device. Keep the visible
+    // page in place until its recording finishes, then turn forward.
     turning = true;
     page.classList.add('speaking');
-    Promise.resolve(speech.speakWord(numberWords(value)))
+    audio.unlock();
+    Promise.resolve(audio.load(numberVoiceKey(value), numberVoicePath(value)))
+      .then(loaded => loaded
+        ? audio.play(numberVoiceKey(value), { rate: speech.getUserRate() })
+        : Promise.resolve())
       .catch(() => {})
       .then(() => {
         if (!alive) return;
@@ -252,6 +268,7 @@ function start(ctx) {
 
   return () => {
     alive = false;
+    audio.stopPlayback();
     clearTimeout(turnTimer);
     clearTimeout(settleTimer);
     page.classList.remove('speaking');
