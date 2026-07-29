@@ -87,6 +87,11 @@ this app. UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v5.8** — replaced Number Book’s unreliable browser speech with 111 bundled
+  Piper recordings using the same natural `en_US-amy-medium` voice as My First
+  Words. Every value from 0–100 and every large place value through one
+  trillion now speaks consistently on iPhone and works offline.
+
 - **v5.7** — Number Book correction: renamed the second mode to **10s & Big
   Numbers**, added five responsive size tiers so every comma-separated value
   through one trillion fits its page, synchronized page turns with the spoken

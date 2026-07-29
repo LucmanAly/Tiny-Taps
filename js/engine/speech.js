@@ -1,6 +1,6 @@
-// Voice services for the intentionally spoken game events (including Counting
-// and Number Book taps), Settings previews, and saved parent
-// praise/encouragement clips.
+// Voice services for the intentionally spoken browser-speech events, Settings
+// previews, and saved parent praise/encouragement clips. Number Book and My
+// First Words use bundled Piper recordings instead.
 
 import { pick } from './rand.js';
 import * as audio from './audio.js';

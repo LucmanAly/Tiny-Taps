@@ -168,13 +168,11 @@ for (const icon of manifest.icons || []) {
   if (!fs.existsSync(path.join(root, icon.src))) errors.push(`Manifest references missing ${icon.src}`);
 }
 
-// Computer speech during gameplay is restricted to five game modules:
-// Counting and Number Book taps, Big/Small round start, Trace It completion,
-// and Play House interaction cues. My First Words uses bundled Piper
-// recordings instead.
+// Computer speech during gameplay is restricted to four game modules:
+// Counting taps, Big/Small round start, Trace It completion, and Play House
+// interaction cues. Number Book and My First Words use bundled Piper audio.
 const voiceGames = new Set([
   'js/games/counting.js',
-  'js/games/numberbook.js',
   'js/games/bigsmall.js',
   'js/games/trace.js',
   'js/games/playhouse.js',
@@ -194,7 +192,6 @@ for (const rel of voiceGames) {
 }
 const exactVoiceCalls = new Map([
   ['js/games/counting.js', 'speech.speakWord(WORDS[counted])'],
-  ['js/games/numberbook.js', 'speech.speakWord(numberWords(value))'],
   ['js/games/bigsmall.js', "ctx.speech.speakWord(target.size === 'big' ? 'Big' : 'Small')"],
   ['js/games/trace.js', 'speech.speakWord(current.spoken'],
   ['js/games/playhouse.js', 'speech.speakWord(word'],
@@ -209,7 +206,14 @@ const [
   { TRACE_ANIMALS },
   { nextPathPoint },
   { FIRST_WORD_CATEGORIES },
-  { COUNTING_NUMBERS, BIG_NUMBER_SEQUENCE, numberWords, formatNumber, numberSize },
+  {
+    COUNTING_NUMBERS,
+    BIG_NUMBER_SEQUENCE,
+    numberWords,
+    formatNumber,
+    numberSize,
+    numberVoicePath,
+  },
 ] = await Promise.all([
   import('../js/data/animals.js'),
   import('../js/data/trace-items.js'),
@@ -255,6 +259,21 @@ for (const [value, expected] of numberSizeChecks) {
 }
 if (!fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8').includes("title: '10s & Big Numbers'")) {
   errors.push('Number Book must use the complete 10s & Big Numbers mode name');
+}
+const numberbookSource = fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8');
+if (numberbookSource.includes('.speakWord(') || !numberbookSource.includes('audio.play(numberVoiceKey(value)')) {
+  errors.push('Number Book must play bundled Piper clips instead of browser speech');
+}
+const expectedNumberAudioValues = [...new Set([...COUNTING_NUMBERS, ...BIG_NUMBER_SEQUENCE])];
+if (expectedNumberAudioValues.length !== 111) {
+  errors.push('Number Book must have exactly 111 unique spoken values');
+}
+for (const value of expectedNumberAudioValues) {
+  const asset = numberVoicePath(value);
+  if (!fs.existsSync(path.join(root, asset))) errors.push(`Number Book is missing Piper clip ${asset}`);
+}
+if (!sw.includes('...NUMBER_AUDIO_ASSETS')) {
+  errors.push('Service worker must include the complete generated Number Book audio collection');
 }
 if (TRACE_ANIMALS.length !== ANIMALS.length) errors.push('Trace animal catalog does not cover every animal');
 const traceSignatures = new Set();

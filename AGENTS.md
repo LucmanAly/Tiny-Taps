@@ -52,10 +52,10 @@ The current registry contains 21 games:
 - Record outcomes through `ctx.recordOutcome`; do not add scores or cloud tracking.
 - Computer voice and saved parent voice are separate systems.
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
-- Computer voice uses `speech.speakWord` only in five gameplay modules:
-  Counting and Number Book tapped numbers, Big/Small round-start target,
-  Trace It completed item name, and Play House interaction cues. My First Words uses bundled Piper
-  recordings for every card and must not fall back to browser speech.
+- Computer voice uses `speech.speakWord` only in four gameplay modules:
+  Counting tapped numbers, Big/Small round-start target, Trace It completed
+  item name, and Play House interaction cues. Number Book and My First Words
+  use bundled Piper recordings and must not fall back to browser speech.
 - Those triggers contain one number/name value only. Do not add instructions or computer praise.
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
 - Authentic animal recordings and Web Audio effects are not computer narration.
