@@ -16,26 +16,29 @@ The shared context contains `stage`, `audio`, `speech`, `celebrate`, `setRepromp
 `exitToMenu`, adaptive `difficulty`, and `recordOutcome`. Game modules should use
 these services rather than reaching into the app shell.
 
-`js/games/index.js` is the authoritative registry. It currently exports 18 games.
+`js/games/index.js` is the authoritative registry. It currently exports 21 games.
 
 ## Voice and audio
 
 ### Computer voice boundary
 
-`js/engine/speech.js` deliberately separates active single-word synthesis from
+`js/engine/speech.js` deliberately separates active single-value synthesis from
 legacy narration. `speak()` returns a resolved promise without producing audio;
 old calls remain harmless so unrelated games do not need invasive rewrites.
 `speakWord()` is the only active computer-speech function during gameplay.
 
-There are exactly four gameplay modules:
+There are exactly five gameplay modules:
 
 1. `js/games/counting.js` calls `speakWord(WORDS[counted])` when an uncounted
    animal is tapped. The utterance is only `one` through `ten`.
-2. `js/games/bigsmall.js` calls `speakWord` after rendering each new round. The
+2. `js/games/numberbook.js` calls `speakWord(numberWords(value))` when its
+   large number page is tapped. The utterance is only that number, including
+   natural written forms such as `one hundred thousand` and `one trillion`.
+3. `js/games/bigsmall.js` calls `speakWord` after rendering each new round. The
    utterance is only `Big` or `Small`; idle reprompting does not repeat it.
-3. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
+4. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
    stroke. The utterance is only the completed letter, number word, shape, or animal.
-4. `js/games/playhouse.js` routes its short weather, outfit, and sibling-moment
+5. `js/games/playhouse.js` routes its short weather, outfit, and sibling-moment
    cues through one `speakWord(word)` helper.
 
 `js/games/animals.js` does not use browser speech. Every My First Words card
@@ -119,6 +122,15 @@ Correct selection fills the target and advances; difficulty controls choices.
 `js/games/counting.js` creates one to ten copies of an animal. Each animal can be
 tapped once, receives an ordinal badge, advances the large numeral, and speaks
 only that number word. A parent-gated control switches the configured maximum.
+
+### Number Book
+
+`js/games/numberbook.js` is a round-free page deck with a top mode switch.
+Counting mode contains every integer from 0 through 100. Tens & Big mode
+contains 0, each ten through 100, then decimal place values through one
+trillion. Tapping speaks the visible number and flips forward; Reset returns
+the selected mode to zero. Number formatting and English speech conversion are
+kept deterministic in the module so large values are read naturally.
 
 ### Puzzle Fit
 

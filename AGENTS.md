@@ -21,27 +21,29 @@ usable without reading.
 
 ## Shipped mini-games
 
-The current registry contains 18 games:
+The current registry contains 21 games:
 
 1. Peekaboo — reveal covered animals and hear authentic sounds; `js/games/peekaboo.js` `start`.
 2. Animal Sounds — match a recording to its animal; `js/games/sounds.js` `start`.
 3. Colors — match a displayed color to a balloon; `js/games/colors.js` `start`.
 4. Shapes — match a dotted outline to a filled shape; `js/games/shapes.js` `start`.
 5. Counting — tap animals in order and hear number words; `js/games/counting.js` `start`.
-6. Puzzle Fit — fit animal silhouettes or missing picture pieces; `js/games/puzzle.js` `start`.
-7. Feed Me — drag the correct food to an animal; `js/games/feedme.js` `start`.
-8. Coloring — choose All Pictures or Characters, fill grouped picture regions, and save finished pages; `js/games/coloring.js` `start`.
-9. Matching — find the matching animal-card pair; `js/games/memory.js` `start`.
-10. Music — free-play rainbow xylophone; `js/games/music.js` `start`.
-11. Bubbles — free-play Canvas bubble popping; `js/games/bubbles.js` `start`.
-12. Sticker Book — browse locally earned animal stickers; `js/games/stickers.js` `start`.
-13. Shadow Match — identify an animal silhouette; `js/games/shadow.js` `makeRoundGame` config.
-14. Big or Small — choose the requested size; `js/games/bigsmall.js` `makeRoundGame` config.
-15. Patterns — select the next color in a sequence; `js/games/pattern.js` `makeRoundGame` config.
-16. Sort It — drag animals to their habitat; `js/games/sort.js` `start`.
-17. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
-18. Trace It — trace letters, shapes, numbers, and animal-specific paths; `js/games/trace.js` `start`.
-19. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring; `js/games/animals.js` `start`.
+6. Number Book — page through spoken numbers from 0–100 or tens/place values through one trillion; `js/games/numberbook.js` `start`.
+7. Puzzle Fit — fit animal silhouettes or missing picture pieces; `js/games/puzzle.js` `start`.
+8. Feed Me — drag the correct food to an animal; `js/games/feedme.js` `start`.
+9. Coloring — choose All Pictures or Characters, fill grouped picture regions, and save finished pages; `js/games/coloring.js` `start`.
+10. Matching — find the matching animal-card pair; `js/games/memory.js` `start`.
+11. Music — free-play rainbow xylophone; `js/games/music.js` `start`.
+12. Bubbles — free-play Canvas bubble popping; `js/games/bubbles.js` `start`.
+13. Sticker Book — browse locally earned animal stickers; `js/games/stickers.js` `start`.
+14. Shadow Match — identify an animal silhouette; `js/games/shadow.js` `makeRoundGame` config.
+15. Big or Small — choose the requested size; `js/games/bigsmall.js` `makeRoundGame` config.
+16. Patterns — select the next color in a sequence; `js/games/pattern.js` `makeRoundGame` config.
+17. Sort It — drag animals to their habitat; `js/games/sort.js` `start`.
+18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
+19. Trace It — trace letters, shapes, numbers, and animal-specific paths; `js/games/trace.js` `start`.
+20. Play House — open-ended weather, time, outfit, movement, and sibling-moment play; `js/games/playhouse.js` `start`.
+21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring; `js/games/animals.js` `start`.
 
 ## Core conventions
 
@@ -50,11 +52,11 @@ The current registry contains 18 games:
 - Record outcomes through `ctx.recordOutcome`; do not add scores or cloud tracking.
 - Computer voice and saved parent voice are separate systems.
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
-- Computer voice uses `speech.speakWord` only in four gameplay modules:
-  Counting tapped number, Big/Small round-start target, Trace It completed item
-  name, and Play House interaction cues. My First Words uses bundled Piper
+- Computer voice uses `speech.speakWord` only in five gameplay modules:
+  Counting and Number Book tapped numbers, Big/Small round-start target,
+  Trace It completed item name, and Play House interaction cues. My First Words uses bundled Piper
   recordings for every card and must not fall back to browser speech.
-- Those triggers contain one word/name only. Do not add instructions or computer praise.
+- Those triggers contain one number/name value only. Do not add instructions or computer praise.
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
 - Authentic animal recordings and Web Audio effects are not computer narration.
 - Trace progress must be sequential movement along the active path; a tap cannot complete it.

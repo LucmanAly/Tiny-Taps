@@ -1,6 +1,6 @@
-// Voice services for the three intentionally spoken game events (Counting,
-// Big/Small round start, and Trace It completion), Settings previews, and
-// saved parent praise/encouragement clips.
+// Voice services for the intentionally spoken game events (including Counting
+// and Number Book taps), Settings previews, and saved parent
+// praise/encouragement clips.
 
 import { pick } from './rand.js';
 import * as audio from './audio.js';
@@ -107,9 +107,9 @@ export function speak() {
   return Promise.resolve();
 }
 
-// The only computer-speech channel used during play. Counting calls it for a
-// tapped number, Big/Small for the target size at round start, and Trace It
-// for the completed item's name. Settings uses it for parent-facing previews.
+// The only computer-speech channel used during play. It handles a single
+// number/name value at an intentional interaction point; Settings also uses it
+// for parent-facing previews.
 export function speakWord(text, { interrupt = true, rate = 0.92, pitch = 1.08 } = {}) {
   const rec = recordings.get(text.toLowerCase());
   if (rec) return audio.play(rec);
