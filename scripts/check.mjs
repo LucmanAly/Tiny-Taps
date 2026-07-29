@@ -209,7 +209,7 @@ const [
   { TRACE_ANIMALS },
   { nextPathPoint },
   { FIRST_WORD_CATEGORIES },
-  { COUNTING_NUMBERS, BIG_NUMBER_SEQUENCE, numberWords, formatNumber },
+  { COUNTING_NUMBERS, BIG_NUMBER_SEQUENCE, numberWords, formatNumber, numberSize },
 ] = await Promise.all([
   import('../js/data/animals.js'),
   import('../js/data/trace-items.js'),
@@ -241,6 +241,20 @@ for (const [value, expected] of spokenNumberChecks) {
 }
 if (formatNumber(1_000_000_000_000) !== '1,000,000,000,000') {
   errors.push('Number Book must group large display numbers with commas');
+}
+const numberSizeChecks = new Map([
+  [100, 'large'],
+  [1_000, 'compact'],
+  [10_000, 'small'],
+  [1_000_000, 'smaller'],
+  [100_000_000, 'tiny'],
+  [1_000_000_000_000, 'smallest'],
+]);
+for (const [value, expected] of numberSizeChecks) {
+  if (numberSize(value) !== expected) errors.push(`Number Book sizes ${value} incorrectly`);
+}
+if (!fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8').includes("title: '10s & Big Numbers'")) {
+  errors.push('Number Book must use the complete 10s & Big Numbers mode name');
 }
 if (TRACE_ANIMALS.length !== ANIMALS.length) errors.push('Trace animal catalog does not cover every animal');
 const traceSignatures = new Set();

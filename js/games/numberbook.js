@@ -61,6 +61,16 @@ export function formatNumber(value) {
   return new Intl.NumberFormat('en-US').format(value);
 }
 
+export function numberSize(value) {
+  const length = formatNumber(value).length;
+  if (length >= 14) return 'smallest';
+  if (length >= 11) return 'tiny';
+  if (length >= 8) return 'smaller';
+  if (length >= 6) return 'small';
+  if (length >= 5) return 'compact';
+  return 'large';
+}
+
 const MODES = {
   counting: {
     title: 'Counting',
@@ -69,7 +79,7 @@ const MODES = {
     numbers: COUNTING_NUMBERS,
   },
   big: {
-    title: '10s & Big',
+    title: '10s & Big Numbers',
     range: 'to 1 trillion',
     kicker: 'BIG NUMBER BOOK',
     numbers: BIG_NUMBER_SEQUENCE,
@@ -175,9 +185,7 @@ function start(ctx) {
     number.textContent = formatted;
     words.textContent = spoken;
     progress.textContent = `${index + 1} of ${mode.numbers.length}`;
-    page.dataset.size = formatted.length >= 15 ? 'smallest'
-      : formatted.length >= 11 ? 'smaller'
-        : formatted.length >= 7 ? 'small' : 'large';
+    page.dataset.size = numberSize(value);
     page.dataset.theme = String(index % 5);
     page.setAttribute('aria-label', `${spoken}. Tap to hear it and turn the page.`);
     for (const tab of tabs.children) {
@@ -211,12 +219,22 @@ function start(ctx) {
     if (!alive || turning) return;
     const mode = MODES[modeId];
     const value = mode.numbers[index];
-    speech.speakWord(numberWords(value));
-    audio.pop();
-    turnPage(() => {
-      index = (index + 1) % mode.numbers.length;
-      render();
-    });
+    // Keep the voice and the visible page synchronized. Previously the page
+    // changed while the old number was still being spoken, which made the
+    // pronunciation appear wrong—especially for longer place values.
+    turning = true;
+    page.classList.add('speaking');
+    Promise.resolve(speech.speakWord(numberWords(value)))
+      .catch(() => {})
+      .then(() => {
+        if (!alive) return;
+        page.classList.remove('speaking');
+        audio.pop();
+        turnPage(() => {
+          index = (index + 1) % mode.numbers.length;
+          render();
+        });
+      });
   });
 
   reset.addEventListener('pointerdown', event => {
@@ -236,6 +254,7 @@ function start(ctx) {
     alive = false;
     clearTimeout(turnTimer);
     clearTimeout(settleTimer);
+    page.classList.remove('speaking');
     stage.classList.remove('number-book-stage');
   };
 }

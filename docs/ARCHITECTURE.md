@@ -48,7 +48,9 @@ load remains silent rather than falling back to a device-dependent system voice.
 
 Settings uses `speakWord()` for parent-facing voice/rate previews; that is not a
 gameplay trigger. `scripts/check.mjs` enforces the permitted game modules and one
-active trigger in each.
+active trigger in each. Every synthesized utterance uses the selected voice's
+English locale, with `en-US` as a fallback while a device's voice list loads;
+this prevents number names from inheriting a non-English system locale.
 
 ### Parent voice
 
@@ -126,11 +128,13 @@ only that number word. A parent-gated control switches the configured maximum.
 ### Number Book
 
 `js/games/numberbook.js` is a round-free page deck with a top mode switch.
-Counting mode contains every integer from 0 through 100. Tens & Big mode
+Counting mode contains every integer from 0 through 100. 10s & Big Numbers mode
 contains 0, each ten through 100, then decimal place values through one
 trillion. Tapping speaks the visible number and flips forward; Reset returns
-the selected mode to zero. Number formatting and English speech conversion are
-kept deterministic in the module so large values are read naturally.
+the selected mode to zero. The page waits for that utterance to finish before
+turning, keeping the spoken and visible values synchronized. Number formatting,
+responsive size tiers, and English speech conversion are kept deterministic in
+the module so large values fit and are read naturally.
 
 ### Puzzle Fit
 
