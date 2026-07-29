@@ -79,6 +79,22 @@ function numberVoiceKey(value) {
   return `number-book:${value}`;
 }
 
+export const DEFAULT_PAGE_DELAY = 0.25;
+export const PAGE_DELAY_STORAGE_KEY = 'tinytaps-number-book-delay';
+
+export function normalizePageDelay(value) {
+  if (value === null || value === undefined || value === '') return DEFAULT_PAGE_DELAY;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_PAGE_DELAY;
+  return Math.round(Math.max(0, Math.min(2, parsed)) * 4) / 4;
+}
+
+export function pageDelayLabel(value) {
+  const delay = normalizePageDelay(value);
+  if (delay === 0) return 'Instant';
+  return `${delay.toFixed(delay % 1 ? 2 : 0)} ${delay === 1 ? 'second' : 'seconds'}`;
+}
+
 const MODES = {
   counting: {
     title: 'Counting',
@@ -115,9 +131,12 @@ function start(ctx) {
   const { stage, audio, speech, setReprompt } = ctx;
   let alive = true;
   let turning = false;
+  let nextTimer = 0;
   let turnTimer = 0;
   let settleTimer = 0;
+  let voiceRequest = 0;
   let modeId = localStorage.getItem('tinytaps-number-book-mode') === 'big' ? 'big' : 'counting';
+  let pageDelay = normalizePageDelay(localStorage.getItem(PAGE_DELAY_STORAGE_KEY));
   let index = 0;
 
   stage.classList.add('number-book-stage');
@@ -146,15 +165,50 @@ function start(ctx) {
     </div>
     <div class="number-book-footer">
       <div class="number-book-progress" aria-live="polite"></div>
-      <button class="number-book-reset" type="button" aria-label="Reset counting">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5.1 8.2A8 8 0 1 1 4 14" fill="none" stroke="currentColor"
-                stroke-width="2.3" stroke-linecap="round"/>
-          <path d="M4.7 3.8v5h5" fill="none" stroke="currentColor"
-                stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Reset
-      </button>
+      <div class="number-book-actions">
+        <button class="number-book-settings-button" type="button"
+                aria-label="Number Book settings" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9.8 3.5h4.4l.7 2.2 1.3.8 2.2-.5 2.2 3.8-1.5 1.7v1.1l1.5 1.7-2.2 3.8-2.2-.5-1.3.8-.7 2.2H9.8l-.7-2.2-1.3-.8-2.2.5-2.2-3.8 1.5-1.7v-1.1L3.4 9.8 5.6 6l2.2.5 1.3-.8z"
+                  fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor"
+                    stroke-width="1.8"/>
+          </svg>
+          Timing
+        </button>
+        <button class="number-book-reset" type="button" aria-label="Reset counting">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5.1 8.2A8 8 0 1 1 4 14" fill="none" stroke="currentColor"
+                  stroke-width="2.3" stroke-linecap="round"/>
+            <path d="M4.7 3.8v5h5" fill="none" stroke="currentColor"
+                  stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Reset
+        </button>
+      </div>
+    </div>
+    <div class="number-book-settings" hidden>
+      <div class="number-book-settings-card" role="dialog" aria-modal="true"
+           aria-labelledby="number-book-settings-title">
+        <div class="number-book-settings-heading">
+          <div>
+            <small>NUMBER BOOK</small>
+            <h2 id="number-book-settings-title">Page timing</h2>
+          </div>
+          <button class="number-book-settings-close" type="button" aria-label="Close settings">×</button>
+        </div>
+        <label class="number-book-delay-label" for="number-book-delay">
+          <span>Delay before next number</span>
+          <output class="number-book-delay-value" for="number-book-delay"></output>
+        </label>
+        <input class="number-book-delay" id="number-book-delay" type="range"
+               min="0" max="2" step="0.25">
+        <div class="number-book-delay-scale" aria-hidden="true">
+          <span>Instant</span><span>1 second</span><span>2 seconds</span>
+        </div>
+        <p>The voice starts right away. This controls when the next page appears.</p>
+      </div>
     </div>`;
 
   const tabs = stage.querySelector('.number-book-tabs');
@@ -164,6 +218,30 @@ function start(ctx) {
   const words = stage.querySelector('.number-book-words');
   const progress = stage.querySelector('.number-book-progress');
   const reset = stage.querySelector('.number-book-reset');
+  const settingsButton = stage.querySelector('.number-book-settings-button');
+  const settings = stage.querySelector('.number-book-settings');
+  const settingsCard = stage.querySelector('.number-book-settings-card');
+  const settingsClose = stage.querySelector('.number-book-settings-close');
+  const delayInput = stage.querySelector('.number-book-delay');
+  const delayValue = stage.querySelector('.number-book-delay-value');
+
+  function closeSettings() {
+    settings.hidden = true;
+    settingsButton.setAttribute('aria-expanded', 'false');
+  }
+
+  function cancelPendingTurn(stopVoice = false) {
+    clearTimeout(nextTimer);
+    clearTimeout(turnTimer);
+    clearTimeout(settleTimer);
+    nextTimer = 0;
+    turnTimer = 0;
+    settleTimer = 0;
+    voiceRequest += 1;
+    turning = false;
+    page.classList.remove('speaking', 'turning', 'arriving');
+    if (stopVoice) audio.stopPlayback();
+  }
 
   for (const [id, mode] of Object.entries(MODES)) {
     const button = document.createElement('button');
@@ -173,12 +251,16 @@ function start(ctx) {
     button.innerHTML = `<span>${mode.title}</span><small>${mode.range}</small>`;
     button.addEventListener('pointerdown', event => {
       event.stopPropagation();
-      if (!alive || turning || modeId === id) return;
+      if (!alive || modeId === id) return;
+      // Mode changes are navigation, not page turns: cancel any pending wait
+      // or voice and show the other deck immediately.
+      cancelPendingTurn(true);
+      closeSettings();
       modeId = id;
       index = 0;
       localStorage.setItem('tinytaps-number-book-mode', modeId);
       audio.chime();
-      turnPage(render);
+      render();
     });
     tabs.appendChild(button);
   }
@@ -219,10 +301,12 @@ function start(ctx) {
       changePage();
       page.classList.remove('turning');
       page.classList.add('arriving');
+      turnTimer = 0;
       settleTimer = setTimeout(() => {
         if (!alive) return;
         page.classList.remove('arriving');
         turning = false;
+        settleTimer = 0;
       }, 300);
     }, 260);
   }
@@ -232,25 +316,74 @@ function start(ctx) {
     if (!alive || turning) return;
     const mode = MODES[modeId];
     const value = mode.numbers[index];
-    // The same bundled Piper voice is used on every device. Keep the visible
-    // page in place until its recording finishes, then turn forward.
+    const tappedMode = modeId;
+    const request = ++voiceRequest;
     turning = true;
     page.classList.add('speaking');
     audio.unlock();
+
+    // Start the same bundled Piper voice immediately on every device. Speech
+    // and page timing run independently, so a long recording never forces a
+    // long wait before the next number.
     Promise.resolve(audio.load(numberVoiceKey(value), numberVoicePath(value)))
-      .then(loaded => loaded
-        ? audio.play(numberVoiceKey(value), { rate: speech.getUserRate() })
-        : Promise.resolve())
+      .then(loaded => {
+        if (!loaded || !alive || request !== voiceRequest || tappedMode !== modeId) return;
+        return audio.play(numberVoiceKey(value), { rate: speech.getUserRate() });
+      })
       .catch(() => {})
       .then(() => {
-        if (!alive) return;
+        if (!alive || request !== voiceRequest) return;
         page.classList.remove('speaking');
-        audio.pop();
-        turnPage(() => {
-          index = (index + 1) % mode.numbers.length;
-          render();
-        });
       });
+
+    // Start the 260 ms page-turn animation early enough that the new number
+    // appears at the chosen delay. "Instant" skips the animation entirely.
+    const waitBeforeTurn = pageDelay === 0 ? 0 : Math.max(0, pageDelay * 1000 - 260);
+    nextTimer = setTimeout(() => {
+      nextTimer = 0;
+      if (!alive || request !== voiceRequest || tappedMode !== modeId) return;
+      voiceRequest += 1;
+      page.classList.remove('speaking');
+      audio.pop();
+      if (pageDelay === 0) {
+        index = (index + 1) % mode.numbers.length;
+        turning = false;
+        render();
+        return;
+      }
+      turnPage(() => {
+        index = (index + 1) % mode.numbers.length;
+        render();
+      });
+    }, waitBeforeTurn);
+  });
+
+  settingsButton.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+    if (!alive) return;
+    const opening = settings.hidden;
+    settings.hidden = !opening;
+    settingsButton.setAttribute('aria-expanded', String(opening));
+    if (opening) {
+      delayInput.value = String(pageDelay);
+      delayValue.textContent = pageDelayLabel(pageDelay);
+    }
+  });
+
+  settings.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+    if (event.target === settings) closeSettings();
+  });
+  settingsCard.addEventListener('pointerdown', event => event.stopPropagation());
+  settingsClose.addEventListener('pointerdown', event => {
+    event.stopPropagation();
+    closeSettings();
+  });
+
+  delayInput.addEventListener('input', event => {
+    pageDelay = normalizePageDelay(event.target.value);
+    delayValue.textContent = pageDelayLabel(pageDelay);
+    localStorage.setItem(PAGE_DELAY_STORAGE_KEY, String(pageDelay));
   });
 
   reset.addEventListener('pointerdown', event => {
@@ -264,14 +397,14 @@ function start(ctx) {
   });
 
   setReprompt(null);
+  delayInput.value = String(pageDelay);
+  delayValue.textContent = pageDelayLabel(pageDelay);
   render();
 
   return () => {
     alive = false;
-    audio.stopPlayback();
-    clearTimeout(turnTimer);
-    clearTimeout(settleTimer);
-    page.classList.remove('speaking');
+    cancelPendingTurn(true);
+    closeSettings();
     stage.classList.remove('number-book-stage');
   };
 }

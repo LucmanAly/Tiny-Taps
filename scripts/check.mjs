@@ -213,6 +213,9 @@ const [
     formatNumber,
     numberSize,
     numberVoicePath,
+    DEFAULT_PAGE_DELAY,
+    normalizePageDelay,
+    pageDelayLabel,
   },
 ] = await Promise.all([
   import('../js/data/animals.js'),
@@ -263,6 +266,20 @@ if (!fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8').includes
 const numberbookSource = fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8');
 if (numberbookSource.includes('.speakWord(') || !numberbookSource.includes('audio.play(numberVoiceKey(value)')) {
   errors.push('Number Book must play bundled Piper clips instead of browser speech');
+}
+if (DEFAULT_PAGE_DELAY !== 0.25
+    || normalizePageDelay(null) !== DEFAULT_PAGE_DELAY
+    || normalizePageDelay(-1) !== 0
+    || normalizePageDelay(0.37) !== 0.25
+    || normalizePageDelay(5) !== 2
+    || pageDelayLabel(0) !== 'Instant'
+    || pageDelayLabel(1) !== '1 second') {
+  errors.push('Number Book page delay must support remembered quarter-second choices from Instant to 2 seconds');
+}
+if (!numberbookSource.includes('PAGE_DELAY_STORAGE_KEY')
+    || !numberbookSource.includes('cancelPendingTurn(true)')
+    || !numberbookSource.includes('render();\n    });')) {
+  errors.push('Number Book must remember page timing and switch modes without a delayed page turn');
 }
 const expectedNumberAudioValues = [...new Set([...COUNTING_NUMBERS, ...BIG_NUMBER_SEQUENCE])];
 if (expectedNumberAudioValues.length !== 111) {
