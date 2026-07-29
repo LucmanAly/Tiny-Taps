@@ -77,7 +77,7 @@ if (!daddySharkSvg.includes('data-fixed="true" pointer-events="none"')) {
 
 const motuColoringSvg = fs.readFileSync(path.join(root, motuColoringAsset), 'utf8');
 const motuRegions = [...motuColoringSvg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
-const expectedMotuRegions = ['shirt-body', 'skin', 'shirt-sleeves', 'shirt-sleeves', 'vest', 'vest', 'skin', 'shoes', 'skin', 'shoes', 'collar'];
+const expectedMotuRegions = ['pants', 'shirt-body', 'skin', 'shirt-sleeves', 'shirt-sleeves', 'vest', 'vest', 'pants', 'skin', 'shoes', 'skin', 'shoes', 'collar'];
 if (motuRegions.join(',') !== expectedMotuRegions.join(',')) {
   errors.push('Character SVG must expose the expected grouped coloring regions');
 }
@@ -90,7 +90,7 @@ if (!motuColoringSvg.includes('data-fixed="true" pointer-events="none"')) {
 
 const additionalColoringRegions = new Map([
   [johnColoringAsset, ['shirt-body', 'pants', 'skin', 'sleeves', 'shoes', 'shoes', 'skin', 'sleeves', 'sleeves', 'trim', 'sleeves', 'skin', 'trim', 'skin', 'skin', 'trim', 'skin', 'trim', 'sleeves']],
-  [patluColoringAsset, ['outfit', 'face', 'pants', 'pants', 'shoes', 'shoes', 'glasses-lenses', 'glasses-lenses', 'collar']],
+  [patluColoringAsset, ['face', 'outfit', 'face', 'pants', 'pants', 'shoes', 'shoes', 'glasses-lenses', 'glasses-lenses', 'collar']],
 ]);
 for (const [asset, expectedRegions] of additionalColoringRegions) {
   const svg = fs.readFileSync(path.join(root, asset), 'utf8');
