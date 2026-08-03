@@ -159,7 +159,7 @@ if (!coloringSource.includes("id: 'characters'") || !coloringSource.includes("id
 }
 
 const animals = fs.readFileSync(path.join(root, 'js/data/animals.js'), 'utf8');
-for (const match of animals.matchAll(/(?:art|sound):\s*['"]([^'"]+)['"]/g)) {
+for (const match of animals.matchAll(/(?:art|photo|sound):\s*['"]([^'"]+)['"]/g)) {
   if (!fs.existsSync(path.join(root, match[1]))) errors.push(`Animal data references missing ${match[1]}`);
 }
 

@@ -2,7 +2,7 @@
 // stay open with a cheer; if not they gently close again. The classic
 // first memory game.
 
-import { ANIMALS, preloadSounds } from '../data/animals.js';
+import { ANIMALS, preloadSounds, displayArt } from '../data/animals.js';
 import { groupCycler, shuffle } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
@@ -79,7 +79,7 @@ function start(ctx) {
         tile.style.animationDelay = `${i * 0.08}s`;
         // start face-up (cover already "off") so the child sees both pairs
         // briefly before they hide — the classic memory-game opening beat
-        tile.innerHTML = `<img src="${a.art}" alt=""><div class="peek-cover off">${coverSvg(COVER_COLORS[i % COVER_COLORS.length], i)}</div>`;
+        tile.innerHTML = `<img src="${displayArt(a)}" alt=""><div class="peek-cover off">${coverSvg(COVER_COLORS[i % COVER_COLORS.length], i)}</div>`;
         const cover = tile.querySelector('.peek-cover');
         covers.push(cover);
         tile.addEventListener('pointerdown', () => {

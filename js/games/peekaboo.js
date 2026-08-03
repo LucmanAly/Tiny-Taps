@@ -1,7 +1,7 @@
 // Peekaboo: every tap is a win. Tap a covered tile to reveal an animal and
 // hear its real sound.
 
-import { ANIMALS, preloadSounds } from '../data/animals.js';
+import { ANIMALS, preloadSounds, displayArt } from '../data/animals.js';
 import { groupCycler } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
@@ -67,7 +67,7 @@ function start(ctx) {
     six.forEach((a, i) => {
       const tile = document.createElement('div');
       tile.className = 'peek-tile pop-in';
-      tile.innerHTML = `<img src="${a.art}" alt=""><div class="peek-cover">${coverSvg(COVER_COLORS[i % COVER_COLORS.length])}</div>`;
+      tile.innerHTML = `<img src="${displayArt(a)}" alt=""><div class="peek-cover">${coverSvg(COVER_COLORS[i % COVER_COLORS.length])}</div>`;
       const cover = tile.querySelector('.peek-cover');
       tile.addEventListener('pointerdown', async () => {
         if (!alive || cover.classList.contains('off')) return;

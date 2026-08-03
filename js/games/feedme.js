@@ -2,7 +2,7 @@
 // bounces back; the right food is eaten once with a happy reaction, then the
 // next animal comes along.
 
-import { animal, food, DIET, FOODS } from '../data/animals.js';
+import { animal, food, DIET, FOODS, displayArt } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
@@ -97,7 +97,7 @@ function start(ctx) {
     if (!alive) return;
     fed = false;
     current = preset || animal(nextPair());
-    animalImg.src = current.art;
+    animalImg.src = displayArt(current);
     animalImg.classList.remove('munch', 'pop-in', 'slide-in');
     void animalImg.offsetWidth;
     animalImg.classList.add('slide-in');

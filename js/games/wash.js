@@ -1,7 +1,7 @@
 // Wash the Animal: rub the mud off with a finger until the animal shines.
 // A new rubbing fine-motor mechanic toddlers can't resist.
 
-import { ANIMALS, preloadSounds } from '../data/animals.js';
+import { ANIMALS, preloadSounds, displayArt } from '../data/animals.js';
 import { cycler } from '../engine/rand.js';
 import { S } from '../data/strings.js';
 
@@ -142,7 +142,7 @@ function start(ctx) {
     if (!alive) return;
     done = false;
     current = preset || nextAnimal();
-    img.src = current.art;
+    img.src = displayArt(current);
     if (current.sound) preloadSounds(audio, [current.id]);
     resize();
     if (first) speech.speak(S.washIntro(current.name), { interrupt: false });

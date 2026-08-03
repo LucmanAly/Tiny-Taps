@@ -3,7 +3,7 @@
 // celebrate.big()) — one sticker every 5 completed rounds, anywhere.
 // Purely local, no streaks shown, no pressure — just a book that fills up.
 
-import { ANIMALS, animal } from '../data/animals.js';
+import { ANIMALS, animal, displayArt } from '../data/animals.js';
 import * as speech from './speech.js';
 
 const KEY = 'tinytaps-stickers';
@@ -47,7 +47,7 @@ export function recordWin(preferredId) {
 export function showToast(a) {
   const t = document.createElement('div');
   t.className = 'sticker-toast';
-  t.innerHTML = `<img src="${a.art}" alt=""><div class="sticker-toast-star">★</div>`;
+  t.innerHTML = `<img src="${displayArt(a)}" alt=""><div class="sticker-toast-star">★</div>`;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2200);
   if (a.bookComplete) speech.speak('You collected every sticker! Amazing!');

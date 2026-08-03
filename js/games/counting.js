@@ -5,7 +5,7 @@
 // answers, no waiting on speech.
 // Parent-gated toggle (hold 2s) switches between counting to 5 and to 10.
 
-import { ANIMALS } from '../data/animals.js';
+import { ANIMALS, displayArt } from '../data/animals.js';
 import { cycler, randInt } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 
@@ -72,7 +72,7 @@ function start(ctx) {
       const item = document.createElement('div');
       item.className = 'count-item pop-in';
       item.style.animationDelay = `${i * 0.07}s`;
-      item.innerHTML = `<img src="${a.art}" alt=""><div class="count-badge"></div>`;
+      item.innerHTML = `<img src="${displayArt(a)}" alt=""><div class="count-badge"></div>`;
       item.addEventListener('pointerdown', () => {
         if (!alive || item.classList.contains('counted')) return;
         counted++;

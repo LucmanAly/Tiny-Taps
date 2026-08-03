@@ -1,6 +1,6 @@
 // Animal Sounds: hear a real recording, tap the animal that makes it.
 
-import { SOUND_ANIMALS, preloadSounds } from '../data/animals.js';
+import { SOUND_ANIMALS, preloadSounds, displayArt } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
 import { S } from '../data/strings.js';
@@ -68,7 +68,7 @@ function start(ctx) {
     options.forEach(a => {
       const card = document.createElement('button');
       card.className = 'option-card pop-in';
-      card.innerHTML = `<img src="${a.art}" alt="${a.name}">`;
+      card.innerHTML = `<img src="${displayArt(a)}" alt="${a.name}">`;
       card.addEventListener('pointerdown', async e => {
         if (!alive || busy) return;
         if (a === target) {
