@@ -1,7 +1,7 @@
 // Sticker Book: browse the animal stickers earned from big celebrations.
 // Earned stickers show in full color; the rest wait as silhouettes.
 
-import { ANIMALS } from '../data/animals.js';
+import { ANIMALS, displayArt } from '../data/animals.js';
 import { earned } from '../engine/stickers.js';
 import { S } from '../data/strings.js';
 import { addTap } from '../engine/ui.js';
@@ -40,7 +40,7 @@ function start(ctx) {
     const cell = document.createElement('div');
     cell.className = 'sticker-cell pop-in' + (have.has(a.id) ? ' earned' : '');
     cell.style.animationDelay = `${i * 0.03}s`;
-    cell.innerHTML = `<img src="${a.art}" alt="${a.name}">`;
+    cell.innerHTML = `<img src="${displayArt(a)}" alt="${a.name}">`;
     if (have.has(a.id)) {
       addTap(cell, () => {
         if (!alive) return;

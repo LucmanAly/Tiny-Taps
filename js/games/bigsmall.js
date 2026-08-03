@@ -1,7 +1,7 @@
 // Big or Small: the same animal appears twice, one huge and one tiny. At the
 // start of every round, computer voice says exactly "Big" or "Small" once.
 
-import { ANIMALS } from '../data/animals.js';
+import { ANIMALS, displayArt } from '../data/animals.js';
 import { shuffle, cycler } from '../engine/rand.js';
 import { makeRoundGame } from '../engine/roundgame.js';
 
@@ -36,7 +36,7 @@ export default makeRoundGame({
       correct: size === target.size,
       render(btn) {
         btn.classList.add('bigsmall-' + size);
-        btn.innerHTML = `<img src="${target.animal.art}" alt="">`;
+        btn.innerHTML = `<img src="${displayArt(target.animal)}" alt="">`;
       },
     }));
   },

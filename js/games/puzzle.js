@@ -2,7 +2,7 @@
 // In Shapes mode, one geometric piece is cut out of a large familiar picture;
 // the child chooses the one piece whose outline exactly fills that gap.
 
-import { ANIMALS } from '../data/animals.js';
+import { ANIMALS, displayArt } from '../data/animals.js';
 import { shuffle, pickN, cycler } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
@@ -126,7 +126,7 @@ function start(ctx) {
     four.forEach(a => {
       const slot = document.createElement('div');
       slot.className = 'puzzle-slot pop-in';
-      slot.innerHTML = `<img src="${a.art}" alt="">`;
+      slot.innerHTML = `<img src="${displayArt(a)}" alt="">`;
       board.appendChild(slot);
       slots.set(a.id, slot);
     });
@@ -134,7 +134,7 @@ function start(ctx) {
     shuffle(four).forEach(a => {
       const piece = document.createElement('div');
       piece.className = 'puzzle-piece pop-in';
-      piece.innerHTML = `<img src="${a.art}" alt="${a.name}">`;
+      piece.innerHTML = `<img src="${displayArt(a)}" alt="${a.name}">`;
       tray.appendChild(piece);
       makeDraggable(piece, {
         getTargets: () => [...slots.entries()]

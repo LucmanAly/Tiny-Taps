@@ -1,7 +1,7 @@
 // Sort It: drag each animal to its home — the farm, the water, or the
 // jungle. Categorization, the biggest untouched cognitive skill in the app.
 
-import { ANIMALS, preloadSounds } from '../data/animals.js';
+import { ANIMALS, preloadSounds, displayArt } from '../data/animals.js';
 import { cycler, pickN } from '../engine/rand.js';
 import { makeDraggable } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
@@ -104,7 +104,7 @@ function start(ctx) {
       tray.innerHTML = '';
       const item = document.createElement('div');
       item.className = 'sort-item pop-in';
-      item.innerHTML = `<img src="${current.art}" alt="${current.name}">`;
+      item.innerHTML = `<img src="${displayArt(current)}" alt="${current.name}">`;
       tray.appendChild(item);
 
       if (current.sound) preloadSounds(audio, [current.id]);
