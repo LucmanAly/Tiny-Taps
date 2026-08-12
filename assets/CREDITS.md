@@ -43,7 +43,10 @@ verbatim in `assets/new-assets/` for provenance. They are not sourced from a
 third-party stock or photography service and carry no external license terms.
 
 `js/data/animals.js` also references a matching photo (the `photo` field) for
-every roster animal that has one, and simple card/tile games display it via
-`displayArt()` in place of the hand-built SVG. Shadow Match and Puzzle Fit
-still use `art` directly — they render the image as a flat silhouette or
-dimmed outline, which only the SVGs are shaped for.
+every roster animal that has one — reusing pictures already sliced into
+`assets/animals-photos/` or `assets/words-photos/` (the latter shared with
+the My First Words game) rather than generating new art — and simple
+card/tile games display it via `displayArt()` in place of the hand-built
+SVG. Shadow Match and Puzzle Fit still use `art` directly — they render the
+image as a flat silhouette or dimmed outline, which only the SVGs are shaped
+for.
