@@ -31,7 +31,7 @@ The current registry contains 21 games:
 6. Number Book — page through spoken numbers from 0–100 or tens/place values through one trillion; `js/games/numberbook.js` `start`.
 7. Puzzle Fit — fit animal silhouettes or missing picture pieces; `js/games/puzzle.js` `start`.
 8. Feed Me — drag the correct food to an animal; `js/games/feedme.js` `start`.
-9. Coloring — pick sketches from a collapsible thumbnail sidebar (All or Characters; an overlay on phones), fill grouped regions including the parrot, and save with the separate Done button; `js/games/coloring.js` `start`.
+9. Coloring — pick sketches from a collapsible thumbnail sidebar (All or Characters; an overlay that starts closed on every screen), fill grouped regions including the parrot, and save with the separate Done button; `js/games/coloring.js` `start`.
 10. Matching — find the matching animal-card pair; `js/games/memory.js` `start`.
 11. Music — free-play rainbow xylophone; `js/games/music.js` `start`.
 12. Bubbles — free-play Canvas bubble popping; `js/games/bubbles.js` `start`.

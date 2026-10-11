@@ -158,9 +158,10 @@ three foods, and uses forgiving drag completion for the correct food.
 large `data-region` targets. Repeated region names join split vector paths into
 one logical fill (for example, every piece of a leg changes together). A
 collapsible sidebar displays every page as a thumbnail and filters All Pictures
-or Characters. On compact viewports it starts closed, overlays the canvas when
-opened from Pictures, and closes after choosing a sketch. Wider screens retain
-an inline sidebar that can also be collapsed. The compact palette has six colors
+or Characters. It starts closed on every screen, overlays the canvas when
+opened from Pictures, and closes immediately on every sketch tap (including
+the selected sketch), before loading any external SVG. Viewport changes never
+reopen the picker or shrink the drawing area. The compact palette has six colors
 per row (two rows), or one row on wide landscape screens. Selecting a page restores its unfinished colors for the current
 session; stale asynchronous loads cannot replace the latest selection. The
 user-supplied Indian ringneck parrot preserves its original vector geometry,

@@ -804,11 +804,15 @@
     max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
     max(10px, env(safe-area-inset-left));
 }
-.game-stage.coloring-game.sidebar-open {
-  grid-template-columns: clamp(140px, 19vw, 170px) minmax(0, 1fr);
-}
 .coloring-sidebar[hidden], .coloring-sidebar-backdrop[hidden] { display: none; }
-.coloring-sidebar-backdrop { display: none; }
+.coloring-sidebar-backdrop {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 610;
+  border: none;
+  background: rgba(58, 51, 87, 0.3);
+}
 .coloring-sidebar-header { display: flex; align-items: center; gap: 4px; }
 .coloring-sidebar-close {
   flex: none;
@@ -836,13 +840,19 @@
 }
 .coloring-pictures-toggle svg { width: 20px; height: 20px; fill: var(--ink); }
 .coloring-sidebar {
+  position: absolute;
+  top: calc(max(1.5vmin, env(safe-area-inset-top)) + max(9vmin, 52px) + 10px);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(10px, env(safe-area-inset-left));
+  width: min(300px, 82vw);
+  z-index: 620;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   padding: clamp(6px, 1.2vmin, 12px);
   border-radius: var(--radius);
-  background: rgba(255,255,255,0.8);
+  background: #fff;
   box-shadow: var(--shadow);
   gap: 8px;
 }
@@ -974,11 +984,9 @@
 .done-btn svg { width: 24px; height: 24px; }
 .done-btn:disabled { opacity: 0.5; cursor: default; }
 .coloring-game button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-/* On compact screens the picker slides over the canvas instead of taking
-   away drawing width. It starts closed and closes after selecting a page. */
+/* The sidebar overlays the canvas on every screen and starts closed. */
 @media (max-width: 760px), (max-height: 500px) {
-  .game-stage.coloring-game,
-  .game-stage.coloring-game.sidebar-open { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .game-stage.coloring-game { gap: 0; }
   .coloring-sidebar {
     position: absolute;
     top: calc(max(1.5vmin, env(safe-area-inset-top)) + max(9vmin, 52px) + 10px);

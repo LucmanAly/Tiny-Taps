@@ -465,7 +465,6 @@ function start(ctx) {
   sidebarButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Pictures</span>`;
   sidebarButton.setAttribute('aria-controls', sidebar.id);
   let sidebarOpen = false;
-  const compactViewport = window.matchMedia('(max-width: 760px), (max-height: 500px)');
   sidebarButton.addEventListener('click', () => {
     audio.pop();
     setSidebarOpen(!sidebarOpen);
@@ -555,9 +554,12 @@ function start(ctx) {
   function setSidebarOpen(open, restoreFocus = true) {
     sidebarOpen = open;
     sidebar.hidden = !open;
-    sidebarBackdrop.hidden = !open || !compactViewport.matches;
-    workspace.inert = open && compactViewport.matches;
-    if (open && compactViewport.matches) {
+    // Inline display also protects against older cached styles overriding hidden.
+    sidebar.style.display = open ? 'flex' : 'none';
+    sidebarBackdrop.hidden = !open;
+    sidebarBackdrop.style.display = open ? 'block' : 'none';
+    workspace.inert = open;
+    if (open) {
       sidebar.setAttribute('role', 'dialog');
       sidebar.setAttribute('aria-modal', 'true');
     } else {
@@ -566,18 +568,14 @@ function start(ctx) {
     }
     stage.classList.toggle('sidebar-open', open);
     sidebarButton.setAttribute('aria-expanded', String(open));
-    if (open && compactViewport.matches) closeSidebar.focus();
+    if (open) closeSidebar.focus();
     else if (!open && restoreFocus) sidebarButton.focus();
-  }
-
-  function handleViewportChange() {
-    setSidebarOpen(!compactViewport.matches, false);
   }
 
   function handleSidebarKey(event) {
     if (event.key === 'Escape' && sidebarOpen) setSidebarOpen(false);
-    // Keep keyboard focus inside the overlay on compact screens.
-    if (event.key === 'Tab' && sidebarOpen && compactViewport.matches) {
+    // Keep keyboard focus inside the picture picker.
+    if (event.key === 'Tab' && sidebarOpen) {
       const buttons = [...sidebar.querySelectorAll('button')];
       const first = buttons[0];
       const last = buttons[buttons.length - 1];
@@ -590,9 +588,8 @@ function start(ctx) {
       }
     }
   }
-  compactViewport.addEventListener('change', handleViewportChange);
   stage.addEventListener('keydown', handleSidebarKey);
-  setSidebarOpen(!compactViewport.matches, false);
+  setSidebarOpen(false, false);
 
   function rememberDraft() {
     const svg = pic.querySelector('svg');
@@ -638,13 +635,16 @@ function start(ctx) {
       label.textContent = page.name;
       button.append(thumbnail, label);
       button.addEventListener('click', () => {
-        if (!alive || finishing) return;
+        if (!alive) return;
+        // Close immediately on every screen, including the current sketch and
+        // while an external SVG is still loading. Resizing never reopens it.
+        setSidebarOpen(false);
+        if (finishing) return;
         if (page !== currentPage) {
           rememberDraft();
           audio.pop();
           loadPage(page);
         }
-        if (compactViewport.matches) setSidebarOpen(false);
       });
       pictureList.appendChild(button);
     }
@@ -755,7 +755,6 @@ function start(ctx) {
     ++pageRequest;
     clearTimeout(finishTimer);
     galleryOverlay?.remove();
-    compactViewport.removeEventListener('change', handleViewportChange);
     stage.removeEventListener('keydown', handleSidebarKey);
     stage.classList.remove('coloring-game', 'sidebar-open');
   };
