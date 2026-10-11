@@ -157,9 +157,16 @@ three foods, and uses forgiving drag completion for the correct food.
 `js/games/coloring.js` mixes hand-built and cleaned external SVG pages with
 large `data-region` targets. Repeated region names join split vector paths into
 one logical fill (for example, every piece of a leg changes together). A
-persistent in-game filter switches between All Pictures and Characters.
-Palette taps fill regions, and completed SVG snapshots are retained in a
-bounded local gallery.
+persistent sidebar displays every page as a thumbnail and filters All Pictures
+or Characters. Selecting a page restores its unfinished colors for the current
+session; stale asynchronous loads cannot replace the latest selection. The
+user-supplied Indian ringneck parrot preserves its original vector geometry,
+with six closed logical regions (head, body, beak, wing, tail, feet), an
+unpaintable background, and fixed ink/eye details that pass taps through.
+Palette taps fill regions. A separate Done control above the picture saves one
+completed SVG snapshot to the bounded local gallery; it is disabled until a
+region is colored and during celebration. Cleanup cancels completion timers
+and removes open gallery overlays. All page assets are precached offline.
 
 ### Matching
 

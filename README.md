@@ -13,7 +13,7 @@ nothing to buy, works offline once loaded:
 6. **Number Book** — tap one giant number to hear it and turn the page; switch between every number from 0–100 and tens/place values through one trillion, with an instant reset
 7. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
 8. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
-9. **Coloring** — choose all pages or character portraits, fill complete grouped regions, and save finished pictures to an in-app gallery
+9. **Coloring** — choose any sketch from the picture sidebar (including a parrot), fill complete grouped regions, and save with a separate Done button to an in-app gallery
 10. **Matching** — flip four cards, find the two matching friends
 11. **Music** — a rainbow xylophone; pure free play
 12. **Bubbles** — pure free play; pop the bubbles

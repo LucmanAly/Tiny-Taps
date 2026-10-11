@@ -47,3 +47,11 @@ every roster animal that has one, and simple card/tile games display it via
 `displayArt()` in place of the hand-built SVG. Shadow Match and Puzzle Fit
 still use `art` directly — they render the image as a flat silhouette or
 dimmed outline, which only the SVGs are shaped for.
+
+# Parrot Coloring Artwork
+
+`assets/art/parrot-coloring.svg` is the user-supplied Indian ringneck parrot
+vector created with Recraft. Original path geometry is retained; runtime
+metadata, the page-sized white background, and nonuniform scaling were removed.
+White paths are grouped into six tap-to-fill regions, while ink and eye details
+remain fixed.

@@ -794,74 +794,173 @@
 }
 
 /* ---------- coloring ---------- */
-.color-stage {
+.game-stage.coloring-game {
+  display: grid;
+  grid-template-columns: clamp(92px, 19vw, 170px) minmax(0, 1fr);
+  align-items: stretch;
+  justify-content: stretch;
+  gap: clamp(8px, 1.6vmin, 16px);
+  padding: calc(max(1.5vmin, env(safe-area-inset-top)) + max(9vmin, 52px) + 10px)
+    max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(10px, env(safe-area-inset-left));
+}
+.coloring-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(6px, 1.2vmin, 12px);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.8);
+  box-shadow: var(--shadow);
+  gap: 8px;
+}
+.coloring-sidebar-title {
+  margin: 2px 0;
+  text-align: center;
+  font-size: clamp(15px, 2.3vmin, 22px);
+}
+.coloring-filters { display: flex; flex-direction: column; gap: 6px; }
+.coloring-filter {
+  min-height: 44px;
+  padding: 5px 2px;
+  border: 2px solid #e8dff3;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: 700 clamp(11px, 1.8vmin, 16px) var(--font);
+  cursor: pointer;
+}
+.coloring-filter.selected { background: #eee4ff; border-color: #8b5cf6; }
+.coloring-picture-list {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 3px;
+}
+.coloring-picture-button {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 78px;
+  width: 100%;
+  padding: 5px;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: 700 clamp(11px, 1.8vmin, 16px) var(--font);
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.coloring-picture-button.selected { border-color: #8b5cf6; background: #f5efff; }
+.coloring-thumbnail { display: block; width: 100%; height: clamp(58px, 10vmin, 108px); }
+.coloring-thumbnail img, .coloring-thumbnail svg {
+  width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none;
+}
+.coloring-picture-name { text-transform: capitalize; text-align: center; overflow-wrap: anywhere; }
+.coloring-workspace {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(8px, 1.6vmin, 14px);
+  min-width: 0;
+  min-height: 0;
+}
+.coloring-toolbar { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.coloring-page-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(14px, 2.6vmin, 26px);
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+.coloring-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.color-stage {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 .color-pic {
-  /* Mobile-first: fill nearly the whole width of a phone, capped by the
-     vertical room left over from the palette row. */
-  width: min(94vw, 66vh, 700px);
+  width: 100%;
+  height: 100%;
+  max-width: 740px;
+  min-height: 0;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.2vmin;
+  padding: clamp(6px, 1.2vmin, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
-.color-pic.portrait-page {
-  width: min(94vw, 45vh, 620px);
-}
-.color-pic svg { width: 100%; height: auto; display: block; }
+.color-pic svg { width: 100%; height: 100%; display: block; }
 .color-pic [data-region] { cursor: pointer; }
 .palette-row {
-  flex: none;
   display: flex;
   gap: clamp(6px, 1.2vmin, 10px);
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   width: min(100%, 760px);
-  padding: 1.6vmin 2vmin max(2.6vmin, env(safe-area-inset-bottom));
+  justify-self: center;
+  padding: 8px 4px;
 }
 .palette-dot {
-  width: clamp(46px, 8.2vmin, 66px);
-  height: clamp(46px, 8.2vmin, 66px);
-  flex: 0 0 clamp(46px, 8.2vmin, 66px);
+  width: clamp(44px, 7vmin, 60px);
+  height: clamp(44px, 7vmin, 60px);
+  flex: 0 0 clamp(44px, 7vmin, 60px);
   border-radius: 50%;
   border: 4px solid #fff;
   box-shadow: 0 4px 0 rgba(58,51,87,0.18);
   cursor: pointer;
   transition: transform 0.15s;
 }
-.palette-dot.selected {
-  transform: scale(1.22);
-  border-color: var(--ink);
-}
+.palette-dot.selected { transform: scale(1.12); border-color: var(--ink); }
 .done-btn {
-  width: 12vmin;
-  height: 12vmin;
-  min-width: 60px;
-  min-height: 60px;
-  border-radius: 50%;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 16px;
   background: var(--grass);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  font-size: clamp(15px, 2.2vmin, 20px);
+  font-weight: 800;
 }
-.done-btn svg { width: 55%; height: 55%; }
-.coloring-config {
-  position: absolute;
-  top: max(1.5vmin, env(safe-area-inset-top));
-  right: calc(max(1.5vmin, env(safe-area-inset-right)) + max(21vmin, 122px));
-  z-index: 510;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  gap: 10px;
+.done-btn svg { width: 24px; height: 24px; }
+.done-btn:disabled { opacity: 0.5; cursor: default; }
+.coloring-game button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+@media (max-width: 480px) {
+  .game-stage.coloring-game { grid-template-columns: 86px minmax(0, 1fr); gap: 8px; }
+  .coloring-sidebar { padding: 5px; }
+  .coloring-actions { gap: 6px; }
+  .done-btn { padding: 8px 10px; gap: 4px; }
 }
-.coloring-config .words-category-panel { width: min(64vw, 240px); }
+@media (max-width: 360px) {
+  .game-stage.coloring-game { grid-template-columns: 76px minmax(0, 1fr); }
+  .coloring-page-title { font-size: 12px; }
+  .done-btn { padding: 8px; }
+  .done-btn svg { width: 18px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .coloring-workspace { gap: 6px; }
+  .coloring-page-title { font-size: 16px; }
+  .palette-row { gap: 6px; padding: 4px; }
+  .palette-dot { width: 44px; height: 44px; flex-basis: 44px; }
+}
 
 /* ---------- bubbles ---------- */
 .bubble-canvas {
@@ -1128,18 +1227,16 @@
 
 /* ---------- coloring gallery ---------- */
 .gallery-btn {
-  position: absolute;
-  top: max(1.5vmin, env(safe-area-inset-top));
-  right: calc(max(1.5vmin, env(safe-area-inset-right)) + max(10.5vmin, 61px));
-  width: 9vmin;
-  height: 9vmin;
-  min-width: 52px;
-  min-height: 52px;
-  border-radius: 50%;
+  position: static;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 500;
 }
 .gallery-btn svg { width: 58%; height: 58%; }
 .gallery-overlay {

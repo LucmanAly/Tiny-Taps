@@ -70,6 +70,7 @@ const externalColoringAssets = [
   johnColoringAsset,
   patluColoringAsset,
   ...uploadedColoringAssets,
+  'assets/art/parrot-coloring.svg',
 ];
 for (const required of externalColoringAssets) {
   if (!sw.includes(`'${required}'`)) errors.push(`Service worker does not cache ${required}`);
@@ -151,6 +152,27 @@ for (const [asset, requiredGroups] of uploadedColoringGroups) {
     errors.push(`${asset} fixed outlines and facial details must pass taps through`);
   }
 }
+// Uploaded parrot must remain paintable vector art with closed, separate parts.
+const parrotSvg = fs.readFileSync(path.join(root, 'assets/art/parrot-coloring.svg'), 'utf8');
+const parrotPaths = [...parrotSvg.matchAll(/<path\b[^>]*>/g)].map(match => match[0]);
+const parrotGroups = new Set();
+for (const element of parrotPaths) {
+  const region = element.match(/data-region="([^"]+)"/);
+  if (region) {
+    parrotGroups.add(region[1]);
+    const data = (element.match(/\bd="([^"]+)"/) || [])[1];
+    if (!data || !/[zZ]\s*$/.test(data)) errors.push('Parrot coloring paths must be closed');
+  } else if (!element.includes('data-fixed="true" pointer-events="none"')) {
+    errors.push('Parrot fixed ink and eye details must pass taps through');
+  }
+}
+if ([...parrotGroups].sort().join(',') !== 'beak,body,feet,head,tail,wing') {
+  errors.push('Parrot must expose its six separate coloring regions');
+}
+if (parrotSvg.includes('<image') || parrotSvg.includes('preserveAspectRatio="none"')) {
+  errors.push('Parrot must remain editable vector art without distortion');
+}
+
 for (const color of ['#8B5CF6', '#17B7D6', '#8B5A2B', '#D8A17D']) {
   if (!coloringSource.includes(color)) errors.push(`Coloring palette is missing ${color}`);
 }

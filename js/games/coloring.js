@@ -2,7 +2,6 @@
 // Pages are hand-sketched-style line art with ~5 chunky regions each so
 // toddlers get an engaging picture without fiddly detail.
 
-import { cycler } from '../engine/rand.js';
 import { animal } from '../data/animals.js';
 import { S as TXT } from '../data/strings.js';
 
@@ -62,53 +61,57 @@ function loadExternalSvg(src) {
 // their own).
 const PAGES = [
   {
+    id: 'parrot', name: 'Parrot',
+    src: 'assets/art/parrot-coloring.svg',
+  },
+  {
     id: 'daddy-shark', name: 'Daddy Shark',
     src: 'assets/art/daddy-shark-coloring.svg',
     sound: 'assets/audio/animals/daddy_shark.mp3',
     category: 'characters',
   },
   {
-    id: 'motu', name: 'character',
+    id: 'motu', name: 'Motu',
     src: 'assets/art/motu-coloring.svg',
     category: 'characters',
   },
   {
-    id: 'john-the-don', name: 'character',
+    id: 'john-the-don', name: 'John the Don',
     src: 'assets/art/john-the-don-coloring.svg',
     category: 'characters',
   },
   {
-    id: 'patlu', name: 'character',
+    id: 'patlu', name: 'Patlu',
     src: 'assets/art/patlu-coloring.svg',
     portrait: true,
     category: 'characters',
   },
   {
-    id: 'family-man', name: 'character',
+    id: 'family-man', name: 'Dad',
     src: 'assets/art/family-man-coloring.svg',
     portrait: true,
     category: 'characters',
   },
   {
-    id: 'family-woman', name: 'character',
+    id: 'family-woman', name: 'Mom',
     src: 'assets/art/family-woman-coloring.svg',
     portrait: true,
     category: 'characters',
   },
   {
-    id: 'family-baby-camera', name: 'character',
+    id: 'family-baby-camera', name: 'Baby',
     src: 'assets/art/family-baby-camera-coloring.svg',
     portrait: true,
     category: 'characters',
   },
   {
-    id: 'family-boy', name: 'character',
+    id: 'family-boy', name: 'Boy',
     src: 'assets/art/family-boy-coloring.svg',
     portrait: true,
     category: 'characters',
   },
   {
-    id: 'chingam', name: 'character',
+    id: 'chingam', name: 'Chingam',
     src: 'assets/art/chingam-coloring.svg',
     portrait: true,
     category: 'characters',
@@ -380,7 +383,7 @@ const ICON = `
 </svg>`;
 
 const CATEGORY_OPTIONS = [
-  { id: 'all', label: 'All Pictures', icon: '🎨' },
+  { id: 'all', label: 'All', icon: '🎨' },
   { id: 'characters', label: 'Characters', icon: '🙂' },
 ];
 
@@ -404,10 +407,47 @@ function start(ctx) {
   let alive = true;
   let selected = PALETTE[3].color;
   let touched = false;
+  let finishing = false;
   let pageRequest = 0;
+  let finishTimer = null;
+  let galleryOverlay = null;
   let category = savedCategory();
-  let nextPage = cycler(pagesFor(category));
+  let currentPage = pagesFor(category)[0];
+  const drafts = new Map();
 
+  stage.classList.add('coloring-game');
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'coloring-sidebar';
+  sidebar.setAttribute('aria-label', 'Choose a coloring picture');
+  const heading = document.createElement('h2');
+  heading.className = 'coloring-sidebar-title';
+  heading.textContent = 'Pictures';
+  const filters = document.createElement('div');
+  filters.className = 'coloring-filters';
+  const categoryButtons = new Map();
+  for (const option of CATEGORY_OPTIONS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'coloring-filter';
+    button.dataset.category = option.id;
+    button.textContent = option.label;
+    button.setAttribute('aria-label', option.id === 'all' ? 'All pictures' : 'Characters');
+    button.addEventListener('click', () => selectCategory(option.id));
+    filters.appendChild(button);
+    categoryButtons.set(option.id, button);
+  }
+  const pictureList = document.createElement('div');
+  pictureList.className = 'coloring-picture-list';
+  sidebar.append(heading, filters, pictureList);
+
+  const workspace = document.createElement('div');
+  workspace.className = 'coloring-workspace';
+  const toolbar = document.createElement('div');
+  toolbar.className = 'coloring-toolbar';
+  const pageTitle = document.createElement('h2');
+  pageTitle.className = 'coloring-page-title';
+  const actions = document.createElement('div');
+  actions.className = 'coloring-actions';
   const area = document.createElement('div');
   area.className = 'color-stage';
   const pic = document.createElement('div');
@@ -415,168 +455,217 @@ function start(ctx) {
   area.appendChild(pic);
   const bar = document.createElement('div');
   bar.className = 'palette-row';
-  stage.appendChild(area);
-  stage.appendChild(bar);
+  bar.setAttribute('role', 'group');
+  bar.setAttribute('aria-label', 'Colors');
+  workspace.append(toolbar, area, bar);
+  stage.append(sidebar, workspace);
 
   const dots = [];
   PALETTE.forEach(({ color, name }) => {
-    const d = document.createElement('button');
-    d.className = 'palette-dot';
-    d.style.background = `radial-gradient(circle at 35% 30%, ${color}cc, ${color})`;
-    d.setAttribute('aria-label', name);
-    d.addEventListener('pointerdown', () => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'palette-dot';
+    dot.style.background = `radial-gradient(circle at 35% 30%, ${color}cc, ${color})`;
+    dot.setAttribute('aria-label', name);
+    dot.setAttribute('aria-pressed', String(color === selected));
+    dot.addEventListener('click', () => {
       selected = color;
-      dots.forEach(x => x.classList.remove('selected'));
-      d.classList.add('selected');
+      dots.forEach(button => {
+        const active = button === dot;
+        button.classList.toggle('selected', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
       audio.pop();
     });
-    bar.appendChild(d);
-    dots.push(d);
+    bar.appendChild(dot);
+    dots.push(dot);
   });
   dots[3].classList.add('selected');
 
+  // Completion is a separate action above the picture, never a palette item.
   const done = document.createElement('button');
+  done.type = 'button';
   done.className = 'big-btn done-btn';
-  done.innerHTML = CHECK_ICON;
-  done.addEventListener('pointerdown', async () => {
-    if (!alive || !touched) return;
+  done.innerHTML = `${CHECK_ICON}<span>Done</span>`;
+  done.setAttribute('aria-label', 'Done coloring, save picture');
+  done.disabled = true;
+  done.addEventListener('click', () => {
+    if (!alive || !touched || finishing) return;
     const svg = pic.querySelector('svg');
-    if (svg) savePicture(svg.outerHTML);
+    if (!svg) return;
+    savePicture(svg.outerHTML);
+    finishing = true;
+    done.disabled = true;
     celebrate.big({ quick: false });
-    setTimeout(() => newPage(false), 1000);
+    const completedPage = currentPage;
+    finishTimer = setTimeout(() => {
+      finishTimer = null;
+      if (!alive) return;
+      drafts.delete(completedPage.id);
+      finishing = false;
+      // Keep the chosen page selected; the sidebar is how children choose another.
+      loadPage(completedPage);
+    }, 1000);
   });
-  bar.appendChild(done);
 
-  // Gallery of saved masterpieces (kids love revisiting their own work).
   const galleryBtn = document.createElement('button');
+  galleryBtn.type = 'button';
   galleryBtn.className = 'big-btn gallery-btn';
+  galleryBtn.setAttribute('aria-label', 'View saved pictures');
   galleryBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#3a3357" stroke-width="2.2"/>
       <circle cx="9" cy="10" r="2" fill="#3a3357"/>
       <path d="M5 17 L10 12.5 L13.5 15.5 L16.5 13 L19 15.5" fill="none" stroke="#3a3357" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
-  galleryBtn.addEventListener('pointerdown', () => {
+  galleryBtn.addEventListener('click', () => {
     if (!alive) return;
     audio.pop();
     showGallery();
   });
-  stage.appendChild(galleryBtn);
+  actions.append(galleryBtn, done);
+  toolbar.append(pageTitle, actions);
 
-  const config = document.createElement('div');
-  config.className = 'coloring-config';
-  const configButton = document.createElement('button');
-  configButton.className = 'words-config-button';
-  configButton.type = 'button';
-  configButton.textContent = '⚙';
-  configButton.setAttribute('aria-label', 'Choose coloring pictures');
-  configButton.setAttribute('aria-expanded', 'false');
-  const categoryPanel = document.createElement('div');
-  categoryPanel.className = 'words-category-panel';
-  categoryPanel.hidden = true;
-  const categoryButtons = new Map();
-  for (const option of CATEGORY_OPTIONS) {
-    const button = document.createElement('button');
-    button.className = 'words-category-button';
-    button.type = 'button';
-    button.dataset.category = option.id;
-    button.innerHTML = `<span aria-hidden="true">${option.icon}</span><span>${option.label}</span>`;
-    categoryPanel.appendChild(button);
-    categoryButtons.set(option.id, button);
-  }
-  config.appendChild(categoryPanel);
-  config.appendChild(configButton);
-  stage.appendChild(config);
-
-  function setConfigOpen(open) {
-    categoryPanel.hidden = !open;
-    configButton.setAttribute('aria-expanded', String(open));
-    config.classList.toggle('open', open);
+  function rememberDraft() {
+    const svg = pic.querySelector('svg');
+    if (svg && touched && !finishing) drafts.set(currentPage.id, svg.outerHTML);
   }
 
-  function renderCategoryButtons() {
-    for (const [id, button] of categoryButtons) {
-      const isSelected = id === category;
-      button.classList.toggle('selected', isSelected);
-      button.setAttribute('aria-pressed', String(isSelected));
+  function updateSelection() {
+    for (const button of pictureList.querySelectorAll('.coloring-picture-button')) {
+      const active = button.dataset.page === currentPage.id;
+      button.classList.toggle('selected', active);
+      button.setAttribute('aria-pressed', String(active));
     }
+    for (const [id, button] of categoryButtons) {
+      const active = id === category;
+      button.classList.toggle('selected', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+  }
+
+  function renderPictures() {
+    pictureList.replaceChildren();
+    for (const page of pagesFor(category)) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'coloring-picture-button';
+      button.dataset.page = page.id;
+      button.setAttribute('aria-label', `Color ${page.name}`);
+      const thumbnail = document.createElement('span');
+      thumbnail.className = 'coloring-thumbnail';
+      thumbnail.setAttribute('aria-hidden', 'true');
+      if (page.src) {
+        const image = document.createElement('img');
+        image.src = page.src;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.draggable = false;
+        thumbnail.appendChild(image);
+      } else {
+        thumbnail.innerHTML = page.svg;
+      }
+      const label = document.createElement('span');
+      label.className = 'coloring-picture-name';
+      label.textContent = page.name;
+      button.append(thumbnail, label);
+      button.addEventListener('click', () => {
+        if (!alive || finishing || page === currentPage) return;
+        rememberDraft();
+        audio.pop();
+        loadPage(page);
+      });
+      pictureList.appendChild(button);
+    }
+    updateSelection();
   }
 
   function selectCategory(nextCategory) {
-    if (!CATEGORY_OPTIONS.some(option => option.id === nextCategory) || nextCategory === category) {
-      setConfigOpen(false);
-      return;
-    }
+    if (!alive || finishing || category === nextCategory) return;
+    rememberDraft();
     category = nextCategory;
     try { localStorage.setItem(CATEGORY_KEY, category); } catch (_) { /* optional */ }
-    nextPage = cycler(pagesFor(category));
-    renderCategoryButtons();
-    setConfigOpen(false);
+    renderPictures();
     audio.pop();
-    newPage(false);
+    if (!pagesFor(category).includes(currentPage)) loadPage(pagesFor(category)[0]);
   }
-
-  for (const eventName of ['pointerdown', 'pointerup', 'pointercancel']) {
-    config.addEventListener(eventName, event => event.stopPropagation());
-  }
-  configButton.addEventListener('click', () => setConfigOpen(categoryPanel.hidden));
-  for (const [id, button] of categoryButtons) {
-    button.addEventListener('click', () => selectCategory(id));
-  }
-  renderCategoryButtons();
 
   function showGallery() {
+    if (galleryOverlay) return;
     const pics = savedPictures();
-    const overlay = document.createElement('div');
-    overlay.className = 'gallery-overlay';
+    galleryOverlay = document.createElement('div');
+    galleryOverlay.className = 'gallery-overlay';
+    galleryOverlay.setAttribute('role', 'dialog');
+    galleryOverlay.setAttribute('aria-modal', 'true');
+    galleryOverlay.setAttribute('aria-label', 'Saved coloring pictures');
     const cells = pics.length
-      ? pics.slice().reverse().map(p2 => `<div class="gallery-cell">${p2.svg}</div>`).join('')
-      : '<div class="gallery-empty">Color a picture and tap the check to save it here!</div>';
-    overlay.innerHTML = `
+      ? pics.slice().reverse().map(picture => `<div class="gallery-cell">${picture.svg}</div>`).join('')
+      : '<div class="gallery-empty">Color a picture and tap Done to save it here!</div>';
+    galleryOverlay.innerHTML = `
       <div class="gallery-panel">
         <div class="gallery-grid">${cells}</div>
-        <button class="big-btn gallery-close">✕</button>
+        <button type="button" class="big-btn gallery-close" aria-label="Close saved pictures">✕</button>
       </div>`;
-    document.body.appendChild(overlay);
+    document.body.appendChild(galleryOverlay);
     speech.speak(TXT.galleryIntro);
-    overlay.querySelector('.gallery-close').addEventListener('pointerdown', () => overlay.remove());
+    const close = galleryOverlay.querySelector('.gallery-close');
+    close.addEventListener('click', () => {
+      galleryOverlay.remove();
+      galleryOverlay = null;
+      galleryBtn.focus();
+    });
+    close.focus();
   }
 
-  async function newPage(first) {
+  async function loadPage(page, first = false) {
     if (!alive) return;
     const request = ++pageRequest;
+    currentPage = page;
     touched = false;
-    const page = nextPage();
-    let svgText = page.svg;
-    if (page.src) {
+    done.disabled = true;
+    pageTitle.textContent = page.name;
+    updateSelection();
+    pic.replaceChildren();
+    pic.setAttribute('aria-busy', 'true');
+    let svgText = drafts.get(page.id) || page.svg;
+    if (!svgText && page.src) {
       try {
         svgText = await loadExternalSvg(page.src);
       } catch (error) {
+        if (!alive || request !== pageRequest) return;
         console.error(`Coloring page ${page.src} could not be loaded.`, error);
-        svgText = PAGES.find(candidate => candidate.svg)?.svg;
+        // Allow a failed download to be retried by reselecting the picture.
+        EXTERNAL_SVG_CACHE.delete(page.src);
+        pic.textContent = 'Picture could not load. Choose another picture, then try again.';
+        pic.removeAttribute('aria-busy');
+        return;
       }
     }
     if (!alive || request !== pageRequest || !svgText) return;
 
     pic.innerHTML = svgText;
+    pic.removeAttribute('aria-busy');
     pic.classList.toggle('portrait-page', Boolean(page.portrait));
     pic.classList.remove('pop-in');
     void pic.offsetWidth;
     pic.classList.add('pop-in');
+    touched = drafts.has(page.id);
+    done.disabled = !touched;
     const regions = [...pic.querySelectorAll('[data-region]')];
     regions.forEach(region => {
-      region.addEventListener('pointerdown', () => {
-        if (!alive) return;
+      region.addEventListener('pointerdown', event => {
+        if (!alive || finishing || request !== pageRequest) return;
+        event.preventDefault();
         const regionName = region.getAttribute('data-region');
         regions
           .filter(part => part.getAttribute('data-region') === regionName)
           .forEach(part => part.setAttribute('fill', selected));
         touched = true;
+        done.disabled = false;
         audio.sparkle();
       });
     });
     if (first) speech.speak(TXT.colorIntro(page.name), { interrupt: false });
-    // One animal on screen: let it say hello with its real sound.
     const a = animal(page.id);
     const sound = page.sound || (a && a.sound);
     if (sound) {
@@ -587,9 +676,16 @@ function start(ctx) {
     }
   }
 
+  renderPictures();
   setReprompt(() => speech.speak(TXT.colorReprompt));
-  newPage(true);
-  return () => { alive = false; };
+  loadPage(currentPage, true);
+  return () => {
+    alive = false;
+    ++pageRequest;
+    clearTimeout(finishTimer);
+    galleryOverlay?.remove();
+    stage.classList.remove('coloring-game');
+  };
 }
 
 export default {
