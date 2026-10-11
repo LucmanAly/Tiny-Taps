@@ -418,10 +418,20 @@ function start(ctx) {
   stage.classList.add('coloring-game');
   const sidebar = document.createElement('aside');
   sidebar.className = 'coloring-sidebar';
+  sidebar.id = 'coloring-picture-sidebar';
   sidebar.setAttribute('aria-label', 'Choose a coloring picture');
   const heading = document.createElement('h2');
   heading.className = 'coloring-sidebar-title';
   heading.textContent = 'Pictures';
+  const sidebarHeader = document.createElement('div');
+  sidebarHeader.className = 'coloring-sidebar-header';
+  const closeSidebar = document.createElement('button');
+  closeSidebar.type = 'button';
+  closeSidebar.className = 'coloring-sidebar-close';
+  closeSidebar.textContent = '×';
+  closeSidebar.setAttribute('aria-label', 'Close picture sidebar');
+  closeSidebar.addEventListener('click', () => setSidebarOpen(false));
+  sidebarHeader.append(heading, closeSidebar);
   const filters = document.createElement('div');
   filters.className = 'coloring-filters';
   const categoryButtons = new Map();
@@ -438,12 +448,28 @@ function start(ctx) {
   }
   const pictureList = document.createElement('div');
   pictureList.className = 'coloring-picture-list';
-  sidebar.append(heading, filters, pictureList);
+  sidebar.append(sidebarHeader, filters, pictureList);
+  const sidebarBackdrop = document.createElement('button');
+  sidebarBackdrop.type = 'button';
+  sidebarBackdrop.className = 'coloring-sidebar-backdrop';
+  sidebarBackdrop.setAttribute('aria-label', 'Close picture sidebar');
+  sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 
   const workspace = document.createElement('div');
   workspace.className = 'coloring-workspace';
   const toolbar = document.createElement('div');
   toolbar.className = 'coloring-toolbar';
+  const sidebarButton = document.createElement('button');
+  sidebarButton.type = 'button';
+  sidebarButton.className = 'big-btn coloring-pictures-toggle';
+  sidebarButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Pictures</span>`;
+  sidebarButton.setAttribute('aria-controls', sidebar.id);
+  let sidebarOpen = false;
+  const compactViewport = window.matchMedia('(max-width: 760px), (max-height: 500px)');
+  sidebarButton.addEventListener('click', () => {
+    audio.pop();
+    setSidebarOpen(!sidebarOpen);
+  });
   const pageTitle = document.createElement('h2');
   pageTitle.className = 'coloring-page-title';
   const actions = document.createElement('div');
@@ -458,7 +484,7 @@ function start(ctx) {
   bar.setAttribute('role', 'group');
   bar.setAttribute('aria-label', 'Colors');
   workspace.append(toolbar, area, bar);
-  stage.append(sidebar, workspace);
+  stage.append(sidebarBackdrop, sidebar, workspace);
 
   const dots = [];
   PALETTE.forEach(({ color, name }) => {
@@ -524,7 +550,49 @@ function start(ctx) {
     showGallery();
   });
   actions.append(galleryBtn, done);
-  toolbar.append(pageTitle, actions);
+  toolbar.append(sidebarButton, pageTitle, actions);
+
+  function setSidebarOpen(open, restoreFocus = true) {
+    sidebarOpen = open;
+    sidebar.hidden = !open;
+    sidebarBackdrop.hidden = !open || !compactViewport.matches;
+    workspace.inert = open && compactViewport.matches;
+    if (open && compactViewport.matches) {
+      sidebar.setAttribute('role', 'dialog');
+      sidebar.setAttribute('aria-modal', 'true');
+    } else {
+      sidebar.removeAttribute('role');
+      sidebar.removeAttribute('aria-modal');
+    }
+    stage.classList.toggle('sidebar-open', open);
+    sidebarButton.setAttribute('aria-expanded', String(open));
+    if (open && compactViewport.matches) closeSidebar.focus();
+    else if (!open && restoreFocus) sidebarButton.focus();
+  }
+
+  function handleViewportChange() {
+    setSidebarOpen(!compactViewport.matches, false);
+  }
+
+  function handleSidebarKey(event) {
+    if (event.key === 'Escape' && sidebarOpen) setSidebarOpen(false);
+    // Keep keyboard focus inside the overlay on compact screens.
+    if (event.key === 'Tab' && sidebarOpen && compactViewport.matches) {
+      const buttons = [...sidebar.querySelectorAll('button')];
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+  compactViewport.addEventListener('change', handleViewportChange);
+  stage.addEventListener('keydown', handleSidebarKey);
+  setSidebarOpen(!compactViewport.matches, false);
 
   function rememberDraft() {
     const svg = pic.querySelector('svg');
@@ -570,10 +638,13 @@ function start(ctx) {
       label.textContent = page.name;
       button.append(thumbnail, label);
       button.addEventListener('click', () => {
-        if (!alive || finishing || page === currentPage) return;
-        rememberDraft();
-        audio.pop();
-        loadPage(page);
+        if (!alive || finishing) return;
+        if (page !== currentPage) {
+          rememberDraft();
+          audio.pop();
+          loadPage(page);
+        }
+        if (compactViewport.matches) setSidebarOpen(false);
       });
       pictureList.appendChild(button);
     }
@@ -684,7 +755,9 @@ function start(ctx) {
     ++pageRequest;
     clearTimeout(finishTimer);
     galleryOverlay?.remove();
-    stage.classList.remove('coloring-game');
+    compactViewport.removeEventListener('change', handleViewportChange);
+    stage.removeEventListener('keydown', handleSidebarKey);
+    stage.classList.remove('coloring-game', 'sidebar-open');
   };
 }
 
