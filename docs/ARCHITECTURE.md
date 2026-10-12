@@ -168,8 +168,10 @@ user-supplied Indian ringneck parrot preserves its original vector geometry,
 with six closed logical regions (head, body, beak, wing, tail, feet), an
 unpaintable background, and fixed ink/eye details that pass taps through.
 Palette taps fill regions. A separate Done control above the picture saves one
-completed SVG snapshot to the bounded local gallery; it is disabled until a
-region is colored and during celebration. Cleanup cancels completion timers
+completed SVG snapshot to the bounded local gallery, then advances to the next
+sketch in the active category after celebration (wrapping after the last one).
+The picker stays closed. Done is disabled until a region is colored and during
+celebration. Cleanup cancels completion timers
 and removes open gallery overlays. All page assets are precached offline.
 
 ### Matching

@@ -528,8 +528,11 @@ function start(ctx) {
       if (!alive) return;
       drafts.delete(completedPage.id);
       finishing = false;
-      // Keep the chosen page selected; the sidebar is how children choose another.
-      loadPage(completedPage);
+      // Continue through the visible category, wrapping after its last sketch.
+      const pages = pagesFor(category);
+      const nextIndex = (pages.indexOf(completedPage) + 1) % pages.length;
+      setSidebarOpen(false, false);
+      loadPage(pages[nextIndex]);
     }, 1000);
   });
 
