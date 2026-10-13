@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.14';
+const VERSION = 'tiny-taps-v5.15';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -58,6 +58,9 @@ const ASSETS = [
   'js/games/wash.js',
   'js/games/trace.js',
   'js/games/playhouse.js',
+  'js/games/playhouse/layout.js', 'js/games/playhouse/world.js', 'js/games/playhouse/art.js', 'js/games/playhouse/assets.js',
+  'js/games/playhouse/fx.js', 'js/games/playhouse/sky.js', 'js/games/playhouse/props.js', 'js/games/playhouse/kids.js',
+  'js/games/playhouse/home.js', 'js/games/playhouse/garden.js', 'js/games/playhouse/moments.js',
   'js/games/animals.js',
   'assets/art/dog.svg', 'assets/art/cat.svg', 'assets/art/cow.svg',
   'assets/art/duck.svg', 'assets/art/sheep.svg', 'assets/art/horse.svg',
@@ -144,6 +147,17 @@ const ASSETS = [
   // The baby's four poses, sliced from one sprite sheet.
   'assets/baby_sit.PNG', 'assets/baby_happy.PNG',
   'assets/baby_crawl.PNG', 'assets/baby_sleep.PNG',
+  // Play House poses, toys, toy box and bushes, sliced from the uploaded
+  // sheets by scripts/slice-playhouse-art.py.
+  'assets/playhouse/baby-hug.png', 'assets/playhouse/baby-look.png', 'assets/playhouse/baby-reach.png',
+  'assets/playhouse/baby-sleepy.png', 'assets/playhouse/boy-rain-carry.png', 'assets/playhouse/boy-rain-kneel.png',
+  'assets/playhouse/boy-rain-push-a.png', 'assets/playhouse/boy-rain-push-b.png', 'assets/playhouse/boy-summer-carry.png',
+  'assets/playhouse/boy-summer-kneel.png', 'assets/playhouse/boy-summer-push-a.png', 'assets/playhouse/boy-summer-push-b.png',
+  'assets/playhouse/boy-winter-carry.png', 'assets/playhouse/boy-winter-kneel.png', 'assets/playhouse/boy-winter-push-a.png',
+  'assets/playhouse/boy-winter-push-b.png', 'assets/playhouse/bush-big.png', 'assets/playhouse/bush-medium.png',
+  'assets/playhouse/bush-small.png', 'assets/playhouse/toy-ball.png', 'assets/playhouse/toy-blanket.png',
+  'assets/playhouse/toy-duck.png', 'assets/playhouse/toy-rattle.png', 'assets/playhouse/toy-teddy.png',
+  'assets/playhouse/toybox-closed.png', 'assets/playhouse/toybox-empty.png', 'assets/playhouse/toybox-open.png',
   // "Play Together" sibling moments.
   'assets/moment_teddy.PNG', 'assets/moment_crawl.PNG', 'assets/moment_hug.PNG',
   'assets/moment_rattle.PNG', 'assets/moment_peekaboo.PNG', 'assets/moment_clap.PNG',

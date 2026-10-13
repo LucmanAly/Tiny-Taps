@@ -10,11 +10,16 @@ usable without reading.
 - `index.html` — app shell and PWA metadata links.
 - `js/app.js` — boot, menus, game shell, settings, navigation, and shared context.
 - `js/games/` — one module per mini-game plus the registry in `js/games/index.js`.
+- `js/games/playhouse/` — Play House's world modules (camera/input, scenery art,
+  sky and weather, house, garden, toys, characters, photo wall); the entry and
+  its single voice trigger stay in `js/games/playhouse.js`.
 - `js/engine/` — audio, speech, dragging, rounds, progress, celebrations, and UI helpers.
 - `js/data/` — animal catalog, strings, trace catalogs, and displayed version.
 - `css/main.css` — global screens, chrome, settings, safe areas, and shared controls.
 - `css/games.css` — mini-game layouts and interaction visuals.
 - `assets/` — original SVG art, licensed animal audio, and credits.
+  `assets/playhouse/` holds sprites sliced from the uploaded Play House sheets
+  by `scripts/slice-playhouse-art.py`.
 - `scripts/check.mjs` — import, offline-asset, manifest, and voice-boundary checks.
 - `sw.js` — offline precache and network-first code/cache-first media strategy.
 - `docs/ARCHITECTURE.md` — deeper system and game behavior reference.
@@ -42,7 +47,7 @@ The current registry contains 21 games:
 17. Sort It — drag animals to their habitat; `js/games/sort.js` `start`.
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, and animal-specific paths; `js/games/trace.js` `start`.
-20. Play House — open-ended weather, time, outfit, movement, and sibling-moment play; `js/games/playhouse.js` `start`.
+20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, weather cloud, sun/moon day-night, bushes with animals, trampoline, pram, and a persistent ten-photo sibling wall; `js/games/playhouse.js` `start`, world in `js/games/playhouse/`.
 21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring; `js/games/animals.js` `start`.
 
 ## Core conventions
@@ -54,7 +59,9 @@ The current registry contains 21 games:
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
 - Computer voice uses `speech.speakWord` only in four gameplay modules:
   Counting tapped numbers, Big/Small round-start target, Trace It completed
-  item name, and Play House interaction cues. Number Book and My First Words
+  item name, and Play House interaction cues (one name each, routed through
+  `W.say` in `js/games/playhouse.js`; `js/games/playhouse/*` must not call
+  `speakWord` directly). Number Book and My First Words
   use bundled Piper recordings and must not fall back to browser speech.
 - Those triggers contain one number/name value only. Do not add instructions or computer praise.
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
@@ -80,6 +87,7 @@ Avoid transformed ancestors around fixed controls because they change containing
 | Shared round behavior | `docs/ARCHITECTURE.md` Game architecture | `js/engine/roundgame.js` `makeRoundGame` |
 | Trace detection or catalogs | `docs/ARCHITECTURE.md` Trace It | `js/games/trace.js` `advanceSample`, `advanceTo`; `js/data/trace-items.js` |
 | Puzzle Fit modes | `docs/ARCHITECTURE.md` Puzzle Fit | `js/games/puzzle.js` `buildAnimals`, `buildShapes` |
+| Play House world | `docs/ARCHITECTURE.md` Play House | `js/games/playhouse/world.js` `createWorld`; `kids.js`, `sky.js`, `home.js`, `garden.js` |
 | Settings or local data | `docs/ARCHITECTURE.md` Settings | `js/app.js` `showSettings`, `showProgress`; `js/engine/progress.js` |
 | Safari, PWA, or safe areas | `docs/ARCHITECTURE.md` PWA and display modes | `css/main.css`; `sw.js` `install`, `activate`, `fetch` |
 

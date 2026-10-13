@@ -529,3 +529,66 @@ export function quack() {
   osc.start(t0);
   osc.stop(t0 + 0.2);
 }
+
+/* ---------------- Play House world earcons ----------------
+   Short, soft one-shots for things the child touches in the Play House world.
+   Like the sibling-moment set above, the textured ones reuse the shared
+   white-noise buffer rather than any recording. */
+
+// Leaves shaking: a short wash of filtered noise that swells and fades.
+export function rustle() {
+  ensureCtx();
+  [0, 0.07, 0.15].forEach((t, i) => noiseBurst(t, 0.16, { freq: 1500 + i * 500, q: 0.8, vol: 0.12 }));
+}
+
+// Feet landing in a puddle: a low wet burst with a falling plop under it.
+export function splash() {
+  ensureCtx();
+  noiseBurst(0, 0.22, { type: 'lowpass', freq: 1400, q: 0.7, vol: 0.32 });
+  noiseBurst(0.04, 0.16, { freq: 3200, q: 1, vol: 0.12 });
+  tone(420, 0, 0.18, { type: 'sine', vol: 0.12, glide: 160 });
+}
+
+// A gentle camera shutter for the sibling photos: two dry clicks.
+export function shutter() {
+  ensureCtx();
+  noiseBurst(0, 0.035, { type: 'highpass', freq: 2400, q: 0.8, vol: 0.3 });
+  noiseBurst(0.09, 0.05, { type: 'highpass', freq: 1700, q: 0.8, vol: 0.24 });
+}
+
+// One music-box note. `step` walks up a pentatonic scale so any sequence of
+// taps sounds like a tune.
+const BELL_SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+export function bell(step = 0) {
+  ensureCtx();
+  const f = BELL_SCALE[((step % BELL_SCALE.length) + BELL_SCALE.length) % BELL_SCALE.length];
+  tone(f, 0, 0.9, { type: 'sine', vol: 0.16 });
+  tone(f * 3, 0, 0.25, { type: 'sine', vol: 0.03 });
+}
+
+// Packing snow: a soft, low crunch.
+export function crunch() {
+  ensureCtx();
+  noiseBurst(0, 0.12, { type: 'lowpass', freq: 900, q: 0.6, vol: 0.28 });
+  noiseBurst(0.06, 0.1, { type: 'bandpass', freq: 1800, q: 1.4, vol: 0.12 });
+}
+
+// Something soft landing on the floor.
+export function thud() {
+  ensureCtx();
+  tone(140, 0, 0.14, { type: 'sine', vol: 0.22, glide: 70 });
+  noiseBurst(0, 0.06, { type: 'lowpass', freq: 600, q: 0.7, vol: 0.12 });
+}
+
+// A squeaky toy or pram wheel: a quick up-down chirp.
+export function squeak() {
+  ensureCtx();
+  tone(900, 0, 0.08, { type: 'triangle', vol: 0.14, glide: 1500 });
+  tone(1400, 0.08, 0.1, { type: 'triangle', vol: 0.11, glide: 900 });
+}
+
+// Drinking from a bottle: three little rising gulps.
+export function glug() {
+  ensureCtx();
+  [0, 0.22, 0.44].forEach(t => tone(260, t, 0.12, { type: 'sine', vol: 0.16, glide: 420 }));
+}

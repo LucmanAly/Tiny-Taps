@@ -34,6 +34,12 @@ Spoken prompts use the device's text-to-speech.
 Most artwork is original for this app (hand-built SVG); the Play House
 mascot/baby art and the Animals photos below are the exceptions.
 
+The Play House scenery (house, garden, furniture, pram, tree, sky) is
+original SVG drawn in `js/games/playhouse/art.js`. The poses, toys, toy box
+and bushes in `assets/playhouse/` were sliced from the developer-supplied
+sheets in `assets/` (`playhouse_*_sheet.png`) by
+`scripts/slice-playhouse-art.py`; the sheets are kept for provenance.
+
 # Photo Credits
 
 The 33 animal photos used by the Animals game (`assets/animals-photos/`) are

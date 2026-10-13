@@ -24,7 +24,7 @@ nothing to buy, works offline once loaded:
 17. **Sort It** — drag each animal to its home, the farm or the water
 18. **Wash the Animal** — rub the mud off with a finger until it shines
 19. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-20. **Play House** — an open-ended landscape world: change the weather (sun, rain, wind, snow) and the time of day, send the mascot to bed, bounce him on the trampoline, open the wardrobe to pick his outfit, tap him for a burst of wand magic, and visit his baby sister in her playpen — where tapping brings up one of ten illustrated "Play Together" moments of the two of them playing
+20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes, and bounce higher with every tap on the trampoline
 21. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
@@ -32,8 +32,9 @@ giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
 game shows a single animal, it says hello with its real voice.
 
 Gameplay is intentionally quiet. Counting and Number Book speak only a tapped
-number, Big or Small speaks only the target size at round start, and Trace It
-speaks only the completed letter, shape, number, or animal name.
+number, Big or Small speaks only the target size at round start, Trace It
+speaks only the completed letter, shape, number, or animal name, and Play House
+says only a single name (an animal, a toy, an outfit, the weather).
 Recorded parent praise and encouragement remain active. The Home button
 responds immediately to one normal tap.
 
@@ -86,6 +87,19 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v5.15** — Play House rebuilt from scratch. The flat, single-screen world is
+  now a hand-drawn dollhouse and garden (painted SVG scenery with a pencil
+  wobble and paper grain, so it sits with the painted characters) that the child
+  swipes between, in landscape or portrait. Every object reacts to a touch;
+  toys, the pram, the brother and the baby can be picked up, carried and
+  thrown. The baby asks for things with picture bubbles, and the ten sibling
+  illustrations became photos earned through play and kept on a photo wall.
+  New: bedtime brings the night, a draggable sun and moon, a weather cloud with
+  rain puddles, snow, a snowman and a rainbow, outfit wishes for the weather,
+  animals hiding in bushes (with their real sounds), an apple tree with an owl,
+  a trampoline that bounces higher with each tap, pram rides, peekaboo, and
+  idle hints that wiggle something to touch next.
 
 - **v5.8** — replaced Number Book’s unreliable browser speech with 111 bundled
   Piper recordings using the same natural `en_US-amy-medium` voice as My First

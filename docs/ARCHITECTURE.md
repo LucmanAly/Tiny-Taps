@@ -35,8 +35,11 @@ There are exactly four gameplay modules:
    utterance is only `Big` or `Small`; idle reprompting does not repeat it.
 3. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
    stroke. The utterance is only the completed letter, number word, shape, or animal.
-4. `js/games/playhouse.js` routes its short weather, outfit, and sibling-moment
-   cues through one `speakWord(word)` helper.
+4. `js/games/playhouse.js` routes every Play House cue through one `W.say(word)`
+   helper wrapping a single `speakWord(word)` call. Each cue is one name: a
+   weather word, an outfit, a toy, an animal, or a photo's name. Repeated words
+   are suppressed for 1.6 s. The modules in `js/games/playhouse/` call `W.say`
+   and never `speakWord`.
 
 `js/games/animals.js` and `js/games/numberbook.js` do not use browser speech.
 My First Words loads Piper MP3s from `assets/audio/animals/`; Number Book loads
@@ -237,6 +240,61 @@ activate strokes in order. A tap without movement cannot complete anything.
 After the final stroke, Trace records the outcome, speaks exactly
 `current.spoken`, then runs the normal visual celebration and separate parent
 praise path.
+
+### Play House
+
+`js/games/playhouse.js` builds the world and owns the voice helper; the world
+lives in `js/games/playhouse/`:
+
+- `layout.js` — world geometry in world units (wu). The design band is 800 wu
+  tall with y = 800 at the screen bottom; taller screens reveal sky and roof.
+  The strip is 3480 wu wide: house interior 44–1600, doorway at 1630, garden
+  1660–3480. Feet, toys and pram rest in a floor band (y 650–786); furniture
+  sits behind it, so moving things are always drawn in front of furniture.
+  `depthAt(y)` scales things further back.
+- `world.js` — canvas, camera and frame loop. Landscape fits a 1600 wu view,
+  portrait a 620 wu view; the child pans by swiping empty space, by carrying
+  something to a screen edge, or with the round edge arrows. Drawing order:
+  sky (gradient, stars, sun, moon, weather cloud), then the world (parallax
+  hills, garden backdrop, ground decals, house backdrop, house decals, things
+  sorted by base y, then held things), weather particles, effects, world-space
+  UI (thought bubbles, polaroids) and screen-space UI (arrows, photo zoom,
+  camera flash). After dusk the world is drawn on a second canvas, tinted with
+  `source-atop` and lit with additive glows, so the sky behind is not darkened.
+  Touches go to screen UI, soap bubbles, then the front-most thing. A press on
+  a draggable gives instant feedback and becomes a tap on release or a drag
+  after 10 px; a press elsewhere taps at once and becomes a pan after 14 px;
+  empty space emits `tapEmpty`. The frame callback is scheduled before work
+  and wrapped in try/catch so one error can never freeze the screen.
+- `art.js` — the scenery as SVG strings (house, garden, hills, furniture,
+  pram, tree, clouds, sun, moon, props) wrapped in a displacement "wobble" and
+  a grain pass, rasterized once per pixel density (backdrops capped at 1.5×).
+- `assets.js` — outfit pose tables (stand, walk, jump, sleep, magic, push,
+  carry, kneel), baby poses, toys, scene art, moments, bush animals.
+  `boundsOf` measures visible pixels so poses are drawn by figure height.
+- `kids.js` — the brother (walk, hop, held/dangle, fall, sleep in bed,
+  trampoline bounce with tap boosts, kneel, push, outfit changes and weather
+  outfit wishes) and the baby (sit/look idle, crawl, wishes every 11–17 s
+  preferring things in her room, toy reactions, peekaboo under the blanket,
+  sleep, brother visits). Fulfilled wishes call `celebrate`, which plays
+  parent praise only (`speech.praise`) and records an outcome.
+- `props.js` — toys with simple gravity, bounce, roll and throw physics;
+  dropped toys are offered to `W.dropTargets` (baby, toy box, trampoline) in
+  order before falling to the floor.
+- `home.js` / `garden.js` — lamp, bed, wardrobe with in-world outfit cards,
+  curtains with window visitors, toy box spill/tidy, door; bushes with
+  peekaboo animals (authentic recordings), apple tree and night owl,
+  trampoline, pram rides, birds.
+- `sky.js` — day/night (`W.dayT`), sun/moon tap or drag, weather cloud
+  (rain under the cloud with puddles → snow cover and snowman → rainbow),
+  rain weather bed, fireflies and porch light.
+- `moments.js` — the ten sibling photos. `snap(id)` is rationed to one per
+  7 s; the polaroid flies to its fixed frame. Collected ids persist in
+  `localStorage` (`tinytaps-playhouse-photos`); the last outfit persists in
+  `tinytaps-playhouse-outfit`.
+
+After seven seconds without a touch, an on-screen interactive thing wiggles
+with a sparkle every few seconds as a hint. Play House never sets a reprompt.
 
 ### My First Words
 
