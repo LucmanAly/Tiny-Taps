@@ -276,15 +276,25 @@ lives in `js/games/playhouse/`:
   trampoline bounce with tap boosts, kneel, push, outfit changes and weather
   outfit wishes) and the baby (sit/look idle, crawl, wishes every 11–17 s
   preferring things in her room, toy reactions, peekaboo under the blanket,
-  sleep, brother visits). Fulfilled wishes call `celebrate`, which plays
-  parent praise only (`speech.praise`) and records an outcome.
+  sleep, brother visits). She is carried around her middle, floats down
+  softly when let go and stays put for 25 s before crawling off. Tapping the
+  brother while he is within 330 wu of his awake sister plays a lullaby: he
+  kneels beside her (or rocks her pram) and she yawns and falls asleep;
+  tapping her wakes her, so it repeats on demand. Waking or lifting her
+  always returns the blanket toy to the floor. Fulfilled wishes call
+  `celebrate`, which plays parent praise only (`speech.praise`) and records
+  an outcome.
 - `props.js` — toys with simple gravity, bounce, roll and throw physics;
   dropped toys are offered to `W.dropTargets` (baby, toy box, trampoline) in
   order before falling to the floor.
 - `home.js` / `garden.js` — lamp, bed, wardrobe with in-world outfit cards,
   curtains with window visitors, toy box spill/tidy, door; bushes with
   peekaboo animals (authentic recordings), apple tree and night owl,
-  trampoline, pram rides, birds.
+  trampoline, pram rides, birds. The pram glows with a ground ring while the
+  baby is carried over it (`takes`) and seats her on release; tapping the
+  empty pram has her crawl in (within 600 wu), as does wheeling it up to
+  her. In the pram, `seatHit` (her, the hood and basket top) lifts her out,
+  while the handle and wheels drag the pram from where it was grabbed.
 - `sky.js` — day/night (`W.dayT`), sun/moon tap or drag, weather cloud
   (rain under the cloud with puddles → snow cover and snowman → rainbow),
   rain weather bed, fireflies and porch light.

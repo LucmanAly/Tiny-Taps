@@ -47,7 +47,7 @@ The current registry contains 21 games:
 17. Sort It — drag animals to their habitat; `js/games/sort.js` `start`.
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, and animal-specific paths; `js/games/trace.js` `start`.
-20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, weather cloud, sun/moon day-night, bushes with animals, trampoline, pram, and a persistent ten-photo sibling wall; `js/games/playhouse.js` `start`, world in `js/games/playhouse/`.
+20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, weather cloud, sun/moon day-night, bushes with animals, trampoline, pram, and a persistent ten-photo sibling wall; `js/games/playhouse.js` `start`, world in `js/games/playhouse/`.
 21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring; `js/games/animals.js` `start`.
 
 ## Core conventions

@@ -271,70 +271,173 @@ export function createGarden(W) {
     },
   });
 
-  /* ---------------- the pram ---------------- */
+  /* ---------------- the pram ----------------
+     Carrying the baby over the pram makes it glow, and letting go there sits
+     her in it. Touching her in the pram lifts her straight back out, while
+     the handle and wheels move the pram with her in it. Tapping the empty
+     pram, or wheeling it up to her, has her climb in by herself. */
+
+  const PRAM_CALL = 600;      // how far she will crawl to a tapped pram
 
   const pram = {
     x: PLACES.stroller.x, y: PLACES.stroller.y, wob: 0, ride: null, draggable: true, held: false, squeakAt: 0,
+    dir: 1, hover: false, glow: 0, grip: { x: 0, y: 0 },
     get z() { return this.y; },
     hasBaby() { return W.baby.state === 'stroller' && W.baby.stroller === this; },
+    depth() { return depthAt(this.y) * 0.95; },
     draw(g) {
-      const d = depthAt(this.y) * 0.95;
-      const bob = this.ride ? Math.abs(Math.sin(W.t * 10)) * 4 : 0;
+      const d = this.depth();
+      const bob = this.ride ? Math.abs(Math.sin(W.t * 10)) * 4 : this.glow * Math.abs(Math.sin(W.t * 6)) * 8;
+      // Rocked to and fro while her brother hums her to sleep.
+      const x = this.x + (W.boy.state === 'rock' && this.hasBaby() ? Math.sin(W.boy.stateT * 3.4) * 14 : 0);
+      if (this.glow > 0) {
+        const pulse = 0.8 + Math.sin(W.t * 7) * 0.2;
+        const cy = this.y - 150 * d, r = 270 * d;
+        const gr = g.createRadialGradient(x, cy, 10, x, cy, r);
+        gr.addColorStop(0, `rgba(255,210,80,${(0.75 * this.glow * pulse).toFixed(3)})`);
+        gr.addColorStop(0.6, `rgba(255,220,110,${(0.35 * this.glow * pulse).toFixed(3)})`);
+        gr.addColorStop(1, 'rgba(255,230,140,0)');
+        g.fillStyle = gr;
+        g.beginPath(); g.arc(x, cy, r, 0, Math.PI * 2); g.fill();
+        // A ring of light on the ground: "let go here".
+        g.save();
+        g.globalAlpha = this.glow;
+        g.strokeStyle = '#ffc93c';
+        g.lineWidth = 9;
+        g.setLineDash([18, 12]);
+        g.lineDashOffset = -W.t * 40;
+        g.beginPath(); g.ellipse(x, this.y + 4, 150 * d * pulse, 26 * d * pulse, 0, 0, Math.PI * 2); g.stroke();
+        g.restore();
+      }
       g.fillStyle = 'rgba(70,40,20,0.2)';
-      g.beginPath(); g.ellipse(this.x, this.y + 2, 120 * d, 16 * d, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(x, this.y + 2, 120 * d, 16 * d, 0, 0, Math.PI * 2); g.fill();
       const sq = Math.sin(this.wob * 16) * 0.06 * this.wob;
       g.save();
-      g.translate(this.x, this.y - bob);
+      g.translate(x, this.y - bob);
       g.scale(d * (1 + sq) * this.dir, d * (1 - sq));
       W.blit(g, W.sprites.strollerBack);
       if (this.hasBaby()) {
         g.save();
         g.scale(this.dir, 1);
-        W.baby.drawAt(g, 4 * this.dir, -82, 0.92);
+        // Asleep she lies down in the basket with just her head peeping out.
+        W.baby.drawAt(g, 4 * this.dir, W.baby.nap ? -98 : -82, 0.92);
         g.restore();
       }
       W.blit(g, W.sprites.strollerFront);
       g.restore();
     },
-    dir: 1,
     hit(x, y) { return Math.abs(x - this.x) < 150 && y > this.y - 280 && y < this.y + 16; },
+    // Her part of the pram: herself, the hood and the top of the basket —
+    // everything except the handle and the wheels.
+    seatHit(x, y) {
+      const d = this.depth();
+      const lx = (x - this.x) * this.dir / d, ly = (y - this.y) / d;
+      return lx > -95 && lx < 125 && ly > -330 && ly < -100;
+    },
+    // Whether the baby, carried with her feet at (x, foot), would go in.
+    takes(x, foot) {
+      return Math.abs(x - this.x) < 200 && foot > this.y - 330 && foot < this.y + 140;
+    },
     press() { this.wob = 1; audio.squeak(); },
     tap() {
       if (this.hasBaby()) startRide();
-      else if (W.baby.want === null && !W.baby.busy()) fx.sparkle(this.x, this.y - 200, 6, 90);
+      else if (!callBaby()) fx.sparkle(this.x, this.y - 200, 6, 90);
     },
-    grab() { this.held = true; this.ride = null; },
+    grab(x, y) {
+      this.held = true;
+      // Moves from wherever it was taken hold of, without jumping.
+      this.grip = { x: this.x - x, y: this.y - y };
+      this.release();
+    },
     drag(x, y) {
-      const p = clampToFloor(x, y + 120);
+      const p = clampToFloor(x + this.grip.x, y + this.grip.y);
       if (Math.abs(p.x - this.x) > 2) this.dir = p.x > this.x ? 1 : -1;
       if (W.t > this.squeakAt && Math.hypot(p.x - this.x, p.y - this.y) > 6) {
         this.squeakAt = W.t + 0.45;
         audio.squeak();
-        if (this.hasBaby() && Math.random() < 0.3) audio.giggle();
+        if (this.hasBaby() && !W.baby.nap && Math.random() < 0.3) audio.giggle();
       }
       this.x = p.x; this.y = p.y;
     },
-    drop() { this.held = false; this.wob = 0.6; },
+    drop() {
+      this.held = false;
+      this.wob = 0.6;
+      // Wheeled right up to her: in she climbs.
+      const baby = W.baby;
+      if (!this.hasBaby() && baby.free() && Math.abs(baby.x - this.x) < 170 && Math.abs(baby.y - this.y) < 110) seat();
+    },
     release() {
-      // The baby was lifted out mid-ride.
+      // The baby was lifted out, or the pram was picked up, mid-ride.
       this.ride = null;
-      if (W.boy.state === 'push') W.boy.setState('idle');
+      if (W.boy.state === 'push' || W.boy.state === 'rock') W.boy.setState('idle');
     },
     update(dt) {
       this.wob = Math.max(0, this.wob - dt * 1.6);
+      // Glows while the baby is carried over it, so letting go there clearly
+      // means "into the pram".
+      const b = W.baby;
+      const hover = b.held && this.takes(b.hold.x, b.heldFoot(b.hold.y));
+      if (hover && !this.hover && W.t > this.squeakAt) {
+        this.squeakAt = W.t + 0.45;
+        this.wob = 0.8;
+        audio.squeak();
+        fx.sparkle(this.x, this.y - 220, 6, 110);
+      }
+      if (hover && Math.random() < dt * 5) fx.sparkle(this.x, this.y - 160, 3, 150, ['#ffffff', '#fff3c4', '#ffd650']);
+      this.hover = hover;
+      this.glow = clamp(this.glow + (hover ? 6 : -4) * dt, 0, 1);
       if (this.ride) stepRide(dt);
     },
     hint() { this.wob = 0.8; },
   };
 
+  // Sits the baby in the pram, however she got there.
+  function seat() {
+    const baby = W.baby;
+    baby.held = false;
+    baby.stroller = pram;
+    baby.nap = false;
+    baby.crawlTo = null;
+    baby.then = null;
+    if (baby.want !== 'brother') baby.want = null;
+    baby.setState('stroller');
+    baby.x = pram.x; baby.y = pram.y + 1;
+    baby.squash = 0.7;
+    pram.wob = 1;
+    audio.giggle();
+    fx.sparkle(pram.x, pram.y - 220, 10, 140);
+    // Her brother comes to give her a ride, if he is free and nearby.
+    setTimeout(() => {
+      const boy = W.boy;
+      if (!W.isAlive() || !pram.hasBaby() || pram.held || pram.ride || baby.nap) return;
+      if (boy.held || ['sleep', 'bounce', 'push', 'rock'].includes(boy.state)) return;
+      if (Math.abs(boy.x - pram.x) > 1100) return;
+      startRide();
+    }, 1100);
+  }
+
+  // Tapping the empty pram calls her over: she crawls to it and climbs in.
+  function callBaby() {
+    const baby = W.baby;
+    if (!baby.free() || Math.abs(baby.x - pram.x) > PRAM_CALL) return false;
+    const f = floorFor(pram.x);
+    const side = baby.x < pram.x ? -1 : 1;
+    audio.babble();
+    baby.crawlOver(clamp(pram.x + side * 120, f.x0, f.x1), pram.y, () => {
+      if (!pram.hasBaby() && !pram.held && Math.abs(baby.x - pram.x) < 220) seat();
+    });
+    return true;
+  }
+
   function startRide() {
     if (pram.ride) return;
     const boy = W.boy;
+    if (W.baby.nap) { W.baby.nap = false; audio.giggle(); }
     const f = floorFor(pram.x);
     const dir = pram.x + 620 < f.x1 ? 1 : -1;
     pram.dir = dir;
     boy.walkTo(pram.x - dir * 170, pram.y + 4, () => {
-      if (!pram.hasBaby()) return;
+      if (!pram.hasBaby() || pram.held) return;
       boy.facing = dir;
       boy.setState('push');
       pram.ride = { dir, from: pram.x, dist: 560, t: 0, back: false };
@@ -382,17 +485,8 @@ export function createGarden(W) {
 
   W.dropTargets.push({
     accept(item, x, y) {
-      if (item !== W.baby) return false;
-      if (Math.abs(x - pram.x) > 150 || y < pram.y - 360 || y > pram.y + 60) return false;
-      const baby = W.baby;
-      baby.held = false;
-      baby.stroller = pram;
-      baby.want = baby.want === 'brother' ? baby.want : null;
-      baby.setState('stroller');
-      baby.x = pram.x; baby.y = pram.y + 1;
-      audio.giggle();
-      pram.wob = 1;
-      setTimeout(() => { if (W.isAlive() && pram.hasBaby()) startRide(); }, 700);
+      if (item !== W.baby || !pram.takes(x, y)) return false;
+      seat();
       return true;
     },
   });
