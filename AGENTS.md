@@ -14,7 +14,8 @@ usable without reading.
   sky and weather, house, garden, toys, characters, photo wall); the entry and
   its single voice trigger stay in `js/games/playhouse.js`.
 - `js/engine/` — audio, speech, dragging, rounds, progress, celebrations, and UI helpers.
-- `js/data/` — animal catalog, strings, trace catalogs, and displayed version.
+- `js/data/` — animal catalog, strings, trace catalogs, Puzzle Fit Shape Builder
+  blueprints (`builds.js`), and displayed version.
 - `css/main.css` — global screens, chrome, settings, safe areas, and shared controls.
 - `css/games.css` — mini-game layouts and interaction visuals.
 - `assets/` — original SVG art, licensed animal audio, and credits.
@@ -34,7 +35,7 @@ The current registry contains 21 games:
 4. Shapes — match a dotted outline to a filled shape; `js/games/shapes.js` `start`.
 5. Counting — tap animals in order and hear number words; `js/games/counting.js` `start`.
 6. Number Book — page through spoken numbers from 0–100 or tens/place values through one trillion; `js/games/numberbook.js` `start`.
-7. Puzzle Fit — fit animal silhouettes or missing picture pieces; `js/games/puzzle.js` `start`.
+7. Puzzle Fit — fit animal silhouettes, or Shapes mode's Shape Builder: drag 3–6 chunky shape pieces into a toy's dashed outlines, then the finished toy comes alive (drives, sails, launches, opens its door for an animal); `js/games/puzzle.js` `start`, blueprints in `js/data/builds.js`.
 8. Feed Me — drag the correct food to an animal; `js/games/feedme.js` `start`.
 9. Coloring — pick sketches from a collapsible thumbnail sidebar (All or Characters; an overlay that starts closed on every screen), fill grouped regions including the parrot, and save with the separate Done button; `js/games/coloring.js` `start`.
 10. Matching — find the matching animal-card pair; `js/games/memory.js` `start`.
@@ -67,7 +68,9 @@ The current registry contains 21 games:
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
 - Authentic animal recordings and Web Audio effects are not computer narration.
 - Trace progress must be sequential movement along the active path; a tap cannot complete it.
-- Puzzle Fit Shapes mode is negative-space piece fitting, never sequence continuation.
+- Puzzle Fit Shapes mode is negative-space piece fitting (several pieces build one
+  toy), never sequence continuation, and never a single-choice quiz (the separate
+  Shapes game already covers outline matching).
 - Bump `js/data/version.js` and the cache name in `sw.js` together for releases.
 - Add runtime files needed offline to `sw.js` and run `npm run check`.
 
@@ -86,7 +89,7 @@ Avoid transformed ancestors around fixed controls because they change containing
 | Navigation or game lifecycle | `docs/ARCHITECTURE.md` Navigation | `js/app.js` `clearScreen`, `showMenu`, `startGame`, `makeHomeButton` |
 | Shared round behavior | `docs/ARCHITECTURE.md` Game architecture | `js/engine/roundgame.js` `makeRoundGame` |
 | Trace detection or catalogs | `docs/ARCHITECTURE.md` Trace It | `js/games/trace.js` `advanceSample`, `advanceTo`; `js/data/trace-items.js` |
-| Puzzle Fit modes | `docs/ARCHITECTURE.md` Puzzle Fit | `js/games/puzzle.js` `buildAnimals`, `buildShapes` |
+| Puzzle Fit modes | `docs/ARCHITECTURE.md` Puzzle Fit | `js/games/puzzle.js` `buildAnimals`, `buildShapes`, `layout`; `js/data/builds.js` |
 | Play House world | `docs/ARCHITECTURE.md` Play House | `js/games/playhouse/world.js` `createWorld`; `kids.js`, `sky.js`, `home.js`, `garden.js` |
 | Settings or local data | `docs/ARCHITECTURE.md` Settings | `js/app.js` `showSettings`, `showProgress`; `js/engine/progress.js` |
 | Safari, PWA, or safe areas | `docs/ARCHITECTURE.md` PWA and display modes | `css/main.css`; `sw.js` `install`, `activate`, `fetch` |

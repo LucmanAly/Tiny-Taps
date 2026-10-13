@@ -752,45 +752,89 @@
   cursor: grab;
 }
 .puzzle-piece img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-.fit-title {
-  font-size: max(3vmin, 19px);
-  font-weight: 900;
-  margin-bottom: 1vmin;
-  color: var(--ink);
+/* Shapes mode: Shape Builder. One SVG fills the content area; the build
+   and its tray are laid out in pixels by js/games/puzzle.js. */
+.sb-svg {
+  flex: 1 1 0;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
-.fit-picture {
-  width: min(66vmin, 43vh, 430px);
-  border-radius: var(--radius);
-  background: rgba(255,255,255,0.74);
-  box-shadow: var(--shadow);
-  padding: 1vmin;
+.sb-piece { cursor: grab; }
+.sb-tray { transition: opacity 0.5s ease; }
+.sb-tray.sb-gone { opacity: 0; }
+.sb-art, .sb-lift, .sb-build, .sb-peek, .sb-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
 }
-.fit-picture-svg { width: 100%; height: auto; display: block; }
-.fit-gap-target { transition: fill 0.2s ease, stroke 0.2s ease; }
-.fit-gap-target.filled { filter: drop-shadow(0 0 5px rgba(255,255,255,0.9)); }
-.fit-tray {
-  display: flex;
-  justify-content: center;
-  gap: 3vmin;
-  padding-top: 2vmin;
+.sb-motion { transform-box: fill-box; transform-origin: 50% 100%; }
+.sb-peek { transform-origin: 50% 100%; }
+.sb-flame { transform-origin: 50% 0%; }
+.sb-pop { animation: sb-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+@keyframes sb-pop { from { transform: scale(0); } to { transform: scale(1); } }
+.sb-snap { animation: sb-snap 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes sb-snap {
+  0% { transform: scale(1.14); }
+  55% { transform: scale(0.95); }
+  100% { transform: scale(1); }
 }
-.fit-piece {
-  width: min(18vmin, 15vh);
-  height: min(18vmin, 15vh);
-  min-width: 68px;
-  min-height: 68px;
-  padding: 1vmin;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: var(--shadow);
-  cursor: grab;
+.sb-nudge { animation: sb-nudge 0.8s ease-in-out; }
+@keyframes sb-nudge {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-9deg) scale(1.08); }
+  40% { transform: rotate(8deg) scale(1.08); }
+  60% { transform: rotate(-5deg) scale(1.03); }
+  80% { transform: rotate(3deg) scale(1); }
 }
-.fit-piece svg { width: 100%; height: 100%; pointer-events: none; }
+.sb-slot.sb-hint { animation: sb-hint 0.75s ease-in-out 3; }
+@keyframes sb-hint {
+  50% { stroke: #ff9f1c; stroke-opacity: 1; stroke-width: 9px; fill: #ffd27a; fill-opacity: 0.6; }
+}
+.sb-happy { animation: sb-happy 0.7s ease-out; }
+@keyframes sb-happy {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  25% { transform: translateY(0) scale(1.06, 0.9); }
+  55% { transform: translateY(-14px) scale(0.96, 1.08); }
+}
+.sb-chug { animation: sb-chug 0.24s ease-in-out infinite alternate; }
+@keyframes sb-chug { to { transform: translateY(-4px); } }
+.sb-bob { animation: sb-bob 0.9s ease-in-out infinite alternate; }
+@keyframes sb-bob {
+  from { transform: rotate(-4deg) translateY(0); }
+  to { transform: rotate(4deg) translateY(-6px); }
+}
+.sb-swim { animation: sb-swim 0.32s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+@keyframes sb-swim { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+.sb-waddle { animation: sb-waddle 0.36s ease-in-out infinite alternate; }
+@keyframes sb-waddle {
+  from { transform: rotate(-3deg) translateY(0); }
+  to { transform: rotate(3deg) translateY(-5px); }
+}
+.sb-hop { animation: sb-hop 0.5s ease-in-out infinite; }
+@keyframes sb-hop {
+  0%, 100% { transform: translateY(0) scale(1.04, 0.95); }
+  50% { transform: translateY(-34px) scale(0.97, 1.04); }
+}
+.sb-dance { animation: sb-dance 0.42s ease-in-out infinite alternate; }
+@keyframes sb-dance {
+  from { transform: rotate(-9deg) translateY(0); }
+  to { transform: rotate(9deg) translateY(-16px); }
+}
+.sb-flutter { animation: sb-flutter 0.18s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+@keyframes sb-flutter { to { transform: scaleX(0.55); } }
+.sb-shake { animation: sb-shake 0.08s linear infinite alternate; }
+@keyframes sb-shake { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
+.sb-flicker { animation: sb-flicker 0.12s ease-in-out infinite alternate; }
+@keyframes sb-flicker { from { transform: scaleY(0.8); } to { transform: scaleY(1.15); } }
 @media (orientation: landscape) and (max-height: 560px) {
   .puzzle-shell { padding-top: calc(env(safe-area-inset-top, 0px) + 58px); gap: 1vmin; }
-  .fit-title { display: none; }
-  .fit-picture { width: min(56vmin, 48vh, 330px); }
-  .fit-piece { min-width: 52px; min-height: 52px; }
+}
 }
 
 /* ---------- coloring ---------- */

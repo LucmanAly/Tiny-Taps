@@ -592,3 +592,30 @@ export function glug() {
   ensureCtx();
   [0, 0.22, 0.44].forEach(t => tone(260, t, 0.12, { type: 'sine', vol: 0.16, glide: 420 }));
 }
+
+/* --- Shape Builder toys coming alive --- */
+
+// A friendly two-beep toy-car horn.
+export function honk() {
+  ensureCtx();
+  [0, 0.2].forEach(t => {
+    tone(392, t, 0.14, { type: 'square', vol: 0.06 });
+    tone(494, t, 0.14, { type: 'square', vol: 0.05 });
+  });
+}
+
+// A toy train whistle: two soft chords that each slide up a touch.
+export function toot() {
+  ensureCtx();
+  [0, 0.34].forEach(t => {
+    tone(587.33, t, 0.28, { type: 'triangle', vol: 0.14, glide: 622 });
+    tone(739.99, t, 0.28, { type: 'triangle', vol: 0.11, glide: 784 });
+  });
+}
+
+// Rocket lift-off: a low, soft rumble under a slow rising sweep.
+export function rumble() {
+  ensureCtx();
+  noiseBurst(0, 1.1, { type: 'lowpass', freq: 420, q: 0.7, vol: 0.28 });
+  tone(110, 0, 1.2, { type: 'sine', vol: 0.12, glide: 440 });
+}

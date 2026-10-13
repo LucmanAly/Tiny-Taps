@@ -386,8 +386,36 @@ const puzzleSource = fs.readFileSync(path.join(root, 'js/games/puzzle.js'), 'utf
 if (puzzleSource.includes('Complete the pattern') || puzzleSource.includes('spatial-board')) {
   errors.push('Puzzle Fit Shapes mode still contains pattern-sequence logic');
 }
-if (!puzzleSource.includes('fit-gap-target') || !puzzleSource.includes('PICTURE_PUZZLES')) {
-  errors.push('Puzzle Fit Shapes mode is missing negative-space picture fitting');
+if (!puzzleSource.includes('sb-slot') || !puzzleSource.includes('BUILDS')) {
+  errors.push('Puzzle Fit Shapes mode is missing Shape Builder negative-space fitting');
+}
+const [{ BUILDS, VISITORS }, { ANIMALS: puzzleAnimals }] = await Promise.all([
+  import('../js/data/builds.js'),
+  import('../js/data/animals.js'),
+]);
+const builderKinds = new Set([...puzzleSource.matchAll(/case '([a-z]+)':/g)].map(match => match[1]));
+const soundAnimal = id => puzzleAnimals.find(a => a.id === id && a.sound);
+if (new Set(BUILDS.map(build => build.id)).size !== BUILDS.length) errors.push('Shape Builder build ids must be unique');
+if (BUILDS.filter(build => build.level === 1).length < 5) errors.push('Shape Builder needs at least five level-1 builds');
+for (const build of BUILDS) {
+  if (build.parts.length < 3 || build.parts.length > 6) errors.push(`Shape build ${build.id} must have 3–6 pieces`);
+  if (![1, 2, 3].includes(build.level)) errors.push(`Shape build ${build.id} has an invalid level`);
+  if (!builderKinds.has(build.go.kind)) errors.push(`Shape build ${build.id} uses unhandled go kind ${build.go.kind}`);
+  if (build.go.kind === 'peek' && (!build.peek || !build.parts.some(part => part.door))) {
+    errors.push(`Shape build ${build.id} needs a door and peek anchor`);
+  }
+  if (build.go.kind === 'launch' && !build.flame) errors.push(`Shape build ${build.id} needs a flame anchor`);
+  if (build.go.kind === 'chug' && !build.puff) errors.push(`Shape build ${build.id} needs a smoke anchor`);
+  const voiced = build.go.sound && build.go.sound.startsWith('animal:') ? build.go.sound.slice(7) : null;
+  if (voiced && !soundAnimal(voiced)) errors.push(`Shape build ${build.id} uses missing animal recording ${voiced}`);
+  for (const part of build.parts) {
+    if (!part.d || !(part.w > 0) || !(part.h > 0) || !Number.isFinite(part.x) || !Number.isFinite(part.y) || !/^#[0-9a-f]{6}$/i.test(part.color)) {
+      errors.push(`Shape build ${build.id} has an incomplete piece`);
+    }
+  }
+}
+for (const id of VISITORS) {
+  if (!soundAnimal(id)) errors.push(`Shape Builder visitor ${id} needs an animal recording`);
 }
 
 if (errors.length) {

@@ -11,7 +11,7 @@ nothing to buy, works offline once loaded:
 4. **Shapes** — tap the shape that fits the dashed outline
 5. **Counting** — tap each animal to count it aloud; badges and a big numeral track the count (1–5 or 1–10 — press-and-hold the corner button)
 6. **Number Book** — tap one giant number to hear it and turn the page; switch between every number from 0–100 and tens/place values through one trillion, with an instant reset
-7. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes or fill the exact missing piece in a picture
+7. **Puzzle Fit** — choose Animals or Shapes; fit animal silhouettes, or build a toy from chunky shapes (car, rocket, boat, house, train…) and watch it come alive
 8. **Feed Me** — drag the right food to the hungry animal; one happy bite and the next friend arrives
 9. **Coloring** — choose any sketch from the picture sidebar (including a parrot), fill complete grouped regions, and save with a separate Done button to an in-app gallery
 10. **Matching** — flip four cards, find the two matching friends
@@ -87,6 +87,20 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v5.16** — Puzzle Fit's Shapes mode reinvented as a Shape Builder. The old
+  mode was a single three-choice drag per round (the same task as the Shapes
+  game) whose piece vanished into a recoloured hole, on a picture that never
+  did anything. Now each round is a toy — car, boat, fish, snowman, duck,
+  turtle, house, ladybug, rocket, robot, butterfly, plane or train — drawn as
+  dashed outlines; the child drags 3–6 chunky shape pieces into place, each
+  landing with a thud and a rising note, then the finished toy comes alive: the
+  car honks and drives off, the rocket launches, the train chugs away puffing
+  smoke, the house opens its door and a farm animal pops out with its real
+  sound. Size matters as well as shape, identical pieces are interchangeable,
+  wrong drops gently show where the piece belongs, idle play gets a silent
+  wiggle hint, and difficulty adapts (colour-tinted outlines and smaller builds
+  first).
 
 - **v5.15** — Play House rebuilt from scratch. The flat, single-screen world is
   now a hand-drawn dollhouse and garden (painted SVG scenery with a pencil

@@ -144,11 +144,36 @@ formatting, responsive size tiers, and spoken phrases are deterministic.
 `js/games/puzzle.js` keeps the Animals/Shapes toggle in local storage. Animals
 mode creates four silhouette slots and draggable matching animal pieces.
 
-Shapes mode uses `PICTURE_PUZZLES`. Each entry draws one large familiar SVG
-picture and overlays one white dashed negative-space `fit-gap-target`. The tray
-contains the exact geometric piece plus two distractors. `makeDraggable()` tests
-the gap; only the matching shape fills the cut-out and completes the picture.
-There is no sequence or pattern-continuation logic in this mode.
+Shapes mode is the Shape Builder. `js/data/builds.js` defines `BUILDS`: toys
+(car, boat, fish, snowman, duck, turtle, house, ladybug, rocket, robot,
+butterfly, plane, train) made of 3–6 primitive parts (circle, oval, rectangle,
+square, half circle, triangle). Each part is positioned by its bounding-box
+centre, so its path doubles as its dashed `sb-slot` outline; parts with
+identical paths (a pair of wheels) are interchangeable. Size matters as much
+as shape (the snowman's three circles, the train's big and small wheels).
+
+`buildShapes()` renders one SVG sized 1:1 to the content box. `layout()` splits
+it into a build area and a tray (beside it in landscape, under it in portrait),
+fits the build at scale `s`, and shelf-packs the remaining pieces at a smaller
+uniform scale `t` so their relative sizes stay true; a lifted piece grows to
+`s` so it matches its outline exactly. A `ResizeObserver` re-lays the round out
+on rotation while keeping placed pieces. Dragging is custom pointer handling in
+SVG space (one piece at a time): a drop near a matching empty outline snaps in
+with a thud and a rising bell note; a drop on a different outline boings, plays
+the throttled parent encouragement, pulses the piece's own outline, and glides
+it home; a drop elsewhere just glides home. The idle re-prompt silently wiggles
+one piece and pulses its outline. Level 1 (`ctx.difficulty()`) tints outlines
+with the piece colour and draws only level-1 builds; levels 2–3 use plain
+outlines and add bigger builds. Wrong drops and completed builds are recorded
+through `ctx.recordOutcome` as `build:<id>`.
+
+When the last piece lands, the toy bounces, `celebrate.big({ quick: false })`
+runs, and the toy comes alive according to `go.kind` (drive, chug, sail,
+paddle, swim, walk, hop, dance, fly, plane, launch, peek) using Web Audio toy
+effects (`honk`, `toot`, `rumble`, …) or an authentic animal recording — the
+house opens its door and a random farm animal from `VISITORS` pops out with
+its real sound. There is no computer speech, sequence, or pattern-continuation
+logic in this mode.
 
 ### Feed Me
 
