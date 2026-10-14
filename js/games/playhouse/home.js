@@ -1,49 +1,82 @@
-// Play House: the house. A lamp, a bed that brings the night, a wardrobe of
-// outfits, curtains that sometimes hide a visitor, a toy box that spills and
-// tidies, and the door out to the garden.
+// Play House: the house. A lamp, a bed that brings the night, the baby's
+// cot with its music-box mobile, a wardrobe of outfits, curtains that
+// sometimes hide a visitor, a toy box that spills and tidies, and the door out
+// to the garden.
 
-import { PLACES, WORLD, depthAt } from './layout.js';
+import { PLACES, WORLD, depthAt, floorFor, roomAt } from './layout.js';
 import { OUTFITS, boundsOf, CAT, OWL, BUSH_ANIMALS } from './assets.js';
+import { heartPath } from './fx.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => 1 - Math.pow(1 - t, 3);
+const INK = 'rgba(107,74,58,0.75)';
 
 export function createHome(W) {
   const { audio, fx } = W;
   const sprite = name => W.sprites[name];
   W.lampOn = false;
 
-  /* ---------------- lamp ---------------- */
+  /* ---------------- lamp ----------------
+     A pull-cord lamp: on, its shade glows gold and it throws a cone of warm
+     light down over the nightstand and a halo up the wall, by day as well as
+     by night (when it also lights the whole room; see the glow below). */
 
   const lamp = {
-    x: PLACES.nightstand.x, y: PLACES.nightstand.y, z: PLACES.nightstand.y, wob: 0,
+    x: PLACES.nightstand.x, y: PLACES.nightstand.y, z: PLACES.nightstand.y, wob: 0, tug: 0,
     draw(g) {
       W.blit(g, sprite('nightstand'), this.x, this.y);
       const top = this.y - 160;
-      if (W.lampOn && W.dayT < 0.5) {
-        const glow = g.createRadialGradient(this.x, top - 150, 20, this.x, top - 150, 260);
-        glow.addColorStop(0, 'rgba(255,236,170,0.45)');
-        glow.addColorStop(1, 'rgba(255,236,170,0)');
-        g.fillStyle = glow;
-        g.beginPath(); g.arc(this.x, top - 150, 260, 0, Math.PI * 2); g.fill();
+      if (W.lampOn) {
+        g.save();
+        g.globalCompositeOperation = 'lighter';
+        const halo = g.createRadialGradient(this.x, top - 150, 20, this.x, top - 150, 230);
+        halo.addColorStop(0, 'rgba(255,226,140,0.42)');
+        halo.addColorStop(1, 'rgba(255,226,140,0)');
+        g.fillStyle = halo;
+        g.beginPath(); g.arc(this.x, top - 150, 230, 0, Math.PI * 2); g.fill();
+        const cone = g.createLinearGradient(0, top - 112, 0, this.y + 70);
+        cone.addColorStop(0, 'rgba(255,222,130,0.4)');
+        cone.addColorStop(1, 'rgba(255,222,130,0)');
+        g.fillStyle = cone;
+        g.beginPath();
+        g.moveTo(this.x - 58, top - 112);
+        g.lineTo(this.x + 58, top - 112);
+        g.lineTo(this.x + 175, this.y + 70);
+        g.lineTo(this.x - 120, this.y + 70);
+        g.closePath();
+        g.fill();
+        g.restore();
       }
       g.save();
       g.translate(this.x, top);
       const sq = Math.sin(this.wob * 18) * 0.1 * this.wob;
       g.scale(1 + sq, 1 - sq);
       W.blit(g, sprite(W.lampOn ? 'lampOn' : 'lampOff'));
+      // The pull cord, which jiggles when it is pulled.
+      const sway = Math.sin(this.tug * 22) * 9 * this.tug;
+      const end = -76 + this.tug * 12;
+      g.strokeStyle = INK;
+      g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(40, -110); g.quadraticCurveTo(40 + sway * 0.4, (end - 110) / 2, 40 + sway, end); g.stroke();
+      g.fillStyle = '#f4a9a0';
+      g.beginPath(); g.arc(40 + sway, end + 5, 6, 0, Math.PI * 2); g.fill(); g.stroke();
       g.restore();
     },
     hit(x, y) { return x > this.x - 80 && x < this.x + 80 && y > this.y - 360 && y < this.y + 10; },
     tap() {
       W.lampOn = !W.lampOn;
-      this.wob = 1;
-      audio.pop();
-      audio.bell(W.lampOn ? 5 : 2);
+      this.wob = 0.6;
+      this.tug = 1;
+      audio.click();
+      setTimeout(() => { if (W.isAlive()) audio.bell(W.lampOn ? 5 : 2); }, 70);
       if (W.lampOn) fx.sparkle(this.x, this.y - 300, 10, 120, ['#fff2b0', '#ffe07a', '#ffffff']);
     },
-    update(dt) { this.wob = Math.max(0, this.wob - dt * 1.8); },
-    hint() { this.wob = 0.8; },
+    update(dt) {
+      this.wob = Math.max(0, this.wob - dt * 1.8);
+      this.tug = Math.max(0, this.tug - dt * 1.6);
+    },
+    hint() { this.wob = 0.8; this.tug = 0.7; },
   };
 
   W.on('glow', ({ g, n }) => {
@@ -104,6 +137,247 @@ export function createHome(W) {
     g.drawImage(img, 0, -bb.y1 * dh, dw, dh);
     g.restore();
   }
+
+  /* ---------------- the baby's cot ----------------
+     Carrying the baby over it makes it glow, and letting go there lays her
+     in it: the mobile turns to a music-box tune and she drifts off. Tapping
+     the cot plays the tune again, or calls her over to it from anywhere in
+     the house; touching her wakes her, lifting her takes her out, and once
+     she has been awake a while she climbs out by herself. */
+
+  const COT = PLACES.cot;
+  const COT_DEPTH = depthAt(COT.y);
+  const MATTRESS = -84;
+  const TUNE_SECS = 2.6;
+  const cot = {
+    x: COT.x, y: COT.y, z: COT.y, wob: 0, glow: 0, hover: false, squeakAt: 0,
+    spin: 0, spinV: 0.2, playingUntil: 0, hop: null, awakeSince: 0,
+    get playing() { return W.t < this.playingUntil; },
+    hasBaby() { return W.baby.state === 'cot' && W.baby.cot === this; },
+    draw(g) {
+      if (this.glow > 0) {
+        const pulse = 0.8 + Math.sin(W.t * 7) * 0.2;
+        g.save();
+        g.globalAlpha = this.glow;
+        g.strokeStyle = '#ffc93c';
+        g.lineWidth = 9;
+        g.setLineDash([18, 12]);
+        g.lineDashOffset = -W.t * 40;
+        g.beginPath(); g.ellipse(this.x, this.y + 6, 160 * pulse, 26 * pulse, 0, 0, Math.PI * 2); g.stroke();
+        g.restore();
+      }
+      g.fillStyle = 'rgba(70,40,20,0.18)';
+      g.beginPath(); g.ellipse(this.x, this.y + 2, 150, 16, 0, 0, Math.PI * 2); g.fill();
+      const sq = Math.sin(this.wob * 16) * 0.04 * this.wob;
+      g.save();
+      g.translate(this.x, this.y);
+      g.scale(1 + sq, 1 - sq);
+      W.blit(g, sprite('cotBack'));
+      if (this.hasBaby()) drawBabyInCot(g);
+      W.blit(g, sprite('cotFront'));
+      g.restore();
+      drawMobile(g);
+    },
+    hit(x, y) {
+      if (Math.abs(x - this.x) < 150 && y > this.y - 280 && y < this.y + 16) return true;
+      // The mobile above it.
+      return x > this.x - 40 && x < this.x + 150 && y > this.y - 340 && y < this.y - 250;
+    },
+    // Her part of the cot (lifting her out, waking her): above the mattress.
+    seatHit(x, y) { return Math.abs(x - this.x) < 125 && y > this.y - 300 && y < this.y - 40; },
+    // Whether the baby, carried with her feet at (x, foot), would go in.
+    takes(x, foot) { return Math.abs(x - this.x) < 170 && foot > this.y - 320 && foot < this.y + 110; },
+    press() { this.wob = 0.8; this.spinV = Math.max(this.spinV, 1.2); },
+    tap() {
+      audio.pop();
+      if (this.hasBaby()) {
+        if (!W.baby.nap) this.playTune(true);
+        return;
+      }
+      if (!this.callBaby()) this.playTune(false);
+    },
+    // A music-box tune while the mobile turns; with `lull`, the baby in the
+    // cot is asleep by the end of it.
+    playTune(lull) {
+      if (this.playing) return;
+      this.playingUntil = W.t + TUNE_SECS;
+      this.spinV = 2.4;
+      const still = () => !lull || (this.hasBaby() && !W.baby.nap);
+      W.kids.hum(this.x + 60, this.y - 300, still, () => {
+        if (!lull || !this.hasBaby()) return;
+        W.baby.nap = true;
+        W.baby.stateT = 0;
+        audio.sleepyCoo();
+        fx.hearts(this.x, this.y - 210, 2);
+      });
+    },
+    // The baby crawls over from wherever she is in the house and climbs in.
+    callBaby() {
+      const baby = W.baby;
+      if (!baby.free() || roomAt(baby.x) !== 'home') return false;
+      const f = floorFor(this.x);
+      const side = baby.x < this.x ? -1 : 1;
+      audio.babble();
+      baby.crawlOver(clamp(this.x + side * 165, f.x0, f.x1), f.y0 + 30, () => {
+        if (!this.hasBaby() && baby.free() && Math.abs(baby.x - this.x) < 260) seatInCot({ x: baby.x, y: baby.y });
+      });
+      return true;
+    },
+    release() {
+      this.hop = null;
+      this.playingUntil = 0;
+    },
+    update(dt) {
+      this.wob = Math.max(0, this.wob - dt * 1.6);
+      this.spin += this.spinV * dt;
+      this.spinV = Math.max(0.2, this.spinV * Math.exp(-0.5 * dt));
+      // Glows while the baby is carried over it.
+      const b = W.baby;
+      const hover = b.held && this.takes(b.hold.x, b.heldFoot(b.hold.y));
+      if (hover && !this.hover && W.t > this.squeakAt) {
+        this.squeakAt = W.t + 0.45;
+        this.wob = 0.8;
+        audio.bell(6);
+        fx.sparkle(this.x, this.y - 240, 6, 110);
+      }
+      this.hover = hover;
+      this.glow = clamp(this.glow + (hover ? 6 : -4) * dt, 0, 1);
+      if (this.hop && W.t - this.hop.t0 > 0.55) this.hop = null;
+      // Awake for a while with nothing happening, she climbs out by herself.
+      if (!this.hasBaby() || b.nap || this.playing) this.awakeSince = W.t;
+      else if (W.t - this.awakeSince > 10) climbOut();
+    },
+    hint() { this.wob = 0.8; this.spinV = Math.max(this.spinV, 1.4); },
+  };
+  W.cot = cot;
+
+  // Lays the baby in the cot. `from` is where she hops in from, if she
+  // climbed in by herself rather than being carried.
+  function seatInCot(from = null) {
+    const baby = W.baby;
+    baby.held = false;
+    baby.stroller = null;
+    baby.cot = cot;
+    baby.nap = false;
+    baby.crawlTo = null;
+    baby.then = null;
+    if (baby.want !== 'brother') baby.want = null;
+    baby.setState('cot');
+    baby.x = cot.x;
+    baby.y = cot.y + 1;
+    baby.squash = 0.6;
+    cot.hop = from ? { from, t0: W.t } : null;
+    cot.wob = 1;
+    cot.awakeSince = W.t;
+    audio.giggle();
+    fx.sparkle(cot.x, cot.y - 200, 10, 140);
+    setTimeout(() => { if (W.isAlive() && cot.hasBaby()) cot.playTune(true); }, from ? 650 : 350);
+  }
+
+  // Out she climbs, onto the rug in front.
+  function climbOut() {
+    const baby = W.baby;
+    cot.release();
+    baby.cot = null;
+    baby.x = cot.x + 30;
+    baby.y = PLACES.babyHome.y;
+    baby.air = baby.y - (cot.y + MATTRESS);
+    baby.vAir = 260;
+    baby.setState('fall');
+    audio.boing();
+  }
+
+  function drawBabyInCot(g) {
+    const baby = W.baby;
+    let bx = 0, foot = MATTRESS;
+    if (cot.hop) {
+      // Climbing in: a little hop from where she was sitting.
+      const k = ease(clamp((W.t - cot.hop.t0) / 0.55, 0, 1));
+      bx = lerp(cot.hop.from.x - cot.x, 0, k);
+      foot = lerp(cot.hop.from.y - cot.y, MATTRESS, k) - Math.sin(k * Math.PI) * 130;
+    }
+    baby.drawAt(g, bx, foot, COT_DEPTH, baby.nap ? 'sleep' : baby.poseKey());
+    if (baby.nap && !cot.hop) {
+      // Tucked in under a little quilt.
+      g.beginPath();
+      g.moveTo(-34, MATTRESS + 2);
+      g.bezierCurveTo(-30, MATTRESS - 50, 96, MATTRESS - 52, 112, MATTRESS + 2);
+      g.closePath();
+      g.fillStyle = '#bfe2e3';
+      g.fill();
+      g.strokeStyle = INK;
+      g.lineWidth = 3;
+      g.stroke();
+      g.fillStyle = '#ffffff';
+      for (const [hx, hy] of [[10, -22], [50, -30], [86, -18]]) {
+        g.save(); g.translate(hx, MATTRESS + hy); heartPath(g, 12); g.fill(); g.restore();
+      }
+    }
+  }
+
+  // The mobile: a star, a moon and a heart turning on a pole from the cot.
+  function drawMobile(g) {
+    const px = cot.x + 130, top = cot.y - 334, hub = { x: cot.x + 50, y: top + 8 };
+    g.save();
+    g.strokeStyle = INK;
+    g.lineCap = 'round';
+    g.lineWidth = 6;
+    g.beginPath();
+    g.moveTo(px, cot.y - 270);
+    g.lineTo(px, top + 14);
+    g.quadraticCurveTo(px, top, px - 16, top);
+    g.lineTo(hub.x, top);
+    g.stroke();
+    g.strokeStyle = '#fff3e3';
+    g.lineWidth = 3;
+    g.stroke();
+    const items = [0, 1, 2].map(i => {
+      const a = cot.spin + (i / 3) * Math.PI * 2;
+      return { i, x: hub.x + Math.cos(a) * 46, k: 0.85 + Math.sin(a) * 0.15, y: hub.y + 40 + i * 6 };
+    }).sort((a, b) => a.k - b.k);
+    for (const it of items) {
+      g.strokeStyle = 'rgba(107,74,58,0.5)';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(hub.x, hub.y); g.lineTo(it.x, it.y - 12); g.stroke();
+      g.save();
+      g.translate(it.x, it.y);
+      g.scale(it.k, it.k);
+      g.rotate(Math.sin(W.t * 2 + it.i) * 0.15);
+      g.strokeStyle = INK;
+      g.lineWidth = 2.5;
+      g.beginPath();
+      if (it.i === 0) {
+        for (let j = 0; j < 10; j++) {
+          const r = j % 2 ? 7 : 16, a = (j / 10) * Math.PI * 2 - Math.PI / 2;
+          g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        g.closePath();
+        g.fillStyle = '#ffd650';
+      } else if (it.i === 1) {
+        g.arc(0, 0, 15, 0.5, Math.PI * 2 - 0.5);
+        g.arc(7, 0, 11, Math.PI * 2 - 0.9, 0.9, true);
+        g.closePath();
+        g.fillStyle = '#d4c4ff';
+      } else {
+        heartPath(g, 26);
+        g.fillStyle = '#ff9fb2';
+      }
+      g.fill();
+      g.stroke();
+      g.restore();
+    }
+    g.fillStyle = '#f4a7b9';
+    g.beginPath(); g.arc(hub.x, hub.y, 6, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+
+  W.dropTargets.push({
+    accept(item, x, y) {
+      if (item !== W.baby || !cot.takes(x, y)) return false;
+      seatInCot();
+      return true;
+    },
+  });
 
   /* ---------------- wardrobe ---------------- */
 
@@ -306,7 +580,8 @@ export function createHome(W) {
         audio.pop();
         spill();
       } else {
-        const out = W.toys.filter(t => !t.hidden && !t.held && W.onScreen(t.x, 100) && t.kind !== 'apple' && t.kind !== 'wand');
+        // Toys only: apples and garden produce belong in the harvest basket.
+        const out = W.toys.filter(t => !t.hidden && !t.held && W.onScreen(t.x, 100) && !t.spec.produce && t.kind !== 'wand');
         if (out.length) tidy(out);
         else { this.isOpen = false; audio.pop(); }
       }
@@ -441,6 +716,6 @@ export function createHome(W) {
     },
   };
 
-  for (const e of [lamp, bed, wardrobe, cards, curtains, toybox, door, sunPatch]) W.add(e);
-  return { toybox, wardrobe, bed, door, curtains, lamp };
+  for (const e of [lamp, bed, cot, wardrobe, cards, curtains, toybox, door, sunPatch]) W.add(e);
+  return { toybox, wardrobe, bed, cot, door, curtains, lamp };
 }

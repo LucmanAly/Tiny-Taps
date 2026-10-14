@@ -456,15 +456,24 @@ export function nightstand() {
   return { vb: [-72, -172, 144, 174], body: painted(body) };
 }
 
+// Off, a cool cream shade in shadow; on, a golden shade lit from inside with
+// the bulb glowing under it, so the difference shows even by day.
 export function lamp(on) {
-  const shade = on ? '#fff7d1' : '#fff0c9';
-  const glow = on ? `<ellipse cx="0" cy="-140" rx="44" ry="26" fill="#fffbe8" opacity="0.9" filter="url(#soft)"/>` : '';
+  const shadeFill = on ? 'url(#shadeOn)' : '#ece0c5';
+  const lit = on
+    ? `<ellipse cx="0" cy="-138" rx="40" ry="24" fill="#fffbe0" opacity="0.95" filter="url(#soft)"/>
+       <ellipse cx="0" cy="-108" rx="22" ry="10" fill="#fff6c8" filter="url(#soft)"/>
+       <ellipse cx="0" cy="-110" rx="12" ry="7" fill="#fffdf0"/>`
+    : `<path d="M-56,-130 L56,-130 L62,-112 L-62,-112 Z" fill="#d8c8a6" opacity="0.7"/>`;
   const body = `
+  <radialGradient id="shadeOn" cx="0.5" cy="0.62" r="0.7">
+    <stop offset="0" stop-color="#fff8cf"/><stop offset="0.6" stop-color="#ffe27d"/><stop offset="1" stop-color="#ffc94a"/>
+  </radialGradient>
   <path d="M-26,0 C-36,-28 -32,-56 -15,-68 L15,-68 C32,-56 36,-28 26,0 Z" fill="#f4a9a0" ${ink(3)}/>
   <path d="M-30,-22 H30 M-31,-40 H31" stroke="#fbd2ca" stroke-width="6"/>
   <rect x="-4" y="-112" width="8" height="46" fill="#c08a5a" ${ink(2, 0.6)}/>
-  <path d="M-44,-178 L44,-178 L62,-112 L-62,-112 Z" fill="${shade}" ${ink(3)}/>
-  ${glow}
+  <path d="M-44,-178 L44,-178 L62,-112 L-62,-112 Z" fill="${shadeFill}" ${ink(3)}/>
+  ${lit}
   <path d="M-62,-112 q8,10 16,0 q8,10 16,0 q8,10 16,0 q8,10 16,0 q8,10 16,0 q8,10 16,0 q8,10 16,0 q8,10 16,0" fill="#f4a9a0" ${ink(2, 0.6)}/>
   <path d="M-44,-178 H44" stroke="#f4a9a0" stroke-width="6"/>`;
   return { vb: [-72, -192, 144, 196], body: painted(body) };
@@ -504,6 +513,39 @@ export function bedQuilt() {
   </g>
   <path d="${shape}" fill="none" ${ink(3)}/>`;
   return { vb: [-122, -156, 346, 104], body: painted(body) };
+}
+
+// The baby's cot in two halves, so she lies (or sits) between the back bars
+// and the front ones. Base centre at (0, 0); the mattress top is at y -84.
+export function cotBack() {
+  let bars = '';
+  for (let x = -102; x <= 102; x += 26) bars += `<rect x="${x - 5}" y="-206" width="10" height="130" rx="5" fill="#f8d9de" ${ink(2, 0.45)}/>`;
+  const post = x => `
+    <rect x="${x - 13}" y="-252" width="26" height="252" rx="10" fill="#fff3e3" ${ink(3)}/>
+    <circle cx="${x}" cy="-258" r="15" fill="#fff3e3" ${ink(3)}/>
+    <circle cx="${x}" cy="-258" r="6" fill="#f4a7b9"/>`;
+  const body = `
+  <rect x="-132" y="-218" width="264" height="18" rx="8" fill="#fff3e3" ${ink(2.5)}/>
+  ${bars}
+  <path transform="translate(0,-226)" d="M0,8 C-15,-4 -13,-17 -5,-17 C-1,-17 0,-13 0,-11 C0,-13 1,-17 5,-17 C13,-17 15,-4 0,8 Z" fill="#f08b9f" ${ink(1.5, 0.6)}/>
+  <rect x="-126" y="-96" width="252" height="30" rx="12" fill="#ffffff" ${ink(2.5)}/>
+  <path d="M-118,-84 C-60,-90 60,-90 118,-84" stroke="#cfe8ea" stroke-width="10" fill="none" stroke-linecap="round"/>
+  ${post(-130)}${post(130)}`;
+  return { vb: [-150, -280, 300, 284], body: painted(body) };
+}
+
+export function cotFront() {
+  let bars = '';
+  for (let x = -96; x <= 96; x += 32) bars += `<rect x="${x - 4}" y="-176" width="8" height="122" rx="4" fill="#fff3e3" ${ink(2, 0.55)}/>`;
+  const body = `
+  <rect x="-128" y="-186" width="256" height="16" rx="7" fill="#fff3e3" ${ink(2.5)}/>
+  ${bars}
+  <rect x="-130" y="-62" width="260" height="34" rx="9" fill="#f4c0cb" ${ink(2.5)}/>
+  <path d="M-110,-45 H110" stroke="#fbe0e6" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="-60" cy="-45" r="5" fill="#fff"/><circle cx="0" cy="-45" r="5" fill="#fff"/><circle cx="60" cy="-45" r="5" fill="#fff"/>
+  <rect x="-124" y="-30" width="16" height="30" rx="5" fill="#fff3e3" ${ink(2.5)}/>
+  <rect x="108" y="-30" width="16" height="30" rx="5" fill="#fff3e3" ${ink(2.5)}/>`;
+  return { vb: [-140, -194, 280, 198], body: painted(body) };
 }
 
 export function wardrobeBody() {
@@ -875,7 +917,7 @@ export function basketFront() {
 // separately because their size depends on the screen.
 export const SPRITES = {
   nightstand, lampOff: () => lamp(false), lampOn: () => lamp(true),
-  bedBack, bedQuilt, wardrobeBody, wardrobeInside, wardrobeDoor, curtain, door,
+  bedBack, bedQuilt, cotBack, cotFront, wardrobeBody, wardrobeInside, wardrobeDoor, curtain, door,
   strollerBack, strollerFront, treeTrunk, treeCanopy,
   cloud: () => cloud('clear'), cloudRain: () => cloud('rain'), cloudSnow: () => cloud('snow'),
   sun: sunFace, moon, bottle, apple, wand,

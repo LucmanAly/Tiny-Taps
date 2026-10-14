@@ -557,13 +557,13 @@ export function createKids(W) {
     held: false, hold: { x: 0, y: 0 }, swing: 0, swingV: 0,
     wob: 0, squash: 0, box: null,
     want: null, wantT: 0, nextWantAt: 7, lastWant: null,
-    blanket: false, using: null, stroller: null, nap: false,
+    blanket: false, using: null, stroller: null, cot: null, nap: false,
     crawlTo: null, then: null, momentIx: 0, settleUntil: 0,
     get z() { return this.held ? 3001 : this.y + 0.2; },
     get layer() { return this.held ? 'front' : 'sorted'; },
 
     setState(s, dur = 0) { this.state = s; this.stateT = 0; this.dur = dur; },
-    busy() { return ['held', 'fall', 'stroller', 'visit', 'lull'].includes(this.state) || !!this.using; },
+    busy() { return ['held', 'fall', 'stroller', 'cot', 'visit', 'lull'].includes(this.state) || !!this.using; },
     // Awake, on the floor and not in the middle of anything.
     free() { return !this.busy() && !['sleep', 'peek'].includes(this.state); },
     // Where her feet are while she is carried with the finger at `y`.
@@ -583,6 +583,10 @@ export function createKids(W) {
           if (this.nap) return 'sleep';
           if (boy.state === 'rock') return 'sleepy';
           return this.stateT % 3 < 1.2 ? 'happy' : 'look';
+        case 'cot':
+          if (this.nap) return 'sleep';
+          if ((W.cot && W.cot.playing) || (boy.state === 'kneel' && Math.abs(boy.x - this.x) < 320)) return 'sleepy';
+          return this.stateT % 4 < 1.5 ? 'happy' : 'sit';
         case 'drink': case 'eat': return 'sit';
         default: return this.look ? 'look' : 'sit';
       }
@@ -609,7 +613,7 @@ export function createKids(W) {
     },
 
     draw(g) {
-      if (this.state === 'stroller') return;   // the pram draws her
+      if (this.state === 'stroller' || this.state === 'cot') return;   // the pram or cot draws her
       const depth = this.held ? HELD_DEPTH : depthAt(this.y);
       const key = this.poseKey();
       const pose = BABY_POSES[key] || BABY_POSES.sit;
@@ -654,7 +658,7 @@ export function createKids(W) {
 
     drawUI(g) {
       this.bubbleAt = null;
-      if (!this.want || this.held || ['sleep', 'stroller', 'visit', 'lull'].includes(this.state)) return;
+      if (!this.want || this.held || ['sleep', 'stroller', 'cot', 'visit', 'lull'].includes(this.state)) return;
       const b = this.box;
       if (!b) return;
       // On whichever side has more room on screen.
@@ -669,6 +673,7 @@ export function createKids(W) {
       // In the pram, touching her (or the top of the basket) lifts her out;
       // the handle and wheels still move the pram.
       if (this.state === 'stroller') return !!this.stroller && this.stroller.seatHit(x, y);
+      if (this.state === 'cot') return !!this.cot && this.cot.seatHit(x, y);
       if (this.want && this.bubbleAt && Math.hypot(x - this.bubbleAt.x, y - this.bubbleAt.y) < 80) { this.bubbleTap = true; return true; }
       const b = this.box;
       if (!b) return false;
@@ -679,10 +684,21 @@ export function createKids(W) {
     press() {
       this.wob = 1;
       if (this.state === 'stroller' && this.stroller) this.stroller.wob = 0.5;
+      if (this.state === 'cot' && this.cot) this.cot.wob = 0.5;
       if (this.state !== 'sleep' && !this.nap) audio.giggle();
     },
 
     tap() {
+      if (this.state === 'cot') {
+        // Asleep in her cot, a touch wakes her; awake, she bounces happily.
+        if (this.nap) {
+          this.nap = false;
+          this.stateT = 0;
+          audio.coo();
+        }
+        fx.hearts(this.x, this.y - 230, 2);
+        return;
+      }
       if (this.state === 'stroller') {
         if (this.nap) {
           this.nap = false;
@@ -714,7 +730,12 @@ export function createKids(W) {
         this.stroller.wob = 1;
         audio.squeak();
       }
+      if (this.state === 'cot' && this.cot) {
+        this.cot.release();
+        this.cot.wob = 1;
+      }
       this.stroller = null;
+      this.cot = null;
       this.nap = false;
       this.held = true;
       this.hold = { x, y };
@@ -775,7 +796,7 @@ export function createKids(W) {
         case 'sit': idle(dt); return;
         case 'reach': case 'sleepy':
           if (!this.want) this.setState('sit');
-          else if (this.state === 'sleepy' && this.stateT > 12) fallAsleep(false);
+          else if (this.state === 'sleepy' && this.stateT > 12 && !toCot()) fallAsleep(false);
           return;
         case 'sleep': {
           if (this.stateT > 1.6) { this.stateT = 0.0001; fx.zzz(this.x + 30, this.y - 70); }
@@ -791,6 +812,13 @@ export function createKids(W) {
           if (!p) { this.setState('sit'); return; }
           this.x = p.x; this.y = p.y + 1;
           if (this.nap && this.stateT > 1.6) { this.stateT = 0.0001; fx.zzz(this.x + 40, this.y - 230); }
+          return;
+        }
+        case 'cot': {
+          const c = this.cot;
+          if (!c) { this.setState('sit'); return; }
+          this.x = c.x; this.y = c.y + 1;
+          if (this.nap && this.stateT > 1.6) { this.stateT = 0.0001; fx.zzz(this.x - 30, this.y - 170); }
           return;
         }
         case 'visit': case 'lull':
@@ -821,7 +849,14 @@ export function createKids(W) {
       }
     }
     if (W.t > baby.nextWantAt) pickWant();
-    if (W.dayT > 0.85 && baby.stateT > 14 && !baby.want) fallAsleep(false);
+    if (W.dayT > 0.85 && baby.stateT > 14 && !baby.want && !toCot()) fallAsleep(false);
+  }
+
+  // Bedtime in the house means her own cot: she crawls over and climbs in.
+  function toCot() {
+    if (!W.cot || roomAt(baby.x) !== 'home') return false;
+    baby.want = null;
+    return W.cot.callBaby();
   }
 
   function crawl(x, y, then = null) {
@@ -968,7 +1003,7 @@ export function createKids(W) {
 
   const NEAR = 170;
   function nearBaby(x, y) {
-    if (baby.held || baby.state === 'stroller') return false;
+    if (baby.held || baby.state === 'stroller' || baby.state === 'cot') return false;
     const cy = baby.y - SIZE.babyH * 0.5 * depthAt(baby.y);
     return Math.hypot(x - baby.x, (y - cy) * 0.8) < NEAR;
   }
@@ -1122,10 +1157,11 @@ export function createKids(W) {
       audio.coo();
     }
   });
+  // Her brother gone to bed, she goes to hers.
   W.on('boySleep', () => {
     setTimeout(() => {
       if (!W.isAlive() || baby.busy() || baby.state === 'sleep') return;
-      if (roomAt(baby.x) === 'home') fallAsleep(false);
+      if (roomAt(baby.x) === 'home' && !toCot()) fallAsleep(false);
     }, 1800);
   });
 
@@ -1182,6 +1218,9 @@ export function createKids(W) {
     if (baby.state === 'stroller') {
       at = baby.stroller;
       if (!at || baby.nap || at.ride || at.held) return false;
+    } else if (baby.state === 'cot') {
+      at = baby.cot;
+      if (!at || baby.nap || at.playing) return false;
     }
     return roomAt(boy.x) === roomAt(at.x) && Math.abs(boy.x - at.x) < LULL_REACH;
   }
@@ -1207,6 +1246,7 @@ export function createKids(W) {
     baby.want = null;
     baby.nextWantAt = Math.max(baby.nextWantAt, W.t + 12);
     if (baby.state === 'stroller') { rockPram(baby.stroller); return; }
+    if (baby.state === 'cot') { hushCot(baby.cot); return; }
     releaseUsing();
     baby.crawlTo = null;
     baby.then = null;
@@ -1236,6 +1276,25 @@ export function createKids(W) {
         baby.stateT = 0;
         audio.sleepyCoo();
         fx.hearts(pram.x, pram.y - 260, 2);
+      });
+    });
+  }
+
+  // In her cot: he kneels beside it and hums while the mobile turns.
+  function hushCot(cot) {
+    const f = floorFor(cot.x);
+    const side = boy.x < cot.x ? -1 : 1;
+    boy.walkTo(clamp(cot.x + side * 200, f.x0, f.x1), f.y0 + 20, () => {
+      if (!cot.hasBaby() || baby.nap) return;
+      boy.facing = -side;
+      boy.setState('kneel', 3.4);
+      cot.spinV = 2.4;
+      cot.playingUntil = W.t + 2.8;
+      hum(cot.x, cot.y - 300, () => cot.hasBaby() && !baby.nap && boy.state === 'kneel', () => {
+        baby.nap = true;
+        baby.stateT = 0;
+        audio.sleepyCoo();
+        fx.hearts(cot.x, cot.y - 210, 2);
       });
     });
   }
@@ -1306,7 +1365,7 @@ export function createKids(W) {
     g.restore();
   }
 
-  W.kids = { boy, baby, celebrate, visitBaby, startBounce, nearBaby, lullaby, receive };
+  W.kids = { boy, baby, celebrate, visitBaby, startBounce, nearBaby, lullaby, receive, hum };
   W.add(boy);
   W.add(baby);
   return { boy, baby, ready: loadSet(boy.outfit).then(set => { boy.imgs = set || {}; }) };

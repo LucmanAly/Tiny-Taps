@@ -2,10 +2,12 @@
 //
 // Day and night belong to the sun and moon themselves: drag the sun down
 // behind the hills (or just tap it) and night falls; tap or drag the moon
-// down and the sun comes back up with a rooster. The weather belongs to one
-// friendly cloud: tap it for rain (a shower that falls only under it and
-// leaves puddles), again for snow (the garden turns white and a snowman can
-// be built), again for a rainbow. Drag the cloud to move the shower.
+// down and the sun comes back up with a rooster. Being far away, they stay
+// put on the screen while the garden pans beneath them, so they can be
+// reached from anywhere outside. The weather belongs to one friendly cloud:
+// tap it for rain (over the whole garden, filling the puddles), again for
+// snow (the garden turns white and a snowman can be built), again for a
+// rainbow. Left behind, the cloud drifts over to wherever the child is.
 
 import { WORLD, PLACES, TIMING, clampToFloor, depthAt } from './layout.js';
 import { ROOSTER } from './assets.js';
@@ -20,6 +22,8 @@ export function createSky(W) {
     snow: 0,                 // 0..1 how white the garden is
     rainbow: 0,              // 0..1
     rainbowUntil: 0,
+    rainbowX: 2560,
+    gloom: 0,                // 0..1 how grey the sky is while it rains
     dayTarget: 0,
   };
   W.sky = sky;
@@ -27,9 +31,36 @@ export function createSky(W) {
   /* ---------------- day and night ---------------- */
 
   let wasNight = false;
-  const sunHome = { x: PLACES.sun.x, y: PLACES.sun.y };
-  const moonHome = { x: 2050, y: 150 };
+  // How high the sun and moon ride: their usual height, or higher up the
+  // extra sky a tall (portrait) screen shows, clear of the edge arrows.
+  const sunTop = () => Math.min(PLACES.sun.y, W.cam.top + W.cam.viewH * 0.24);
+  const moonTop = () => sunTop() + 30;
   const SET_Y = 560;               // below the hills
+  // The sun and moon keep their place on the screen (a fraction `f` of the
+  // way across), but never further left than the garden sky: hidden behind
+  // the house they would catch taps meant for the wall.
+  const SKY_X0 = 1900;
+  const anchor = f => Math.max(SKY_X0, W.cam.x + W.cam.viewW * f);
+  // Their usual places are 0.72 (sun) and 0.3 (moon) of the way across; if
+  // the apple tree's canopy would hide one there, it glides over to the
+  // nearest clear spot, and back again once the tree has passed.
+  const TREE_SPAN = [PLACES.tree.x - 460, PLACES.tree.x + 430];
+  const clearOfTree = x => x < TREE_SPAN[0] || x > TREE_SPAN[1];
+  const place = {
+    sun: { spots: [0.72, 0.88, 0.56, 0.4], f: 0.72, to: 0.72 },
+    moon: { spots: [0.3, 0.14, 0.46, 0.62], f: 0.3, to: 0.3 },
+  };
+  function placeBodies(dt) {
+    for (const p of Object.values(place)) {
+      if (clearOfTree(anchor(p.spots[0]))) p.to = p.spots[0];
+      else if (!clearOfTree(anchor(p.to))) p.to = p.spots.find(f => clearOfTree(anchor(f))) ?? p.spots[0];
+      p.f += (p.to - p.f) * Math.min(1, dt * 5);
+    }
+  }
+  const holdX = x => {
+    const lo = Math.max(1750, W.cam.x + 60);
+    return clamp(x, lo, Math.max(lo, W.cam.x + W.cam.viewW - 60));
+  };
 
   function setDay(night, { quiet = false } = {}) {
     sky.dayTarget = night ? 1 : 0;
@@ -63,7 +94,7 @@ export function createSky(W) {
     layer: 'sky', held: false, wob: 0,
     pos() {
       const t = ease(W.dayT);
-      return { x: sunHome.x + t * 260, y: sunHome.y + t * (SET_Y - sunHome.y) };
+      return { x: anchor(place.sun.f) + t * Math.min(260, W.cam.viewW * 0.15), y: sunTop() + t * (SET_Y - sunTop()) };
     },
     draw(g) {
       if (W.dayT > 0.98) return;
@@ -72,6 +103,7 @@ export function createSky(W) {
       const squash = 1 + Math.sin(this.wob * 18) * 0.08 * Math.max(0, this.wob);
       g.save();
       g.translate(x, y);
+      g.globalAlpha = 1 - sky.gloom * 0.35;     // paler behind the rain
       // Soft glow, then slowly turning rays, then the face.
       const glow = g.createRadialGradient(0, 0, 40, 0, 0, 170);
       glow.addColorStop(0, 'rgba(255,240,170,0.55)');
@@ -105,8 +137,8 @@ export function createSky(W) {
     tap() { setDay(true); fx.sparkle(this.pos().x, this.pos().y, 12, 160); },
     grab(x, y) { this.held = true; this.hold = { x, y }; },
     drag(x, y) {
-      this.hold = { x: clamp(x, 1750, WORLD.W - 80), y: clamp(y, 60, SET_Y + 40) };
-      W.dayT = clamp((this.hold.y - sunHome.y) / (SET_Y - sunHome.y), 0, 1) * 0.9;
+      this.hold = { x: holdX(x), y: clamp(y, Math.min(60, sunTop()), SET_Y + 40) };
+      W.dayT = clamp((this.hold.y - sunTop()) / (SET_Y - sunTop()), 0, 1) * 0.9;
     },
     drop() {
       this.held = false;
@@ -118,7 +150,7 @@ export function createSky(W) {
     layer: 'sky', held: false, wob: 0,
     pos() {
       const t = ease(clamp((W.dayT - 0.35) / 0.65, 0, 1));
-      return { x: moonHome.x, y: SET_Y - t * (SET_Y - moonHome.y) };
+      return { x: anchor(place.moon.f), y: SET_Y - t * (SET_Y - moonTop()) };
     },
     draw(g) {
       if (W.dayT < 0.36) return;
@@ -147,8 +179,8 @@ export function createSky(W) {
     tap() { setDay(false); fx.sparkle(this.pos().x, this.pos().y, 12, 160, ['#fff6c9', '#ffffff', '#d8e4ff']); },
     grab(x, y) { this.held = true; this.hold = { x, y }; },
     drag(x, y) {
-      this.hold = { x: clamp(x, 1750, WORLD.W - 80), y: clamp(y, 60, SET_Y + 40) };
-      W.dayT = 1 - clamp((this.hold.y - moonHome.y) / (SET_Y - moonHome.y), 0, 1) * 0.9;
+      this.hold = { x: holdX(x), y: clamp(y, Math.min(60, moonTop()), SET_Y + 40) };
+      W.dayT = 1 - clamp((this.hold.y - moonTop()) / (SET_Y - moonTop()), 0, 1) * 0.9;
     },
     drop() {
       this.held = false;
@@ -183,9 +215,7 @@ export function createSky(W) {
         g.globalAlpha = 1;
       }
       if (sky.rainbow > 0.01) drawRainbow(g, sky.rainbow);
-      const tint = W.skyStops ? W.skyStops(W.dayT) : null;
       for (const p of puffs) drawPuff(g, p, n);
-      void tint;
     },
     update(dt) {
       for (const p of puffs) {
@@ -199,7 +229,9 @@ export function createSky(W) {
     const s = 60 * p.s;
     g.save();
     g.globalAlpha = 0.85 - n * 0.45;
-    g.fillStyle = n > 0.5 ? '#8e9ad0' : '#ffffff';
+    // White on a fine day, grey in the rain, blue-grey after dark.
+    const grey = Math.round(255 - sky.gloom * 52);
+    g.fillStyle = n > 0.5 ? '#8e9ad0' : `rgb(${grey},${grey + Math.round(sky.gloom * 8)},${Math.min(255, grey + Math.round(sky.gloom * 22))})`;
     g.beginPath();
     g.arc(p.x, p.y, s, 0, Math.PI * 2);
     g.arc(p.x + s * 0.95, p.y + s * 0.2, s * 0.75, 0, Math.PI * 2);
@@ -210,7 +242,7 @@ export function createSky(W) {
   }
 
   function drawRainbow(g, a) {
-    const cx = 2560, cy = 640;
+    const cx = sky.rainbowX, cy = 640;
     const bands = ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#b197fc'];
     g.save();
     g.globalAlpha = a * 0.8;
@@ -227,7 +259,7 @@ export function createSky(W) {
   /* ---------------- the weather cloud ---------------- */
 
   const cloud = {
-    layer: 'sky', x: PLACES.cloud.x, y: PLACES.cloud.y, held: false, wob: 0, lean: 0,
+    layer: 'sky', x: PLACES.cloud.x, y: PLACES.cloud.y, held: false, wob: 0, lean: 0, droppedAt: -99,
     draw(g) {
       const name = sky.weather === 'rain' ? 'cloudRain' : sky.weather === 'snow' ? 'cloudSnow' : 'cloud';
       const sprite = W.sprites[name];
@@ -247,10 +279,11 @@ export function createSky(W) {
     update(dt) {
       this.wob = Math.max(0, this.wob - dt * 1.5);
       this.lean *= Math.exp(-5 * dt);
-      // Asked over to somewhere thirsty (the vegetable patch), it drifts there.
+      // Asked over somewhere (see followView), it floats there, never so fast
+      // that it seems to jump.
       if (this.glideTo != null && !this.held) {
         const dx = clamp(this.glideTo, 1840, WORLD.W - 120) - this.x;
-        this.x += dx * Math.min(1, dt * 1.8);
+        this.x += clamp(dx * Math.min(1, dt * 1.8), -900 * dt, 900 * dt);
         this.lean = clamp(dx * 0.0015, -0.2, 0.2);
         if (Math.abs(dx) < 4) this.glideTo = null;
       }
@@ -266,7 +299,7 @@ export function createSky(W) {
       this.x = nx;
       this.y = clamp(y, 40, 300);
     },
-    drop() { this.held = false; },
+    drop() { this.held = false; this.droppedAt = W.t; },
     hint() { this.wob = 0.8; },
   };
   sky.cloud = cloud;
@@ -291,6 +324,38 @@ export function createSky(W) {
     return copy;
   }
 
+  // The cloud comes along: once the view has rested somewhere in the garden
+  // for a moment with the cloud nowhere to be seen, it drifts over, so the
+  // weather is always in reach. It settles on the side away from the sun (or
+  // the moon), and moves aside if it ends up in front of them.
+  let camSeen = 0;
+  let stillSince = 0;
+  function followView() {
+    const cam = W.cam;
+    if (Math.abs(cam.x - camSeen) > 2) { camSeen = cam.x; stillSince = W.t; return; }
+    if (cloud.held || cloud.glideTo != null || W.t - stillSince < 2 || W.t - cloud.droppedAt < 6) return;
+    const centre = cam.x + cam.viewW / 2;
+    if (centre < 2000) return;
+    const body = (W.dayT > 0.5 ? moon : sun).pos();
+    const away = Math.abs(cloud.x - centre) > cam.viewW / 2 + 150;
+    // Overlapping, allowing for the sun or moon riding higher than the cloud.
+    const near = x => Math.max(0, 1 - Math.hypot((x - body.x) / 280, (cloud.y - body.y) / 220));
+    const covering = !away && near(cloud.x) > 0 && W.onScreen(body.x);
+    const hidden = !away && !cloudClearOfTree(cloud.x);
+    if (!away && !covering && !hidden) return;
+    // The best of a few spots across the view: clear of the tree, clear of
+    // the sun or moon, and otherwise as close to where it is as possible.
+    let best = null, bestScore = Infinity;
+    for (const f of [0.08, 0.22, 0.36, 0.5, 0.64, 0.78, 0.92]) {
+      const x = clamp(cam.x + cam.viewW * f, 1840, WORLD.W - 120);
+      const score = (cloudClearOfTree(x) ? 0 : 1000) + near(x) * 600 + Math.abs(x - cloud.x) * 0.01;
+      if (score < bestScore) { bestScore = score; best = x; }
+    }
+    if (Math.abs(best - cloud.x) > 20) cloud.glideTo = best;
+  }
+  // Clear of the apple tree's canopy, which would hide the cloud behind it.
+  const cloudClearOfTree = x => x < PLACES.tree.x - 510 || x > PLACES.tree.x + 480;
+
   function cycleWeather() {
     const next = sky.weather === 'clear' ? 'rain' : sky.weather === 'rain' ? 'snow' : 'clear';
     setWeather(next);
@@ -304,11 +369,14 @@ export function createSky(W) {
     if (kind === 'rain') { W.say('Rain'); audio.whoosh(); }
     else if (kind === 'snow') { W.say('Snow'); audio.shimmer(1046.5); }
     else if (was !== 'clear') {
+      // Over the part of the garden the child is looking at.
+      sky.rainbowX = clamp(W.cam.x + W.cam.viewW / 2, 2000, WORLD.W - 200);
       sky.rainbow = 0.01;
       sky.rainbowUntil = W.t + 11;
       W.say('Rainbow');
       audio.softFanfare();
-      fx.sparkle(2560, 260, 24, 300, ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#b197fc']);
+      fx.sparkle(sky.rainbowX, 260, 24, 300, ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#b197fc']);
+      W.emit('rainbow', sky.rainbowX);
     }
     W.emit('weather:' + kind);
   }
@@ -330,24 +398,23 @@ export function createSky(W) {
     && Math.abs(x - p.x) < p.r * p.wet && Math.abs(y - p.y) < p.r * 0.4 * p.wet + 18);
 
   function updateWeather(dt) {
-    // Rain: a shower under the cloud only.
+    // Rain: over the whole garden, as thick as a fixed number of drops across
+    // whatever part of it is in view (none falls indoors).
+    sky.gloom = clamp(sky.gloom + (sky.weather === 'rain' ? dt / 2 : -dt / 3), 0, 1);
     if (sky.weather === 'rain') {
-      const want = 110;
+      const x0 = Math.max(1660, W.cam.x - 80), x1 = Math.min(WORLD.W + 40, W.cam.x + W.cam.viewW + 80);
+      const want = x1 > x0 ? Math.round(170 * (x1 - x0) / 1600) : 0;
       while (drops.length < want) {
-        drops.push({ x: cloud.x + (Math.random() - 0.5) * 300, y: cloud.y + 40 + Math.random() * 60,
+        drops.push({ x: x0 + Math.random() * (x1 - x0), y: W.cam.top - 40 - Math.random() * 500,
           land: 540 + Math.random() * 250, v: 1100 + Math.random() * 400 });
       }
-      for (const p of puddles) {
-        if (Math.abs(p.x - cloud.x) < 230) p.wet = Math.min(1, p.wet + dt / 3.5);
-      }
+      for (const p of puddles) p.wet = Math.min(1, p.wet + dt / 3.5);
     }
     for (const d of drops) d.y += d.v * dt;
-    const landed = drops.filter(d => d.y >= d.land);
-    for (const d of landed) {
-      if (Math.random() < 0.18) fx.splash(d.x, d.land, 0.15);
+    for (const d of drops) {
+      if (d.y >= d.land && Math.random() < 0.12 && W.onScreen(d.x)) fx.splash(d.x, d.land, 0.15);
     }
     drops = drops.filter(d => d.y < d.land);
-    if (sky.weather !== 'rain') drops = drops.filter(d => d.y > cloud.y + 140);
 
     // Puddles slowly dry in sunshine and freeze over (vanish) in snow.
     if (sky.weather !== 'rain') {
@@ -462,6 +529,47 @@ export function createSky(W) {
       g.fillStyle = '#ffffff';
       g.fillRect(1250, -284, 114, 16);
       g.fillRect(232, 342, 346, 10);
+      g.restore();
+    },
+  };
+
+  // Rain or snow seen through the bedroom window, drawn on the glass before
+  // the curtains.
+  const GLASS = { x: 262, y: 130, w: 286, h: 210 };
+  const windowWeather = {
+    layer: 'houseDecal',
+    bits: Array.from({ length: 18 }, () => ({
+      x: GLASS.x + Math.random() * GLASS.w, y: GLASS.y + Math.random() * GLASS.h, k: Math.random(),
+    })),
+    update(dt) {
+      if (sky.weather === 'clear') return;
+      const rain = sky.weather === 'rain';
+      for (const b of this.bits) {
+        b.y += (rain ? 820 + b.k * 300 : 40 + b.k * 40) * dt;
+        if (!rain) b.x += Math.sin(W.t * 1.5 + b.k * 6) * 18 * dt;
+        if (b.y > GLASS.y + GLASS.h + 30) {
+          b.y = GLASS.y - 30;
+          b.x = GLASS.x + Math.random() * GLASS.w;
+        }
+      }
+    },
+    draw(g) {
+      if (sky.weather === 'clear') return;
+      g.save();
+      g.beginPath();
+      g.rect(GLASS.x, GLASS.y, GLASS.w, GLASS.h);
+      g.clip();
+      if (sky.weather === 'rain') {
+        g.strokeStyle = 'rgba(120,160,215,0.6)';
+        g.lineWidth = 4;
+        g.lineCap = 'round';
+        g.beginPath();
+        for (const b of this.bits) { g.moveTo(b.x, b.y); g.lineTo(b.x - 4, b.y + 26); }
+        g.stroke();
+      } else {
+        g.fillStyle = '#ffffff';
+        for (const b of this.bits) { g.beginPath(); g.arc(b.x, b.y, 3 + b.k * 4, 0, Math.PI * 2); g.fill(); }
+      }
       g.restore();
     },
   };
@@ -623,9 +731,9 @@ export function createSky(W) {
     }
   });
 
-  W.on('update', dt => { updateDay(dt); updateWeather(dt); });
+  W.on('update', dt => { placeBodies(dt); updateDay(dt); updateWeather(dt); followView(); });
 
-  for (const e of [backdrop, sun, moon, cloud, groundDecal, roofSnow, snowman]) W.add(e);
+  for (const e of [backdrop, sun, moon, cloud, groundDecal, roofSnow, windowWeather, snowman]) W.add(e);
   W.on('destroy', () => audio.stopWeatherBed());
   return sky;
 }

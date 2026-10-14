@@ -77,6 +77,8 @@ export const PLACES = {
   photos: { x0: 1054, y0: 116, cols: 5, rows: 2, size: 86, gap: 18 },
   rug: { x: 1372, y: 712, rx: 215, ry: 50 },
   babyHome: { x: 1372, y: 714 },
+  // The baby's cot, against the back wall under the photo frames.
+  cot: { x: 1350, y: 652 },
   boyHome: { x: 1000, y: 742 },
   door: { x: 1600, y0: 330, y1: 790 },
   stroller: { x: 1830, y: 744 },
@@ -94,6 +96,9 @@ export const PLACES = {
     { x: 2780, y: 768, r: 100 },
     { x: 3020, y: 718, r: 78 },
     { x: 3270, y: 772, r: 86 },
+    // On the path along the vegetable patch.
+    { x: 3640, y: 752, r: 78 },
+    { x: 4250, y: 748, r: 80 },
   ],
   cloud: { x: 2290, y: 150 },
   sun: { x: 2760, y: 120 },
