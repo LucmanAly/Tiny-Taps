@@ -9,6 +9,7 @@
 import { PLACES } from './layout.js';
 import { MOMENTS, MOMENT_ORDER, loadImages } from './assets.js';
 import { heartPath } from './fx.js';
+import { childKey } from '../../engine/children.js';
 
 const LS_PHOTOS = 'tinytaps-playhouse-photos';
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -20,7 +21,7 @@ export function createMoments(W) {
   const { audio, fx } = W;
   let collected = new Set();
   try {
-    const saved = JSON.parse(localStorage.getItem(LS_PHOTOS) || '[]');
+    const saved = JSON.parse(localStorage.getItem(childKey(LS_PHOTOS)) || '[]');
     if (Array.isArray(saved)) collected = new Set(saved.filter(id => MOMENTS[id]));
   } catch (e) { /* private mode or bad data: start empty */ }
 
@@ -152,7 +153,7 @@ export function createMoments(W) {
   function arrive(shot) {
     const fresh = !collected.has(shot.id);
     collected.add(shot.id);
-    try { localStorage.setItem(LS_PHOTOS, JSON.stringify([...collected])); } catch (e) { /* storage full or blocked */ }
+    try { localStorage.setItem(childKey(LS_PHOTOS), JSON.stringify([...collected])); } catch (e) { /* storage full or blocked */ }
     glowAt.set(shot.id, W.t);
     const r = frameRect(shot.id);
     fx.sparkle(r.x + r.w / 2, r.y + r.h / 2, fresh ? 18 : 8, 160);

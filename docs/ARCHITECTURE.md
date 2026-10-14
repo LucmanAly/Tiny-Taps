@@ -16,7 +16,7 @@ The shared context contains `stage`, `audio`, `speech`, `celebrate`, `setRepromp
 `exitToMenu`, adaptive `difficulty`, and `recordOutcome`. Game modules should use
 these services rather than reaching into the app shell.
 
-`js/games/index.js` is the authoritative registry. It currently exports 21 games.
+`js/games/index.js` is the authoritative registry. It currently exports 24 games.
 
 ## Voice and audio
 
@@ -35,6 +35,8 @@ There are exactly four gameplay modules:
    utterance is only `Big` or `Small`; idle reprompting does not repeat it.
 3. `js/games/trace.js` awaits `speakWord(current.spoken)` after the final valid
    stroke. The utterance is only the completed letter, number word, shape, or animal.
+   In the My Name set each letter says itself and the last letter says the
+   whole name (one name value).
 4. `js/games/playhouse.js` routes every Play House cue through one `W.say(word)`
    helper wrapping a single `speakWord(word)` call. Each cue is one name: a
    weather word, an outfit, a toy, an animal, or a photo's name. Repeated words
@@ -42,8 +44,9 @@ There are exactly four gameplay modules:
    and never `speakWord`.
 
 `js/games/animals.js` and `js/games/numberbook.js` do not use browser speech.
-My First Words loads Piper MP3s from `assets/audio/animals/`; Number Book loads
-111 Piper MP3s from `assets/audio/numbers/`. Both use the same
+My First Words loads Piper MP3s from `assets/audio/animals/` (its Find it mode plays the same
+clip as the only prompt); Number Book loads 111 Piper MP3s from
+`assets/audio/numbers/`. Both use the same
 `en_US-amy-medium` voice and remain consistent across devices. A failed clip
 load remains silent rather than falling back to device-dependent system speech.
 
@@ -70,15 +73,27 @@ computer-voice triggers.
 ### Other audio
 
 `js/engine/audio.js` owns Web Audio effects, decoded buffers, global volume, and
-per-game mute state. Authentic animal sounds and the bundled My First Words
+per-game mute state. Things That Go adds one effect per vehicle (`siren`,
+`beepBeep`, `puttPutt`, `chopChop`, `foghorn`, `jet`, `ringRing`, plus the
+existing `honk` and `toot`); Things That Go, Paint Pots and Silly Faces use
+effects only. Authentic animal sounds and the bundled My First Words
 Piper MP3s are data/media sounds, not browser narration. `js/data/animals.js`
 records which animals have authentic sound files.
 
 ## Navigation and lifecycle
 
-`showSplash()` unlocks audio on the first gesture and opens `showMenu()`.
+`showSplash()` unlocks audio on the first gesture and opens `showMenu()`, or
+`showWhoIsPlaying()` first when more than one child is set up. With several
+children the menu shows the playing child's avatar chip (top-left; avatar only
+on phones), which returns to that chooser.
 `showMenu()` filters the registry by the selected learning profile and hidden
 games, builds the card grid, and anchors Settings, Mix, and Info controls.
+Every preset profile includes the Sticker Book; My First Words, Things That Go
+and Silly Faces are on the younger home screens, Paint Pots and Number Book on
+the older ones. While the bedtime timer is winding down, the menu shows only
+`calm.CALM_GAMES` (title "Wind-down time"), and `mixPool()` applies the same
+filter to Mix. `showGoodnight()` replaces any screen when the timer ends, and
+boot shows it instead of the splash while the goodnight lock is active.
 
 `startGame()` guards against multi-touch duplicate launches, clears the previous
 screen, creates the game stage and chrome, records a play, constructs `ctx`, and
@@ -89,7 +104,8 @@ stores the cleanup returned by the game. Mix mode wraps cleanup with its own
 buffer playback, and removes the prior DOM. `makeHomeButton()` returns to the
 menu immediately on one pointerdown; there is no hold timer.
 
-The mute control resets to audible for each newly opened game. Muting cancels
+The mute control resets to audible for each newly opened game unless a parent
+turned on "Keep sound muted between games" (`calm.savedMute()`). Muting cancels
 speech and affects both Web Audio and speech synthesis through engine checks.
 
 ## Game architecture
@@ -98,6 +114,15 @@ Games with specialized gestures implement their own `start(ctx)`. Simple
 prompt/choice games can use `js/engine/roundgame.js` `makeRoundGame()`, which
 handles target construction, answer buttons, feedback, parent voice, progress,
 stickers, fade transitions, and reprompt registration.
+
+`js/engine/drag.js` `makeDraggable()` (Feed Me, Sort It, Puzzle Fit Animals,
+Paint Pots) also provides tap-to-place: a press that moves less than 10 px in
+under 600 ms is a tap. With one destination the item glides straight there;
+otherwise it is lifted (`.tap-selected`) and every destination pulses
+(`.tap-target`) until a capture-phase document listener sees the next tap —
+on a destination it glides there, anywhere else it is put down. Arrival goes
+through the same `onDrop` verdict as a real drop, so wrong choices bounce home
+with the usual feedback. Parents can switch it off (`tinytaps-tap-place`).
 
 ### Peekaboo
 
@@ -158,7 +183,10 @@ fits the build at scale `s`, and shelf-packs the remaining pieces at a smaller
 uniform scale `t` so their relative sizes stay true; a lifted piece grows to
 `s` so it matches its outline exactly. A `ResizeObserver` re-lays the round out
 on rotation while keeping placed pieces. Dragging is custom pointer handling in
-SVG space (one piece at a time): a drop near a matching empty outline snaps in
+SVG space (one piece at a time). With tap-to-place on, a quick tap lifts a
+piece (`.sb-picked`) and makes every empty outline glow (`.sb-target`, so no
+answer is given away); tapping an outline glides the piece there and resolves
+it like a drop, tapping elsewhere puts it down. A drop near a matching empty outline snaps in
 with a thud and a rising bell note; a drop on a different outline boings, plays
 the throttled parent encouragement, pulses the piece's own outline, and glides
 it home; a drop elsewhere just glides home. The idle re-prompt silently wiggles
@@ -178,7 +206,8 @@ logic in this mode.
 ### Feed Me
 
 `js/games/feedme.js` chooses an animal/diet pair from `js/data/animals.js`, shows
-three foods, and uses forgiving drag completion for the correct food.
+three foods, and uses forgiving drag completion for the correct food. With
+tap-to-place a tapped food goes straight to the animal (its only destination).
 
 ### Coloring
 
@@ -195,12 +224,22 @@ session; stale asynchronous loads cannot replace the latest selection. The
 user-supplied Indian ringneck parrot preserves its original vector geometry,
 with six closed logical regions (head, body, beak, wing, tail, feet), an
 unpaintable background, and fixed ink/eye details that pass taps through.
-Palette taps fill regions. A separate Done control above the picture saves one
-completed SVG snapshot to the bounded local gallery, then advances to the next
-sketch in the active category after celebration (wrapping after the last one).
-The picker stays closed. Done is disabled until a region is colored and during
-celebration. Cleanup cancels completion timers
-and removes open gallery overlays. All page assets are precached offline.
+Palette taps fill regions. Each page's fills are an ordered list of
+`[region, color]` pairs in `tinytaps-coloring-drafts`: the picture is rebuilt
+by resetting every region to its original fill and replaying the list, Undo
+pops the last pair, and a repeat tap with the same color adds nothing. Lists
+over 200 steps fold into one fill per region. Drafts survive leaving the game;
+the game reopens on the last unfinished page (`tinytaps-coloring-last`) and
+picker thumbnails with a draft show a paint dot. A separate Done control above
+the picture saves one completed SVG snapshot (with the page name) to the
+bounded local gallery, clears that draft, then advances to the next sketch in
+the active category after celebration (wrapping after the last one). The
+picker stays closed. Done and Undo are disabled until a region is colored and
+during celebration. In the gallery, holding ⤓ for 0.65 s renders the snapshot
+to a 1600 px PNG (re-serialized as namespaced XML, drawn on white) and hands it
+to the share sheet on release, falling back to a download. Cleanup cancels
+completion timers and removes open gallery overlays. All page assets are
+precached offline.
 
 ### Matching
 
@@ -210,7 +249,14 @@ pair, leaves matches open, and flips misses back after gentle feedback.
 ### Music
 
 `js/games/music.js` is round-free play. Eight large bars trigger synthesized
-notes and occasional visual bursts.
+notes and occasional visual bursts. Every tap is remembered as `[bar, pause]`
+pairs; 3.5 s of quiet (or a new instrument) starts a new tune, capped at 24
+notes. The green replay button plays the current or previous tune with its
+timing (pauses clamped to 110–1200 ms), lighting each bar; any bar tap stops
+it. The star keeps the tune as a chip (six at most, `tinytaps-music-tunes`).
+The instrument button cycles the xylophone and recorded animals (dog, cat,
+cow, duck, sheep, pig), whose recording plays at 0.75–1.5× speed per bar
+(`tinytaps-music-instrument`). The controls sit between Home and mute.
 
 ### Bubbles
 
@@ -219,8 +265,20 @@ bubbles, play effects, and update the free-play scene.
 
 ### Sticker Book
 
-`js/games/stickers.js` reads locally earned animal IDs from
-`js/engine/stickers.js` and shows earned art or locked silhouettes.
+`js/engine/stickers.js` defines `STICKER_SETS`: Animals (plain animal ids, so
+older books still count), Toys (`toy:<build>`, drawn by `buildSvg` from
+`js/data/builds.js`) and Treats (`food:<id>`). One sticker is awarded every
+fifth win across all sets until the whole book is complete. Animal stickers
+show the photo in the book and the cut-out cartoon (`cutout`) in scenes.
+
+`js/games/stickers.js` has a Book tab (each set with earned art or locked
+silhouettes) and three scene tabs — Farm, Jungle, Ocean — with SVG backdrops
+anchored to the bottom (`xMidYMax slice`). The tray under a scene holds every
+earned sticker: a tap drops one at a random spot, a drag (upward on touch, so
+sideways swipes still scroll the tray) places it exactly. Placed stickers move
+by drag, stack by z-index (re-appending would drop pointer capture), play
+their sound on tap, and are removed by dropping them on the tray. Scenes keep
+up to 40 stickers each in `tinytaps-sticker-scenes`.
 
 ### Shadow Match
 
@@ -241,7 +299,8 @@ adaptive difficulty and asks for the next color visually.
 ### Sort It
 
 `js/games/sort.js` shows two habitat targets per round and draggable animals.
-Targets and outcomes use the habitat field in `js/data/animals.js`.
+Targets and outcomes use the habitat field in `js/data/animals.js`. With
+tap-to-place, tapping the animal lifts it and both homes pulse.
 
 ### Wash the Animal
 
@@ -265,6 +324,16 @@ activate strokes in order. A tap without movement cannot complete anything.
 After the final stroke, Trace records the outcome, speaks exactly
 `current.spoken`, then runs the normal visual celebration and separate parent
 praise path.
+
+Before each stroke a glowing demo dot (`playDemo`) runs along it once, leaving
+a faint trail; it only draws and never changes progress, any touch on the card
+stops it, and the idle reprompt replays it silently. The parent's path width
+(`tinytaps-trace-width`, per child: narrow 0.75×, normal, wide 1.4×) scales
+the tracing tolerance, start tolerance and stroke widths. When the playing
+child has a name (Settings → Children; A–Z are kept, up to 10 letters), a Name
+tab comes first: `nameItems()` makes one item per letter, the strip above the card shows
+the whole name with the current letter large, and the last letter's spoken
+value is the whole name.
 
 ### Play House
 
@@ -329,7 +398,10 @@ lives in `js/games/playhouse/`:
   `tinytaps-playhouse-outfit`.
 
 After seven seconds without a touch, an on-screen interactive thing wiggles
-with a sparkle every few seconds as a hint. Play House never sets a reprompt.
+with a sparkle every few seconds as a hint (a smaller wiggle and no sparkle
+under `calm.quietMotion()`, which also suppresses the photo camera flash in
+`fx.flash()`). During bedtime wind-down Play House starts at night. Play
+House never sets a reprompt.
 
 ### My First Words
 
@@ -339,10 +411,56 @@ word photos, Shark Family includes only the five colored family PNGs, and
 Objects contains the remaining everyday items. The generic shark belongs only
 to Animals.
 
-A safe-bottom-corner configuration button opens the three deck choices. The
+A safe-bottom-corner configuration button opens the mode row (Flashcards or
+Find it, `tiny-taps:first-words-mode`) and the deck choices. The deck
 selection is stored locally, immediately reshuffles that deck, and is restored
 on the next visit. Object taps play bundled Piper names; full-screen horizontal
 swipes move only within the selected category.
+
+Find it plays the target's Piper clip and shows two photos (three from level
+2) from the selected deck; the speaker button and the idle reprompt replay
+only that word. A right tap records a win, bursts, plays parent praise and
+counts toward stickers (the sticker engine is imported lazily because the
+release check imports this module under Node). A wrong tap wiggles, plays
+parent encouragement, records a miss against the target word and replays the
+word. Targets are weighted by `progress.details('animals')`: a word with more
+misses than wins is drawn up to four times as often. Settings → progress lists
+the hardest words under "Currently practicing".
+
+### Things That Go
+
+`js/games/vehicles.js` draws nine original vehicles (car, bus, fire truck,
+tractor, train, plane, helicopter, boat, bike) as inline SVG, each with its own
+effect and a way of leaving (`drive`, `fly`, `sail`). Garage mode is a street
+of four garage doors: a tap rolls a door up, the vehicle's effect plays and a
+copy (`.tg-mover`, wheels and rotor spinning) leaves across the screen with the
+Web Animations API, then the door closes on a new surprise; every fourth reveal
+celebrates. Listen mode plays one vehicle's sound and offers two or three
+vehicles (by level); a wrong tap plays that vehicle's own sound before the
+target sound repeats. Mode is stored in `tinytaps-vehicles-mode`.
+
+### Paint Pots
+
+`js/games/paintpots.js` has four paint jars (red, yellow, blue, white) whose
+blobs use `makeDraggable` with the pot as the only destination, so a tap pours.
+Two paints show as a swirl; stirring (finger angle travel around the pot, three
+turns, or three spoon taps) blends both layers toward a hand-picked mix
+(`MIXES`, so yellow and blue make green, not grey). Mix mode keeps the last
+eight colors on a shelf and celebrates every third. Make it shows a picture
+(carrot, frog, grapes; pig, raindrop and star at higher levels) and its swatch;
+the right color paints it, the wrong one boings and empties the pot.
+
+### Silly Faces
+
+`js/games/faces.js` builds one SVG (viewBox −20 −40 240 280) with a base face
+(kid, monster, potato, robot) and up to 16 parts from five kinds (eyes, nose,
+mouth, hat, extra). Tapping a tray part places it at its usual spot, swapping a
+same-kind part already there; dragging places it anywhere. Placed parts drag
+in SVG space, react to taps by kind (blink, honk, chatter, hop, wiggle) and are
+removed by dropping them on the tray. The face blinks on its own, giggles when
+tapped, and celebrates the first time it has eyes, nose and mouth. The dice
+builds a surprise face; the face button changes the base. The face persists in
+`tinytaps-faces`.
 
 ## Settings and local state
 
@@ -351,10 +469,55 @@ button is the first control. Settings includes learning profile, volume, voice
 speed/voice selection, optional Mix, local progress, offline/install status,
 parent recordings, and per-game menu visibility.
 
+Settings opens with Children, then holds tap-to-place, the Trace It path
+width, and the Calm & bedtime section (celebrations, keep mute, bedtime timer).
+Learning stage, path width, the menu editor and the progress view belong to
+the playing child and say so ("for <name>") when there are several.
+
 Preferences use namespaced `localStorage` keys. `js/engine/progress.js` stores
 plays, outcomes, detail difficulty, and local observations. The progress view is
 informational and can reset data after confirmation. Recordings use IndexedDB
 because audio blobs are unsuitable for localStorage.
+
+## Children
+
+`js/engine/children.js` keeps up to four children in `tinytaps-children`
+(`{ active, list: [{ id, name, avatar }] }`); avatars are animal cartoons.
+`childKey(base)` returns the storage key for the playing child: child one
+(`c1`) uses the original key, everyone else `base::<id>`, so a device used
+before profiles existed keeps its data as child one (and the old Trace It name
+becomes child one's name). Per-child keys: progress, stickers and wins,
+Coloring gallery/drafts/last page/category, sticker scenes and view, Music
+tunes and instrument, Silly Faces, Play House photos and outfit, learning
+stage, hidden games and the custom menu groups, and each game's mode choice
+(My First Words, Puzzle Fit, Trace It category and width, Things That Go,
+Paint Pots, Number Book mode, Counting max). Shared keys: volume, voice and
+rate, Mix, tap-to-place, calm and bedtime, offline status, Number Book page
+delay, and the IndexedDB parent recordings.
+
+Settings → Children lists every child with a tap-to-change avatar, a name
+field, Play (switch) and remove (not child one). Switching or adding reopens
+Settings, because the settings below belong to whoever is playing. Removing a
+child deletes every `::<id>` key after a confirmation. Names are escaped
+wherever they are shown.
+
+## Calm and bedtime
+
+`js/engine/calm.js` keeps three parent choices:
+
+- Celebrations (`tinytaps-celebrations`): Full, Gentle or Calm.
+  `celebrate.js` scales confetti by `confettiScale()` (1, 0.4, 0; always 0 under
+  the device's reduce-motion setting) and plays `tada`, `softFanfare` or
+  `gentleGift` in `big()`. `quietMotion()` is true for Calm or reduced motion.
+- Keep mute (`tinytaps-keep-mute`, `tinytaps-muted`): the mute button's state
+  carries into the next game.
+- Bedtime timer (`tinytaps-bedtime-minutes`: off, 10–60): counted from app
+  open or from choosing a time, checked against the wall clock every 10 s. The
+  last five minutes (or last third of a short timer) are wind-down: calm games
+  only, volume easing to about 55 %. At the end the goodnight screen (moon,
+  stars, sleeping mascot, one soft lullaby) appears and `tinytaps-goodnight-at`
+  keeps it up across reloads for eight hours. Holding the moon for two seconds
+  unlocks it and snoozes the timer until the app is opened again.
 
 ## PWA, caching, and display modes
 
@@ -378,7 +541,8 @@ Screen launch, in both orientations where the game supports them.
 
 ## Validation
 
-Run `npm run check` after every change. It verifies relative JS imports, service
+Run `npm run check` after every change (it normalizes Windows path separators
+and CRLF line endings, so it runs the same on every OS). It verifies relative JS imports, service
 worker assets, animal media references, manifest icons, the four-game
 computer-speech boundary, and the exact My First Words category partition. Also
 run JavaScript syntax checks and `git diff --check`.

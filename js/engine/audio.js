@@ -619,3 +619,60 @@ export function rumble() {
   noiseBurst(0, 1.1, { type: 'lowpass', freq: 420, q: 0.7, vol: 0.28 });
   tone(110, 0, 1.2, { type: 'sine', vol: 0.12, glide: 440 });
 }
+
+/* --- Things That Go: one friendly, distinct sound per vehicle --- */
+
+// Fire engine: a two-tone "nee-naw", twice.
+export function siren() {
+  ensureCtx();
+  [0, 0.5].forEach(t => {
+    tone(740, t, 0.24, { type: 'triangle', vol: 0.12 });
+    tone(587.33, t + 0.25, 0.24, { type: 'triangle', vol: 0.12 });
+  });
+}
+
+// School bus: two quick, high "beep beep"s.
+export function beepBeep() {
+  ensureCtx();
+  [0, 0.17].forEach(t => tone(880, t, 0.11, { type: 'square', vol: 0.05 }));
+}
+
+// Tractor: a slow, low putt-putt-putt.
+export function puttPutt() {
+  ensureCtx();
+  [0, 0.16, 0.32, 0.48, 0.64].forEach(t => {
+    tone(92, t, 0.1, { type: 'square', vol: 0.06 });
+    noiseBurst(t, 0.07, { type: 'lowpass', freq: 500, q: 0.8, vol: 0.12 });
+  });
+}
+
+// Helicopter: rotor chops speeding up a little.
+export function chopChop() {
+  ensureCtx();
+  for (let i = 0, t = 0; i < 9; i++, t += 0.13 - i * 0.004) {
+    noiseBurst(t, 0.06, { type: 'lowpass', freq: 900, q: 1, vol: 0.2 });
+  }
+}
+
+// Boat: a deep, round foghorn.
+export function foghorn() {
+  ensureCtx();
+  tone(130.81, 0, 0.9, { type: 'sawtooth', vol: 0.05 });
+  tone(130.81, 0, 0.9, { type: 'sine', vol: 0.12 });
+}
+
+// Aeroplane: a soft rising jet whoosh.
+export function jet() {
+  ensureCtx();
+  noiseBurst(0, 1.2, { type: 'bandpass', freq: 900, q: 0.6, vol: 0.18 });
+  tone(220, 0, 1.2, { type: 'sine', vol: 0.06, glide: 520 });
+}
+
+// Bicycle: a bright ring-ring bell.
+export function ringRing() {
+  ensureCtx();
+  [0, 0.16].forEach(t => {
+    tone(2093, t, 0.3, { type: 'sine', vol: 0.09 });
+    tone(2637, t, 0.22, { type: 'sine', vol: 0.05 });
+  });
+}

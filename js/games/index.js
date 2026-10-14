@@ -21,6 +21,9 @@ import wash from './wash.js';
 import trace from './trace.js';
 import playhouse from './playhouse.js';
 import animals from './animals.js';
+import vehicles from './vehicles.js';
+import paintpots from './paintpots.js';
+import faces from './faces.js';
 
 export const games = [
   peekaboo,
@@ -44,4 +47,7 @@ export const games = [
   trace,
   playhouse,
   animals,
+  vehicles,
+  paintpots,
+  faces,
 ];

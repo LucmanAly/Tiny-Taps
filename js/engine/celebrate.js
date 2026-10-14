@@ -3,6 +3,7 @@
 import * as audio from './audio.js';
 import * as speech from './speech.js';
 import * as stickers from './stickers.js';
+import { celebrationLevel, confettiScale } from './calm.js';
 
 const COLORS = ['#ff8a70', '#ffd54a', '#7ed67e', '#62d9d0', '#b98aef', '#ff9fce', '#73b9ff'];
 
@@ -24,7 +25,10 @@ function resize() {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
+// Confetti follows the parent's Celebrations choice and the device's reduce
+// motion setting: fewer pieces when Gentle, none when Calm or reduced.
 function spawn(x, y, count, spread) {
+  count = Math.round(count * confettiScale());
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = (0.3 + Math.random() * 0.7) * spread;
@@ -41,7 +45,7 @@ function spawn(x, y, count, spread) {
       decay: 0.008 + Math.random() * 0.008,
     });
   }
-  if (!running) { running = true; requestAnimationFrame(tick); }
+  if (count > 0 && !running) { running = true; requestAnimationFrame(tick); }
 }
 
 function drawStar(x, y, r, rot, color) {
@@ -106,8 +110,11 @@ export function burst(x, y, { count = 26, sound = true } = {}) {
 // playing every single round — slower games (Coloring, Trace It, Wash the
 // Animal) pass `quick: false` to always use it.
 export function big({ praise = true, sticker = true, quick = true, nextAnimalId = null } = {}) {
-  audio.tada();
-  const bursts = 6;
+  const level = celebrationLevel();
+  if (level === 'calm') audio.gentleGift();
+  else if (level === 'gentle') audio.softFanfare();
+  else audio.tada();
+  const bursts = level === 'full' ? 6 : level === 'gentle' ? 3 : 0;
   for (let i = 0; i < bursts; i++) {
     setTimeout(() => {
       spawn(innerWidth * (0.15 + Math.random() * 0.7), innerHeight * 0.3, 34, 11);

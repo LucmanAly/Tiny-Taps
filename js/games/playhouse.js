@@ -28,6 +28,7 @@ import { createGarden } from './playhouse/garden.js';
 import { createMoments } from './playhouse/moments.js';
 import { PLACES, TIMING } from './playhouse/layout.js';
 import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, loadImages } from './playhouse/assets.js';
+import { isWindingDown, quietMotion } from '../engine/calm.js';
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -69,6 +70,11 @@ function start(ctx) {
   W.recordOutcome = (correct, detail) => recordOutcome(correct, detail);
 
   createSky(W);
+  // Bedtime wind-down: the house is already settling into night.
+  if (isWindingDown()) {
+    W.dayT = 1;
+    W.sky.setDay(true, { quiet: true });
+  }
   createProps(W);
   createMoments(W);
   const kids = createKids(W);
@@ -111,6 +117,12 @@ function start(ctx) {
     const e = options[(Math.random() * options.length) | 0];
     lastHinted = e;
     e.hint();
+    // Quiet motion (Calm, or the device's reduce motion): a smaller wiggle
+    // and no sparkle burst.
+    if (quietMotion()) {
+      if (typeof e.wob === 'number') e.wob *= 0.5;
+      return;
+    }
     const y = typeof e.y === 'number' ? e.y - 160 : 300;
     W.fx.sparkle(e.x, y, 8, 120);
   });

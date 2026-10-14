@@ -2,6 +2,8 @@
 // browser. The data is deliberately observational: no grades, streaks or age
 // comparisons.
 
+import { childKey } from './children.js';
+
 const KEY = 'tinytaps-progress-v1';
 const LEVELS = 3;
 
@@ -10,12 +12,12 @@ function empty() {
 }
 
 export function read() {
-  try { return { ...empty(), ...JSON.parse(localStorage.getItem(KEY) || '{}') }; }
+  try { return { ...empty(), ...JSON.parse(localStorage.getItem(childKey(KEY)) || '{}') }; }
   catch (e) { return empty(); }
 }
 
 function write(data) {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* optional */ }
+  try { localStorage.setItem(childKey(KEY), JSON.stringify(data)); } catch (e) { /* optional */ }
 }
 
 function game(data, id) {
@@ -70,7 +72,13 @@ export function level(id) {
 }
 
 export function reset() {
-  try { localStorage.removeItem(KEY); } catch (e) { /* optional */ }
+  try { localStorage.removeItem(childKey(KEY)); } catch (e) { /* optional */ }
+}
+
+// Per-item wins and misses for one game ({ detail: { wins, misses } }), so a
+// game can quietly bring back what a child is still learning.
+export function details(id) {
+  return { ...(game(read(), id).details || {}) };
 }
 
 export function hardestDetails(id, limit = 3) {

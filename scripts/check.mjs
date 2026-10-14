@@ -231,7 +231,8 @@ const voiceGames = new Set([
   'js/games/playhouse.js',
 ]);
 for (const file of files.filter(f => f.includes(`${path.sep}games${path.sep}`))) {
-  const rel = path.relative(root, file);
+  // Forward slashes on every OS, so Windows paths match the list above.
+  const rel = path.relative(root, file).split(path.sep).join('/');
   const source = fs.readFileSync(file, 'utf8');
   if (source.includes('speakWord(') && !voiceGames.has(rel)) {
     errors.push(`${rel} uses the restricted computer-speech channel`);
@@ -316,7 +317,8 @@ for (const [value, expected] of numberSizeChecks) {
 if (!fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8').includes("title: '10s & Big Numbers'")) {
   errors.push('Number Book must use the complete 10s & Big Numbers mode name');
 }
-const numberbookSource = fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8');
+// Line endings normalized, so a CRLF checkout (Windows) passes the same checks.
+const numberbookSource = fs.readFileSync(path.join(root, 'js/games/numberbook.js'), 'utf8').replace(/\r\n/g, '\n');
 if (numberbookSource.includes('.speakWord(') || !numberbookSource.includes('audio.play(numberVoiceKey(value)')) {
   errors.push('Number Book must play bundled Piper clips instead of browser speech');
 }

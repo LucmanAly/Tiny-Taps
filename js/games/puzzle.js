@@ -7,8 +7,9 @@
 import { ANIMALS, displayArt, animal as findAnimal } from '../data/animals.js';
 import { BUILDS, VISITORS } from '../data/builds.js';
 import { shuffle, pickN, pick, cycler } from '../engine/rand.js';
-import { makeDraggable } from '../engine/drag.js';
+import { makeDraggable, tapPlaceEnabled } from '../engine/drag.js';
 import { fadeSwap } from '../engine/ui.js';
+import { childKey } from '../engine/children.js';
 
 const MODE_KEY = 'tinytaps-puzzle-mode';
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -227,7 +228,7 @@ const ICON = `
 function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt, recordOutcome, difficulty } = ctx;
   let alive = true;
-  let mode = localStorage.getItem(MODE_KEY) === 'shapes' ? 'shapes' : 'animals';
+  let mode = localStorage.getItem(childKey(MODE_KEY)) === 'shapes' ? 'shapes' : 'animals';
   let epoch = 0;
   let teardown = null;
 
@@ -248,7 +249,7 @@ function start(ctx) {
       if (mode === id) return;
       mode = id;
       epoch++;
-      localStorage.setItem(MODE_KEY, mode);
+      localStorage.setItem(childKey(MODE_KEY), mode);
       audio.pop();
       newRound(true);
     });
@@ -339,6 +340,7 @@ function start(ctx) {
     const timers = new Set();
     let L = null;
     let drag = null;
+    let picked = null;                               // tap-to-place: lifted piece
     let phase = 'play';
     let lastEncourage = 0;
     let lastSize = '';
@@ -398,6 +400,7 @@ function start(ctx) {
       tweens.forEach(t => t.cancel());
       tweens.clear();
       drag = null;
+      picked = null;
       const tray = order.filter(i => left.has(i));
       L = layout(parts, bb, tray, cw, ch);
       L.cw = cw;
@@ -674,13 +677,65 @@ function start(ctx) {
       apply(d.i);
     }
 
+    // Tap-to-place: a tapped piece is lifted (it bobs and every empty outline
+    // glows, so no answer is given away); tapping an outline sends it there.
+    function pickPiece(i) {
+      unpick();
+      picked = i;
+      const g = els.get(i);
+      if (g) g.classList.add('sb-picked');
+      svg.querySelectorAll('.sb-slot').forEach(s => s.classList.add('sb-target'));
+    }
+
+    function unpick() {
+      if (picked == null) return;
+      const g = els.get(picked);
+      if (g) g.classList.remove('sb-picked');
+      svg.querySelectorAll('.sb-target').forEach(s => s.classList.remove('sb-target'));
+      picked = null;
+    }
+
+    // The empty outline under a tap: the outline itself when it was hit,
+    // otherwise the nearest one relative to its size.
+    function slotAt(target, x, y) {
+      const part = target.closest ? target.closest('.sb-part') : null;
+      if (part && open.has(Number(part.dataset.j))) return Number(part.dataset.j);
+      let best = null;
+      for (const j of open) {
+        const q = parts[j];
+        const c = slotPx(j);
+        const dist = Math.hypot(x - c.x, y - c.y) / (Math.max(q.w, q.h) * L.s * 0.55 + 20);
+        if (dist <= 1 && (!best || dist < best.dist)) best = { j, dist };
+      }
+      return best ? best.j : null;
+    }
+
+    function sendToSlot(i, j) {
+      if (parts[j].d === parts[i].d) { place(i, j); return; }
+      const c = slotPx(j);
+      glide(i, { x: c.x, y: c.y, k: (L.t + L.s) / 2 }, 260, easeOut, () => wrong(i));
+    }
+
     svg.addEventListener('pointerdown', e => {
       if (phase !== 'play' || drag || !live()) return;
       const g = e.target.closest ? e.target.closest('.sb-piece') : null;
-      if (!g) return;
+      if (!g) {
+        if (picked == null) return;
+        const rect = svg.getBoundingClientRect();
+        const i = picked;
+        const j = slotAt(e.target, e.clientX - rect.left, e.clientY - rect.top);
+        unpick();
+        if (j != null && left.has(i)) {
+          e.preventDefault();
+          sendToSlot(i, j);
+        }
+        return;
+      }
       const i = Number(g.dataset.i);
       if (!left.has(i)) return;
       e.preventDefault();
+      const wasPicked = picked === i;
+      unpick();
       cancelTween(i);
       g.parentNode.appendChild(g);
       try { g.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
@@ -688,7 +743,7 @@ function start(ctx) {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       const p = pos.get(i);
-      const d = { i, id: e.pointerId, rect, px, py, sx: px, sy: py, offX: p.x - px, offY: p.y - py, k0: p.k, grow: 0, moved: false, t0: performance.now() };
+      const d = { i, id: e.pointerId, rect, px, py, sx: px, sy: py, offX: p.x - px, offY: p.y - py, k0: p.k, grow: 0, moved: false, t0: performance.now(), wasPicked };
       drag = d;
       d.tw = tween(150, easeOut, e2 => { d.grow = e2; follow(d); });
       audio.pop();
@@ -708,8 +763,11 @@ function start(ctx) {
       drag = null;
       if (d.tw) d.tw.cancel();
       if (e.type !== 'pointerup') sendHome(d.i);
-      else if (!d.moved && performance.now() - d.t0 < 400) { nudge(d.i); sendHome(d.i); }
-      else drop(d.i);
+      else if (!d.moved && performance.now() - d.t0 < 400) {
+        sendHome(d.i);
+        if (!tapPlaceEnabled()) nudge(d.i);
+        else if (!d.wasPicked) pickPiece(d.i);
+      } else drop(d.i);
     };
     svg.addEventListener('pointerup', release);
     svg.addEventListener('pointercancel', release);

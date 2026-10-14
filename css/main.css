@@ -203,6 +203,126 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   z-index: 10;
 }
 
+/* ---------- children: who's playing ---------- */
+.who-screen { justify-content: center; padding: 0 3vmin; }
+.who-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4vmin;
+  width: min(100%, 900px);
+}
+.who-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4vmin;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: 800 max(3vmin, 20px) var(--font);
+  color: var(--ink);
+}
+.who-avatar {
+  width: max(22vmin, 120px);
+  height: max(22vmin, 120px);
+  border-radius: 50%;
+  background: #fff;
+  border: 6px solid #fff;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.who-card.current .who-avatar { border-color: var(--sun); }
+.who-avatar img { width: 82%; height: 82%; object-fit: contain; pointer-events: none; }
+.who-card:active .who-avatar { transform: scale(0.94); }
+.who-name {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 100px;
+  padding: 0.4vmin 2.4vmin;
+  max-width: max(26vmin, 140px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.child-chip {
+  position: fixed;
+  top: max(1.5vmin, env(safe-area-inset-top));
+  left: max(1.5vmin, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  min-height: 48px;
+  max-width: 34vw;
+  padding: 4px 2vmin 4px 4px;
+  border: none;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 0 rgba(58, 51, 87, 0.15);
+  font: 800 max(2vmin, 14px) var(--font);
+  color: var(--ink);
+  z-index: 10;
+  cursor: pointer;
+}
+.child-chip img { width: 40px; height: 40px; border-radius: 50%; background: #f4f1fa; object-fit: contain; padding: 3px; flex: none; }
+.child-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Phones: the avatar alone, so the chip never runs into the menu title. */
+@media (max-width: 600px) {
+  .child-chip { padding: 4px; }
+  .child-chip span { display: none; }
+}
+
+/* Settings → Children */
+.kid-rows { display: flex; flex-direction: column; gap: 1vmin; margin: 1vmin 0; }
+.kid-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2vmin;
+  padding: 0.8vmin;
+  border-radius: 16px;
+  border: 2px solid #ebe5f7;
+}
+.kid-row.playing { border-color: var(--sun); background: #fffbe8; }
+.kid-avatar {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border: 2px solid #ebe5f7;
+  border-radius: 50%;
+  background: #fff;
+  padding: 4px;
+  cursor: pointer;
+}
+.kid-avatar img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.kid-name {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0.6vmin 1.2vmin;
+  border-radius: 10px;
+  border: 2px solid rgba(58,51,87,0.15);
+  font: 700 max(1.9vmin, 15px) var(--font);
+  color: var(--ink);
+  -webkit-user-select: text;
+  user-select: text;
+}
+.kid-play, .kid-remove {
+  flex: none;
+  min-height: 40px;
+  padding: 0 1.6vmin;
+  border: none;
+  border-radius: 10px;
+  background: #f4f1fa;
+  color: var(--ink);
+  font: 800 max(1.8vmin, 13px) var(--font);
+  cursor: pointer;
+}
+.kid-row.playing .kid-play { background: var(--sun); }
+.kid-remove { width: 40px; padding: 0; color: #c0392b; }
+.kid-add { padding: 1.1vmin 2vmin; margin-bottom: 1vmin; }
+
 /* ---------- credits (parent-facing) ---------- */
 .credits-btn {
   position: fixed;
@@ -395,6 +515,19 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
   font-weight: 700;
 }
 .set-row input[type="range"] { flex: 1; max-width: 60%; }
+.set-row input[type="text"] {
+  flex: 1;
+  max-width: 60%;
+  min-height: 40px;
+  padding: 0.8vmin 1.2vmin;
+  border-radius: 10px;
+  border: 2px solid rgba(58,51,87,0.15);
+  font: 700 max(1.9vmin, 15px) var(--font);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  -webkit-user-select: text;
+  user-select: text;
+}
 .set-row select {
   flex: 1;
   max-width: 60%;
@@ -486,6 +619,56 @@ img, svg { -webkit-user-drag: none; user-drag: none; }
 .offline-status { margin: 0.7vmin 0; color: #27733b; font-weight: 700; }
 .install-help { margin: 0.8vmin 0; }
 .install-help summary { cursor: pointer; font-weight: 700; }
+
+.set-note { font-size: 0.9em; color: #6b6389; margin: 0.4vmin 0 1vmin; }
+
+/* ---------- goodnight (bedtime timer) ---------- */
+.goodnight {
+  justify-content: center;
+  gap: 2vmin;
+  background: linear-gradient(180deg, #1d1b4a 0%, #3a3a7a 60%, #5a5aa0 100%);
+  color: #fff8dc;
+  overflow: hidden;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.gn-sky { position: absolute; inset: 0; pointer-events: none; }
+.gn-star {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff8dc;
+  box-shadow: 0 0 8px 2px rgba(255, 248, 220, 0.6);
+  animation: gn-twinkle 3s ease-in-out infinite;
+}
+@keyframes gn-twinkle { 50% { opacity: 0.25; } }
+.gn-moon {
+  position: relative;
+  width: max(22vmin, 120px);
+  height: max(22vmin, 120px);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+  filter: drop-shadow(0 0 22px rgba(255, 243, 176, 0.55));
+}
+.gn-moon svg { width: 100%; height: 100%; pointer-events: none; }
+/* Holding fills a ring around the moon for the two seconds it takes. */
+.gn-moon::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 6px solid rgba(255, 243, 176, 0.9);
+  clip-path: inset(100% 0 0 0);
+}
+.gn-moon.holding::after { animation: gn-hold 2s linear forwards; }
+@keyframes gn-hold { to { clip-path: inset(0 0 0 0); } }
+.gn-sleeper { width: max(40vmin, 190px); height: auto; margin: -6vmin 0; position: relative; }
+.gn-title { position: relative; font-size: max(7vmin, 40px); font-weight: 900; }
+.gn-hint { position: relative; font-size: max(1.9vmin, 13px); opacity: 0.7; }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {

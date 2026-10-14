@@ -274,3 +274,32 @@ export const BUILDS = [
 
 // Farm friends with an authentic recording who can answer the house's door.
 export const VISITORS = ['dog', 'cat', 'cow', 'sheep', 'pig', 'bunny', 'horse', 'rooster'];
+
+function shade(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = c => Math.round(c * (1 - amount));
+  return `rgb(${mix(n >> 16)}, ${mix((n >> 8) & 255)}, ${mix(n & 255)})`;
+}
+
+// The finished toy as one standalone SVG (the Sticker Book's toy stickers):
+// base art and every part drawn in place, framed around the parts with room
+// for details that reach past them.
+export function buildSvg(build) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of build.parts) {
+    x0 = Math.min(x0, p.x - p.w / 2);
+    y0 = Math.min(y0, p.y - p.h / 2);
+    x1 = Math.max(x1, p.x + p.w / 2);
+    y1 = Math.max(y1, p.y + p.h / 2);
+  }
+  const pad = 30;
+  x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+  const size = Math.max(x1 - x0, y1 - y0);
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  const parts = build.parts.map(p => {
+    const stroke = p.stroke || shade(p.color, 0.28);
+    return `<g transform="translate(${p.x} ${p.y})">${p.under || ''}<path d="${p.d}" fill="${p.color}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>${p.art || ''}</g>`;
+  }).join('');
+  return `<svg viewBox="${cx - size / 2} ${cy - size / 2} ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${build.base || ''}${parts}</svg>`;
+}

@@ -2,6 +2,8 @@
 // number currently on it, then turns to the next page. The two visible modes
 // cover every number from 0–100 and tens/place values through one trillion.
 
+import { childKey } from '../engine/children.js';
+
 export const COUNTING_NUMBERS = Array.from({ length: 101 }, (_, index) => index);
 
 export const BIG_NUMBER_SEQUENCE = [
@@ -135,7 +137,7 @@ function start(ctx) {
   let turnTimer = 0;
   let settleTimer = 0;
   let voiceRequest = 0;
-  let modeId = localStorage.getItem('tinytaps-number-book-mode') === 'big' ? 'big' : 'counting';
+  let modeId = localStorage.getItem(childKey('tinytaps-number-book-mode')) === 'big' ? 'big' : 'counting';
   let pageDelay = normalizePageDelay(localStorage.getItem(PAGE_DELAY_STORAGE_KEY));
   let index = 0;
 
@@ -258,7 +260,7 @@ function start(ctx) {
       closeSettings();
       modeId = id;
       index = 0;
-      localStorage.setItem('tinytaps-number-book-mode', modeId);
+      localStorage.setItem(childKey('tinytaps-number-book-mode'), modeId);
       audio.chime();
       render();
     });

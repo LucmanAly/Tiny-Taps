@@ -1,6 +1,8 @@
 // Play House particles: sparkles, hearts, stars, notes, confetti, puffs,
 // splashes, leaves and tappable soap bubbles. All positions are world units.
 
+import { quietMotion } from '../../engine/calm.js';
+
 const PALETTE = ['#ff9fb2', '#ffd166', '#8fd3ff', '#b5e48c', '#d4b5ff', '#ffb38a'];
 const pick = a => a[(Math.random() * a.length) | 0];
 
@@ -83,6 +85,9 @@ export function createFx() {
       add({ kind: 'tap', x, y, life: 0.42, size: 70, color: '#ffffff' });
     },
     flash() {
+      // No white flash for a child who should not have one (Calm or
+      // the device's reduce motion): the shutter sound is enough.
+      if (quietMotion()) return;
       add({ kind: 'flash', x: 0, y: 0, life: 0.32 });
     },
     // Soap bubbles float up, wobble, and pop when touched or when they age.

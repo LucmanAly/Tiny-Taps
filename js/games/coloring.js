@@ -4,21 +4,112 @@
 
 import { animal } from '../data/animals.js';
 import { S as TXT } from '../data/strings.js';
+import { childKey } from '../engine/children.js';
 
 // Finished pictures, saved as colored SVG snapshots.
 const GALLERY_KEY = 'tinytaps-gallery';
 const CATEGORY_KEY = 'tinytaps-coloring-category';
+// Unfinished pictures survive leaving the game: per page, the ordered list of
+// [region, color] fills. Replaying the list rebuilds the picture, and popping
+// it is Undo.
+const DRAFTS_KEY = 'tinytaps-coloring-drafts';
+const LAST_PAGE_KEY = 'tinytaps-coloring-last';
+const MAX_OPS = 200;
 
 function savedPictures() {
-  try { return JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(childKey(GALLERY_KEY)) || '[]'); }
   catch (e) { return []; }
 }
 
-function savePicture(svg) {
+function savePicture(svg, name) {
   const list = savedPictures();
-  list.push({ svg, t: Date.now() });
+  list.push({ svg, name, t: Date.now() });
   while (list.length > 24) list.shift();
-  try { localStorage.setItem(GALLERY_KEY, JSON.stringify(list)); } catch (e) { /* full */ }
+  try { localStorage.setItem(childKey(GALLERY_KEY), JSON.stringify(list)); } catch (e) { /* full */ }
+}
+
+function readDrafts() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(childKey(DRAFTS_KEY)) || '{}');
+    const out = {};
+    for (const [id, ops] of Object.entries(raw && typeof raw === 'object' ? raw : {})) {
+      if (!Array.isArray(ops)) continue;
+      const clean = ops.filter(op => Array.isArray(op) && typeof op[0] === 'string' && typeof op[1] === 'string');
+      if (clean.length) out[id] = clean;
+    }
+    return out;
+  } catch (e) { return {}; }
+}
+
+function writeDrafts(drafts) {
+  try { localStorage.setItem(childKey(DRAFTS_KEY), JSON.stringify(drafts)); } catch (e) { /* optional */ }
+}
+
+// A very long session is folded into one fill per region so storage stays
+// small; only the oldest undo steps are lost.
+function compact(ops) {
+  if (ops.length <= MAX_OPS) return ops;
+  const last = new Map();
+  for (const [region, color] of ops) { last.delete(region); last.set(region, color); }
+  return [...last];
+}
+
+// Renders a saved SVG snapshot to a PNG and hands it to the share sheet
+// (iOS: Save Image) or downloads it. Parsing through HTML and re-serializing
+// as XML guarantees a standalone, namespaced SVG the <img> decoder accepts.
+function renderPng(svgText) {
+  return new Promise((resolve, reject) => {
+    const holder = document.createElement('div');
+    holder.innerHTML = svgText;
+    const svg = holder.querySelector('svg');
+    if (!svg) { reject(new Error('No picture')); return; }
+    const vb = (svg.getAttribute('viewBox') || '0 0 200 200').split(/[\s,]+/).map(Number);
+    const w = vb[2] > 0 ? vb[2] : 200;
+    const h = vb[3] > 0 ? vb[3] : 200;
+    const k = 1600 / Math.max(w, h);
+    const W = Math.round(w * k);
+    const H = Math.round(h * k);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    const xml = new XMLSerializer().serializeToString(svg);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+    const img = new Image();
+    img.onload = () => {
+      const pad = Math.round(Math.max(W, H) * 0.04);
+      const canvas = document.createElement('canvas');
+      canvas.width = W + pad * 2;
+      canvas.height = H + pad * 2;
+      const g = canvas.getContext('2d');
+      g.fillStyle = '#ffffff';
+      g.fillRect(0, 0, canvas.width, canvas.height);
+      g.drawImage(img, pad, pad, W, H);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('PNG failed'))), 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Picture could not render')); };
+    img.src = url;
+  });
+}
+
+async function sharePng(blob, name) {
+  const slug = String(name || 'picture').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'picture';
+  const file = new File([blob], `tiny-taps-${slug}.png`, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Tiny Taps picture' });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 const PALETTE = [
@@ -362,6 +453,18 @@ const PAGES = [
   },
 ];
 
+const UNDO_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M9 5.5 L4 10 L9 14.5" fill="none" stroke="#3a3357" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4.5 10 H14.5 A5 5 0 0 1 14.5 20 H10" fill="none" stroke="#3a3357" stroke-width="2.6" stroke-linecap="round"/>
+</svg>`;
+
+const SAVE_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M12 4 V14 M7.5 10 L12 14.5 L16.5 10" fill="none" stroke="#3a3357" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5 16.5 V19 H19 V16.5" fill="none" stroke="#3a3357" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
 const CHECK_ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <path d="M18 54 L42 76 L84 26" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
@@ -389,7 +492,7 @@ const CATEGORY_OPTIONS = [
 
 function savedCategory() {
   try {
-    const saved = localStorage.getItem(CATEGORY_KEY);
+    const saved = localStorage.getItem(childKey(CATEGORY_KEY));
     return CATEGORY_OPTIONS.some(option => option.id === saved) ? saved : 'all';
   } catch (_) {
     return 'all';
@@ -406,14 +509,23 @@ function start(ctx) {
   const { stage, audio, speech, celebrate, setReprompt } = ctx;
   let alive = true;
   let selected = PALETTE[3].color;
-  let touched = false;
   let finishing = false;
   let pageRequest = 0;
   let finishTimer = null;
   let galleryOverlay = null;
   let category = savedCategory();
-  let currentPage = pagesFor(category)[0];
-  const drafts = new Map();
+  const drafts = readDrafts();
+  // Come back to an unfinished picture if the child left one.
+  let currentPage = (() => {
+    const pages = pagesFor(category);
+    let last = null;
+    try { last = localStorage.getItem(childKey(LAST_PAGE_KEY)); } catch (_) { /* optional */ }
+    return pages.find(page => page.id === last && drafts[page.id]) || pages[0];
+  })();
+  let ops = [];              // the current page's fills, oldest first
+  let regions = [];          // the current page's paintable elements
+  let original = new Map();  // element → its fill before any coloring
+  const touched = () => ops.length > 0;
 
   stage.classList.add('coloring-game');
   const sidebar = document.createElement('aside');
@@ -515,18 +627,21 @@ function start(ctx) {
   done.setAttribute('aria-label', 'Done coloring, save picture');
   done.disabled = true;
   done.addEventListener('click', () => {
-    if (!alive || !touched || finishing) return;
+    if (!alive || !touched() || finishing) return;
     const svg = pic.querySelector('svg');
     if (!svg) return;
-    savePicture(svg.outerHTML);
+    savePicture(svg.outerHTML, currentPage.name);
     finishing = true;
     done.disabled = true;
+    undo.disabled = true;
     celebrate.big({ quick: false });
     const completedPage = currentPage;
+    delete drafts[completedPage.id];
+    writeDrafts(drafts);
+    markDrafts();
     finishTimer = setTimeout(() => {
       finishTimer = null;
       if (!alive) return;
-      drafts.delete(completedPage.id);
       finishing = false;
       // Continue through the visible category, wrapping after its last sketch.
       const pages = pagesFor(category);
@@ -551,7 +666,28 @@ function start(ctx) {
     audio.pop();
     showGallery();
   });
-  actions.append(galleryBtn, done);
+  // Undo takes back the last fill, one tap at a time, all the way to blank.
+  const undo = document.createElement('button');
+  undo.type = 'button';
+  undo.className = 'big-btn undo-btn';
+  undo.setAttribute('aria-label', 'Undo last color');
+  undo.innerHTML = UNDO_ICON;
+  undo.disabled = true;
+  undo.addEventListener('click', () => {
+    if (!alive || finishing || !ops.length) return;
+    const [region] = ops.pop();
+    paint();
+    persist();
+    audio.pop();
+    const part = regions.find(r => r.getAttribute('data-region') === region);
+    if (part) {
+      part.classList.remove('undo-flash');
+      void part.getBoundingClientRect();
+      part.classList.add('undo-flash');
+    }
+  });
+
+  actions.append(undo, galleryBtn, done);
   toolbar.append(sidebarButton, pageTitle, actions);
 
   function setSidebarOpen(open, restoreFocus = true) {
@@ -594,9 +730,38 @@ function start(ctx) {
   stage.addEventListener('keydown', handleSidebarKey);
   setSidebarOpen(false, false);
 
-  function rememberDraft() {
-    const svg = pic.querySelector('svg');
-    if (svg && touched && !finishing) drafts.set(currentPage.id, svg.outerHTML);
+  // Rebuilds the picture from scratch: every region back to its original
+  // fill, then the fills replayed in order.
+  function paint() {
+    for (const [part, fill] of original) {
+      if (fill == null) part.removeAttribute('fill');
+      else part.setAttribute('fill', fill);
+    }
+    for (const [region, color] of ops) {
+      regions
+        .filter(part => part.getAttribute('data-region') === region)
+        .forEach(part => part.setAttribute('fill', color));
+    }
+    syncButtons();
+  }
+
+  function persist() {
+    if (ops.length) drafts[currentPage.id] = ops.slice();
+    else delete drafts[currentPage.id];
+    writeDrafts(drafts);
+    markDrafts();
+  }
+
+  // A paint-dot badge on every thumbnail with an unfinished picture.
+  function markDrafts() {
+    for (const button of pictureList.querySelectorAll('.coloring-picture-button')) {
+      button.classList.toggle('has-draft', Boolean(drafts[button.dataset.page]));
+    }
+  }
+
+  function syncButtons() {
+    done.disabled = finishing || !touched();
+    undo.disabled = finishing || !ops.length;
   }
 
   function updateSelection() {
@@ -644,7 +809,6 @@ function start(ctx) {
         setSidebarOpen(false);
         if (finishing) return;
         if (page !== currentPage) {
-          rememberDraft();
           audio.pop();
           loadPage(page);
         }
@@ -652,13 +816,13 @@ function start(ctx) {
       pictureList.appendChild(button);
     }
     updateSelection();
+    markDrafts();
   }
 
   function selectCategory(nextCategory) {
     if (!alive || finishing || category === nextCategory) return;
-    rememberDraft();
     category = nextCategory;
-    try { localStorage.setItem(CATEGORY_KEY, category); } catch (_) { /* optional */ }
+    try { localStorage.setItem(childKey(CATEGORY_KEY), category); } catch (_) { /* optional */ }
     renderPictures();
     audio.pop();
     if (!pagesFor(category).includes(currentPage)) loadPage(pagesFor(category)[0]);
@@ -672,16 +836,47 @@ function start(ctx) {
     galleryOverlay.setAttribute('role', 'dialog');
     galleryOverlay.setAttribute('aria-modal', 'true');
     galleryOverlay.setAttribute('aria-label', 'Saved coloring pictures');
-    const cells = pics.length
-      ? pics.slice().reverse().map(picture => `<div class="gallery-cell">${picture.svg}</div>`).join('')
+    const shown = pics.slice().reverse();
+    const cells = shown.length
+      ? shown.map((picture, n) => `<div class="gallery-cell">${picture.svg}<button type="button" class="gallery-save" data-n="${n}" aria-label="Hold to save as an image" title="Hold to save as an image">${SAVE_ICON}</button></div>`).join('')
       : '<div class="gallery-empty">Color a picture and tap Done to save it here!</div>';
     galleryOverlay.innerHTML = `
       <div class="gallery-panel">
         <div class="gallery-grid">${cells}</div>
+        <p class="gallery-hint">${shown.length ? 'Grown-ups: hold ⤓ on a picture to save it as an image.' : ''}</p>
         <button type="button" class="big-btn gallery-close" aria-label="Close saved pictures">✕</button>
       </div>`;
     document.body.appendChild(galleryOverlay);
     speech.speak(TXT.galleryIntro);
+    // Saving is a hold (so a toddler's tap never opens a share sheet). The
+    // PNG starts rendering on press and is shared on release, which keeps the
+    // share call inside a real user gesture as iOS requires.
+    galleryOverlay.querySelectorAll('.gallery-save').forEach(button => {
+      const picture = shown[Number(button.dataset.n)];
+      let pressedAt = 0;
+      let rendering = null;
+      button.addEventListener('pointerdown', () => {
+        pressedAt = performance.now();
+        button.classList.add('holding');
+        rendering = renderPng(picture.svg);
+        rendering.catch(() => {});
+      });
+      const end = async () => {
+        if (!pressedAt) return;
+        const held = performance.now() - pressedAt;
+        pressedAt = 0;
+        button.classList.remove('holding');
+        if (held < 650 || !rendering) return;
+        try {
+          await sharePng(await rendering, picture.name);
+        } catch (e) {
+          console.warn('Picture could not be saved', e);
+        }
+      };
+      button.addEventListener('pointerup', end);
+      button.addEventListener('pointercancel', () => { pressedAt = 0; button.classList.remove('holding'); });
+      button.addEventListener('pointerleave', () => { pressedAt = 0; button.classList.remove('holding'); });
+    });
     const close = galleryOverlay.querySelector('.gallery-close');
     close.addEventListener('click', () => {
       galleryOverlay.remove();
@@ -695,13 +890,16 @@ function start(ctx) {
     if (!alive) return;
     const request = ++pageRequest;
     currentPage = page;
-    touched = false;
-    done.disabled = true;
+    try { localStorage.setItem(childKey(LAST_PAGE_KEY), page.id); } catch (_) { /* optional */ }
+    ops = (drafts[page.id] || []).slice();
+    regions = [];
+    original = new Map();
+    syncButtons();
     pageTitle.textContent = page.name;
     updateSelection();
     pic.replaceChildren();
     pic.setAttribute('aria-busy', 'true');
-    let svgText = drafts.get(page.id) || page.svg;
+    let svgText = page.svg;
     if (!svgText && page.src) {
       try {
         svgText = await loadExternalSvg(page.src);
@@ -723,19 +921,25 @@ function start(ctx) {
     pic.classList.remove('pop-in');
     void pic.offsetWidth;
     pic.classList.add('pop-in');
-    touched = drafts.has(page.id);
-    done.disabled = !touched;
-    const regions = [...pic.querySelectorAll('[data-region]')];
+    regions = [...pic.querySelectorAll('[data-region]')];
+    original = new Map(regions.map(part => [part, part.getAttribute('fill')]));
+    paint();
     regions.forEach(region => {
       region.addEventListener('pointerdown', event => {
         if (!alive || finishing || request !== pageRequest) return;
         event.preventDefault();
         const regionName = region.getAttribute('data-region');
-        regions
-          .filter(part => part.getAttribute('data-region') === regionName)
-          .forEach(part => part.setAttribute('fill', selected));
-        touched = true;
-        done.disabled = false;
+        // Tapping a region with the color it already has changes nothing,
+        // so it is not an undo step either.
+        if (region.getAttribute('fill') !== selected) {
+          ops.push([regionName, selected]);
+          ops = compact(ops);
+          regions
+            .filter(part => part.getAttribute('data-region') === regionName)
+            .forEach(part => part.setAttribute('fill', selected));
+          persist();
+          syncButtons();
+        }
         audio.sparkle();
       });
     });

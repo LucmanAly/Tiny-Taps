@@ -1,4 +1,5 @@
 import { ANIMALS } from './animals.js';
+import { activeChild } from '../engine/children.js';
 
 // Simple centre-line glyphs are intentionally used instead of font outlines:
 // each stroke has an obvious start and can be followed by a toddler's finger.
@@ -176,6 +177,31 @@ export const TRACE_ANIMALS = ANIMALS.map(a => ({
   id: a.id, label: a.name[0].toUpperCase() + a.name.slice(1), spoken: a.name,
   art: a.art, paths: ANIMAL_PATHS[a.id],
 }));
+
+// My Name: Trace It offers the letters of the playing child's own name (set
+// in Settings → Children). Only A–Z can be traced, so anything else is
+// dropped. Each letter says itself when finished; the last letter says the
+// whole name (one name value, like every other Trace It completion).
+export function cleanName(raw) {
+  return String(raw || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 10);
+}
+
+export function childName() {
+  return cleanName(activeChild().name);
+}
+
+export function nameItems(name) {
+  const letters = [...cleanName(name)];
+  const spokenName = letters.length ? letters[0] + letters.slice(1).join('').toLowerCase() : '';
+  return letters.map((letter, i) => ({
+    id: `name-${i}`,
+    label: letter,
+    name: letters.join(''),
+    nameIndex: i,
+    spoken: i === letters.length - 1 ? spokenName : letter,
+    paths: LETTER_PATHS[letter],
+  }));
+}
 
 export const TRACE_CATEGORIES = {
   alphabet: { label: 'ABC', items: ALPHABET },

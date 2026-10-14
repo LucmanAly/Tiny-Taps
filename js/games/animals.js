@@ -1,10 +1,22 @@
 // My First Words: a photo flashcard deck, not a round-based game. One card
 // fills the screen at a time; tapping it speaks its name. Swipe left or right
 // to move through the deck, wrapping in both directions.
+//
+// Find it is an optional second mode (chosen in the same corner panel as the
+// deck): the bundled recording says one word and two or three photos wait —
+// tap the one that was named. Only the word itself is ever played, never an
+// instruction, and words the child is still learning come back more often.
 
 import { preloadImages } from '../engine/intro.js';
-import { shuffle } from '../engine/rand.js';
+import { shuffle, pickN } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
+import { details as practiceDetails } from '../engine/progress.js';
+import { childKey } from '../engine/children.js';
+
+// Loaded on first use: the release check imports this module under Node,
+// where the sticker engine's browser speech module cannot load.
+let stickerEngine = null;
+const stickers = () => (stickerEngine ||= import('../engine/stickers.js'));
 
 function voiceSlug(name) {
   return name
@@ -135,10 +147,29 @@ const CATEGORY_OPTIONS = [
   { id: 'all', label: 'All', icon: '🔀' },
 ];
 const CATEGORY_KEY = 'tiny-taps:first-words-category';
+const MODE_KEY = 'tiny-taps:first-words-mode';
+const MODE_OPTIONS = [
+  { id: 'cards', label: 'Flashcards', icon: '🃏' },
+  { id: 'find', label: 'Find it', icon: '🔍' },
+];
+
+function savedMode() {
+  try {
+    if (localStorage.getItem(childKey(MODE_KEY)) === 'find') return 'find';
+  } catch (_) { /* optional */ }
+  return 'cards';
+}
+
+const LISTEN_ICON = `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="#fff"/>
+  <path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+</svg>`;
 
 function savedCategory() {
   try {
-    const saved = localStorage.getItem(CATEGORY_KEY);
+    const saved = localStorage.getItem(childKey(CATEGORY_KEY));
     if (CATEGORIES[saved]) return saved;
   } catch (_) { /* storage can be unavailable in private browsing */ }
   return 'animals';
@@ -160,10 +191,11 @@ const ICON = `
 </svg>`;
 
 function start(ctx) {
-  const { stage, audio, speech, setReprompt } = ctx;
+  const { stage, audio, speech, celebrate, setReprompt, difficulty, recordOutcome } = ctx;
   let alive = true;
 
   let category = savedCategory();
+  let mode = savedMode();
   let order = shuffle(CATEGORIES[category]);
   let i = 0;
   let pointerStart = null;
@@ -206,6 +238,19 @@ function start(ctx) {
   const categoryPanel = document.createElement('div');
   categoryPanel.className = 'words-category-panel';
   categoryPanel.hidden = true;
+  const modeRow = document.createElement('div');
+  modeRow.className = 'words-mode-row';
+  const modeButtons = new Map();
+  for (const option of MODE_OPTIONS) {
+    const button = document.createElement('button');
+    button.className = 'words-mode-button';
+    button.type = 'button';
+    button.innerHTML = `<span aria-hidden="true">${option.icon}</span><span>${option.label}</span>`;
+    button.addEventListener('click', () => selectMode(option.id));
+    modeRow.appendChild(button);
+    modeButtons.set(option.id, button);
+  }
+  categoryPanel.appendChild(modeRow);
   const categoryButtons = new Map();
   for (const option of CATEGORY_OPTIONS) {
     const button = document.createElement('button');
@@ -232,6 +277,22 @@ function start(ctx) {
       button.classList.toggle('selected', selected);
       button.setAttribute('aria-pressed', String(selected));
     }
+    for (const [id, button] of modeButtons) {
+      const selected = id === mode;
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+  }
+
+  function selectMode(nextMode) {
+    setConfigOpen(false);
+    if (nextMode === mode) return;
+    mode = nextMode;
+    try { localStorage.setItem(childKey(MODE_KEY), mode); } catch (_) { /* optional */ }
+    speech.stop();
+    audio.stopPlayback();
+    renderCategoryButtons();
+    showMode();
   }
 
   function selectCategory(nextCategory) {
@@ -240,14 +301,15 @@ function start(ctx) {
       return;
     }
     category = nextCategory;
-    try { localStorage.setItem(CATEGORY_KEY, category); } catch (_) { /* optional */ }
+    try { localStorage.setItem(childKey(CATEGORY_KEY), category); } catch (_) { /* optional */ }
     order = shuffle(CATEGORIES[category]);
     i = 0;
     speech.stop();
     audio.stopPlayback();
     renderCategoryButtons();
     setConfigOpen(false);
-    fadeSwap(card, render);
+    if (mode === 'find') newFindRound();
+    else fadeSwap(card, render);
   }
 
   // The category controls sit inside the full-screen swipe surface. Keep their
@@ -333,6 +395,130 @@ function start(ctx) {
     await audio.play(a.voiceKey, { rate: speech.getUserRate() });
   }
 
+  /* ---------- Find it ---------- */
+
+  const find = document.createElement('div');
+  find.className = 'words-find';
+  const listen = document.createElement('button');
+  listen.type = 'button';
+  listen.className = 'words-listen';
+  listen.setAttribute('aria-label', 'Hear the word again');
+  listen.innerHTML = LISTEN_ICON;
+  const choices = document.createElement('div');
+  choices.className = 'words-choices';
+  find.append(listen, choices);
+  stage.insertBefore(find, config);
+
+  let target = null;
+  let lastTarget = null;
+  let answered = false;
+  let roundTimer = null;
+
+  // Words with more misses than wins are drawn up to four times as often.
+  function pickTarget(pool) {
+    const stats = practiceDetails('animals');
+    const options = pool.filter(a => a !== lastTarget);
+    const weights = options.map(a => {
+      const d = stats[a.name];
+      return 1 + (d ? Math.min(3, Math.max(0, d.misses - d.wins)) : 0);
+    });
+    let roll = Math.random() * weights.reduce((sum, w) => sum + w, 0);
+    for (let n = 0; n < options.length; n++) {
+      roll -= weights[n];
+      if (roll <= 0) return options[n];
+    }
+    return options[options.length - 1];
+  }
+
+  async function sayTarget() {
+    if (!alive || mode !== 'find' || !target) return;
+    const a = target;
+    listen.classList.remove('wiggle');
+    void listen.offsetWidth;
+    listen.classList.add('wiggle');
+    const loaded = await audio.load(a.voiceKey, a.voice);
+    if (!alive || target !== a || !loaded) return;
+    await audio.play(a.voiceKey, { rate: speech.getUserRate() });
+  }
+
+  function newFindRound() {
+    clearTimeout(roundTimer);
+    const pool = CATEGORIES[category];
+    const count = Math.min(pool.length, difficulty && difficulty() >= 2 ? 3 : 2);
+    target = pickTarget(pool);
+    lastTarget = target;
+    answered = false;
+    const others = pickN(pool.filter(a => a !== target), count - 1);
+    const build = () => {
+      if (!alive || mode !== 'find') return;
+      choices.replaceChildren();
+      choices.dataset.count = String(count);
+      shuffle([target, ...others]).forEach((a, n) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'words-choice pop-in';
+        b.style.animationDelay = `${n * 0.07}s`;
+        b.setAttribute('aria-label', a.name);
+        b.innerHTML = `<img src="${a.photo}" alt="" draggable="false">`;
+        b.addEventListener('pointerdown', e => {
+          e.stopPropagation();
+          choose(a, b, e);
+        });
+        choices.appendChild(b);
+      });
+      sayTarget();
+    };
+    if (choices.children.length) fadeSwap(choices, build);
+    else build();
+  }
+
+  function choose(a, button, e) {
+    if (!alive || answered || mode !== 'find') return;
+    if (a === target) {
+      answered = true;
+      if (recordOutcome) recordOutcome(true, a.name);
+      button.classList.add('right');
+      audio.chime();
+      celebrate.burst(e.clientX, e.clientY, { count: 26 });
+      speech.praise({ quick: true });
+      stickers().then(m => {
+        const won = m.recordWin(null);
+        if (won) setTimeout(() => m.showToast(won), 700);
+      });
+      roundTimer = setTimeout(() => { if (alive && mode === 'find') newFindRound(); }, 1300);
+    } else {
+      if (recordOutcome) recordOutcome(false, target.name);
+      button.classList.remove('wiggle');
+      void button.offsetWidth;
+      button.classList.add('wiggle');
+      audio.boing();
+      speech.encourage();
+      roundTimer = setTimeout(sayTarget, 700);
+    }
+  }
+
+  listen.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    sayTarget();
+  });
+
+  function showMode(first = false) {
+    clearTimeout(roundTimer);
+    const finding = mode === 'find';
+    // Inline display: the stylesheet's own display rules would beat [hidden].
+    wrap.style.display = finding ? 'none' : '';
+    find.style.display = finding ? '' : 'none';
+    if (finding) {
+      // An idle child hears the word again — just the word.
+      setReprompt(() => { if (!answered) sayTarget(); });
+      newFindRound();
+    } else {
+      target = null;
+      setReprompt(null);
+      if (!first) fadeSwap(card, render);
+    }
+  }
+
   stage.addEventListener('pointerdown', e => {
     if (!alive || !e.isPrimary) return;
     if (!categoryPanel.hidden) {
@@ -340,6 +526,7 @@ function start(ctx) {
       setConfigOpen(false);
       return;
     }
+    if (mode !== 'cards') { pointerStart = null; return; }
     pointerStart = {
       id: e.pointerId,
       x: e.clientX,
@@ -374,11 +561,12 @@ function start(ctx) {
   stage.addEventListener('pointercancel', () => { pointerStart = null; });
 
   preloadImages(Object.fromEntries(ITEMS.map(a => [a.id, a.photo])), 0)
-    .then(() => { if (alive) render(); });
+    .then(() => { if (alive && mode === 'cards') render(); });
   render();
+  renderCategoryButtons();
+  showMode(true);
 
-  setReprompt(null);
-  return () => { alive = false; pointerStart = null; };
+  return () => { alive = false; pointerStart = null; clearTimeout(roundTimer); };
 }
 
 export default {

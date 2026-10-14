@@ -8,8 +8,16 @@ import { addTap } from './engine/ui.js';
 import { IntroScene, preloadMascots } from './engine/intro.js';
 import { VERSION } from './data/version.js';
 import * as progress from './engine/progress.js';
+import { tapPlaceEnabled, setTapPlace } from './engine/drag.js';
+import { traceWidth, setTraceWidth } from './games/trace.js';
+import * as calm from './engine/calm.js';
+import {
+  childKey, children, activeChild, setActive, addChild, updateChild, removeChild,
+  avatarArt, displayName, isFirst, AVATARS, MAX_CHILDREN,
+} from './engine/children.js';
 
 const screenEl = document.getElementById('screen');
+let currentView = 'splash';   // splash | who | menu | game | goodnight
 let currentCleanup = null;
 let repromptFn = null;
 let repromptTimer = null;
@@ -27,20 +35,20 @@ const LS_MORE_GAMES = 'tinytaps-more-games';
 const PROFILES = {
   little: {
     label: 'Little Explorer', age: '18–30 months',
-    games: ['playhouse', 'peekaboo', 'bubbles', 'music', 'wash', 'coloring', 'counting'],
+    games: ['playhouse', 'peekaboo', 'animals', 'vehicles', 'faces', 'bubbles', 'music', 'wash', 'coloring', 'counting', 'stickers'],
   },
   early: {
     label: 'Early Learner', age: '2½–3½ years',
-    games: ['playhouse', 'sounds', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory'],
+    games: ['playhouse', 'sounds', 'animals', 'vehicles', 'faces', 'paintpots', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory', 'stickers'],
   },
   growing: {
     label: 'Growing Thinker', age: '3½–4½ years',
-    games: ['pattern', 'shadow', 'sort', 'trace', 'counting', 'memory'],
+    games: ['pattern', 'shadow', 'sort', 'trace', 'paintpots', 'counting', 'numberbook', 'memory', 'stickers'],
   },
   custom: { label: 'Custom', age: 'your choices', games: [] },
 };
 
-function profileId() { return localStorage.getItem(LS_PROFILE) || 'little'; }
+function profileId() { return localStorage.getItem(childKey(LS_PROFILE)) || 'little'; }
 function profileGames() {
   if (profileId() === 'custom') return reconcileGameGroups().home;
   const p = PROFILES[profileId()] || PROFILES.little;
@@ -48,12 +56,12 @@ function profileGames() {
 }
 
 function hiddenGames() {
-  try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN) || '[]')); }
+  try { return new Set(JSON.parse(localStorage.getItem(childKey(LS_HIDDEN)) || '[]')); }
   catch (e) { return new Set(); }
 }
 
 function setHiddenGames(set) {
-  localStorage.setItem(LS_HIDDEN, JSON.stringify([...set]));
+  localStorage.setItem(childKey(LS_HIDDEN), JSON.stringify([...set]));
 }
 
 // Custom profile's home/more grouping and order, kept in localStorage as two
@@ -62,14 +70,14 @@ function setHiddenGames(set) {
 // parent's arrangement survives toggling a game's visibility.
 function idList(key) {
   try {
-    const list = JSON.parse(localStorage.getItem(key) || 'null');
+    const list = JSON.parse(localStorage.getItem(childKey(key)) || 'null');
     return Array.isArray(list) ? list : [];
   } catch (e) { return []; }
 }
 function homeGames() { return idList(LS_HOME_GAMES); }
-function setHomeGames(list) { localStorage.setItem(LS_HOME_GAMES, JSON.stringify(list)); }
+function setHomeGames(list) { localStorage.setItem(childKey(LS_HOME_GAMES), JSON.stringify(list)); }
 function moreGames() { return idList(LS_MORE_GAMES); }
-function setMoreGames(list) { localStorage.setItem(LS_MORE_GAMES, JSON.stringify(list)); }
+function setMoreGames(list) { localStorage.setItem(childKey(LS_MORE_GAMES), JSON.stringify(list)); }
 
 // Reconciles the stored home/more id lists against the live game registry:
 // drops ids for games that no longer exist, and appends any game the parent
@@ -91,6 +99,7 @@ const ACCENTS = {
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
   shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',
   wash: '#dcf0fa', trace: '#fff4d6', playhouse: '#dbefff', animals: '#e2f5ee',
+  vehicles: '#ffe9d6', paintpots: '#f3e6ff', faces: '#ffeedd',
 };
 
 /* ---------------- idle re-prompt ----------------
@@ -127,6 +136,11 @@ function el(tag, className, parent) {
   if (className) n.className = className;
   if (parent) parent.appendChild(n);
   return n;
+}
+
+// Children's names are typed by parents; never trust them as markup.
+function esc(text) {
+  return String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 /* ---------------- splash ---------------- */
@@ -179,7 +193,9 @@ function showSplash() {
     if (handedOver) return;   // one hand-off only, however it was triggered
     handedOver = true;
     speech.init();
-    showMenu();
+    // Several children on this device: ask who is playing first.
+    if (children().length > 1) showWhoIsPlaying();
+    else showMenu();
   };
 
   // Any touch during the intro is also the audio-unlock gesture iOS needs.
@@ -210,18 +226,49 @@ function showStaticSplash(s, done) {
   }, { once: true });
 }
 
+/* ---------------- who's playing ---------------- */
+
+function showWhoIsPlaying() {
+  if (calm.goodnightLocked()) { showGoodnight(); return; }
+  clearScreen();
+  currentView = 'who';
+  const s = el('div', 'screen menu who-screen', screenEl);
+  el('div', 'menu-title', s).textContent = 'Who’s playing?';
+  const grid = el('div', 'who-grid', s);
+  const playing = activeChild().id;
+  children().forEach(child => {
+    const card = el('button', 'who-card' + (child.id === playing ? ' current' : ''), grid);
+    card.innerHTML = `<span class="who-avatar"><img src="${avatarArt(child)}" alt=""></span><span class="who-name">${esc(displayName(child))}</span>`;
+    addTap(card, () => {
+      setActive(child.id);
+      audio.chime();
+      showMenu();
+    });
+  });
+  makeSettingsButton(s);
+}
+
 /* ---------------- menu ---------------- */
 
 function showMenu(showAll = false) {
+  if (calm.goodnightLocked()) { showGoodnight(); return; }
   clearScreen();
+  currentView = 'menu';
   const s = el('div', 'screen menu', screenEl);
   const profile = PROFILES[profileId()] || PROFILES.little;
-  el('div', 'menu-title', s).textContent = showAll ? 'All games' : profile.label;
+  const windingDown = calm.isWindingDown();
+  el('div', 'menu-title', s).textContent = windingDown ? '🌙 Wind-down time' : showAll ? 'All games' : profile.label;
   const grid = el('div', 'menu-grid', s);
   const hidden = hiddenGames();
 
   let visible, hasMore;
-  if (profileId() === 'custom') {
+  if (windingDown) {
+    // Bedtime is near: only the slow, open-ended games stay on the menu.
+    visible = games.filter(g => calm.CALM_GAMES.includes(g.id) && !hidden.has(g.id));
+    if (!visible.length) visible = games.filter(g => calm.CALM_GAMES.includes(g.id));
+    hasMore = false;
+    showAll = false;
+  } else if (profileId() === 'custom') {
     const byId = new Map(games.map(g => [g.id, g]));
     const { home, more } = reconcileGameGroups();
     const homeVisible = home.map(id => byId.get(id)).filter(g => g && !hidden.has(g.id));
@@ -254,8 +301,21 @@ function showMenu(showAll = false) {
     addTap(back, () => showMenu(false));
   }
   if (localStorage.getItem(LS_MIX) === '1') makeMixButton(s);
+  if (children().length > 1) makeChildChip(s);
   makeCreditsButton(s);
   makeSettingsButton(s);
+}
+
+// Who is playing, top-left of the menu; a tap goes back to choosing.
+function makeChildChip(parent) {
+  const child = activeChild();
+  const chip = el('button', 'child-chip', parent);
+  chip.setAttribute('aria-label', `${displayName(child)} is playing. Change child`);
+  chip.innerHTML = `<img src="${avatarArt(child)}" alt=""><span>${esc(displayName(child))}</span>`;
+  addTap(chip, () => {
+    audio.pop();
+    showWhoIsPlaying();
+  });
 }
 
 /* ---------------- credits (parent-facing, hold to open) ---------------- */
@@ -339,9 +399,16 @@ function makeMixButton(parent) {
   btn.textContent = '▶ Mix';
   btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    const pool = games.filter(g => profileGames().includes(g.id) && !hiddenGames().has(g.id) && g.id !== 'stickers');
+    const pool = mixPool();
     if (pool.length) startGame(pool[Math.floor(Math.random() * pool.length)], true);
   });
+}
+
+// Mix plays the menu's games (calm ones only while winding down).
+function mixPool(exceptId = null) {
+  return games.filter(g => profileGames().includes(g.id) && !hiddenGames().has(g.id)
+    && g.id !== 'stickers' && g.id !== exceptId
+    && (!calm.isWindingDown() || calm.CALM_GAMES.includes(g.id)));
 }
 
 let activeRecorder = null;
@@ -395,7 +462,7 @@ function setupGameGroups(panel) {
   function persist() {
     setHomeGames(home);
     setMoreGames(more);
-    localStorage.setItem(LS_PROFILE, 'custom');
+    localStorage.setItem(childKey(LS_PROFILE), 'custom');
   }
 
   function renderRow(id, listEl) {
@@ -416,7 +483,7 @@ function setupGameGroups(panel) {
       // Never allow hiding every game.
       if (h.size >= games.length) { h.delete(id); e.target.checked = true; }
       setHiddenGames(h);
-      localStorage.setItem(LS_PROFILE, 'custom');
+      localStorage.setItem(childKey(LS_PROFILE), 'custom');
     });
     row.querySelector('.set-drag-handle').addEventListener('pointerdown', e => startDrag(e, row, id));
   }
@@ -535,17 +602,67 @@ function setupGameGroups(panel) {
   renderAll();
 }
 
-function showSettings() {
+// The Children rows: picture (tap to change), name, who is playing, remove.
+// Switching child or adding/removing one reopens Settings, because the
+// child settings further down belong to whoever is playing.
+function setupChildren(panel, reopen) {
+  const rows = panel.querySelector('#kid-rows');
+  const playing = activeChild().id;
+  children().forEach(child => {
+    const row = el('div', 'kid-row' + (child.id === playing ? ' playing' : ''), rows);
+    row.dataset.id = child.id;
+    row.innerHTML = `
+      <button type="button" class="kid-avatar" aria-label="Change picture"><img src="${avatarArt(child)}" alt=""></button>
+      <input type="text" class="kid-name" maxlength="16" autocomplete="off" spellcheck="false" aria-label="Child’s name" placeholder="${esc(displayName({ ...child, name: '' }))}" value="${esc(child.name)}">
+      <button type="button" class="kid-play">${child.id === playing ? '★ Playing' : 'Play'}</button>
+      ${isFirst(child.id) ? '' : '<button type="button" class="kid-remove" aria-label="Remove this child">✕</button>'}`;
+    const img = row.querySelector('.kid-avatar img');
+    row.querySelector('.kid-avatar').addEventListener('click', () => {
+      const current = children().find(c => c.id === child.id);
+      const next = AVATARS[(AVATARS.indexOf(current.avatar) + 1) % AVATARS.length];
+      updateChild(child.id, { avatar: next });
+      img.src = avatarArt({ avatar: next });
+      audio.pop();
+    });
+    row.querySelector('.kid-name').addEventListener('input', e => updateChild(child.id, { name: e.target.value }));
+    row.querySelector('.kid-play').addEventListener('click', () => {
+      if (child.id === playing) return;
+      setActive(child.id);
+      audio.chime();
+      reopen();
+    });
+    const remove = row.querySelector('.kid-remove');
+    if (remove) remove.addEventListener('click', () => {
+      const name = displayName(children().find(c => c.id === child.id));
+      if (!window.confirm(`Remove ${name} and all of their stickers, pictures and progress from this device?`)) return;
+      removeChild(child.id);
+      reopen();
+    });
+  });
+  const add = panel.querySelector('.kid-add');
+  if (add) add.addEventListener('click', () => {
+    const child = addChild();
+    if (child) reopen(child.id);
+  });
+}
+
+function showSettings(focusChildId = null) {
   const overlay = el('div', 'credits-overlay', document.body);
   const panel = el('div', 'credits-panel settings-panel', overlay);
 
   const vol = Number(localStorage.getItem(LS_VOLUME) || 0.9);
   const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+  const child = activeChild();
+  const whose = children().length > 1 ? ` for ${esc(displayName(child))}` : '';
 
   panel.innerHTML = `
     <button class="settings-close" aria-label="Close settings">✕ Close</button>
     <h2>Parent settings</h2>
-    <label class="set-row">Learning stage
+    <h3>Children</h3>
+    <p class="set-note">Each child keeps their own stickers, pictures, progress, learning stage and game choices on this device. The highlighted child is playing now; settings marked “for” a name are theirs. Trace It’s Name tab traces the playing child’s name.</p>
+    <div class="kid-rows" id="kid-rows"></div>
+    ${children().length < MAX_CHILDREN ? '<button type="button" class="big-btn kid-add">+ Add a child</button>' : ''}
+    <label class="set-row">Learning stage${whose}
       <select id="set-profile">
         ${Object.entries(PROFILES).map(([id, p]) => `<option value="${id}"${id === profileId() ? ' selected' : ''}>${p.label} · ${p.age}</option>`).join('')}
       </select>
@@ -560,14 +677,34 @@ function showSettings() {
       <select id="set-voice"></select>
     </label>
     <label class="set-check"><input type="checkbox" id="set-mix" ${localStorage.getItem(LS_MIX) === '1' ? 'checked' : ''}> Show Play Mix (automatically changes games)</label>
+    <label class="set-check"><input type="checkbox" id="set-tap-place" ${tapPlaceEnabled() ? 'checked' : ''}> Tap to move pieces (tap a piece, then where it goes — easier than dragging)</label>
     <button class="big-btn progress-open">View on-device progress</button>
     <div class="offline-status">${localStorage.getItem('tinytaps-offline-ready') === '1' ? '✓ Ready to play offline' : 'Offline files finish saving after the first online visit'}</div>
     <details class="install-help"><summary>Install on iPhone or iPad</summary><p>Open Tiny Taps in Safari, tap Share, choose <strong>Add to Home Screen</strong>, then tap Add. Open it once while online before taking it offline.</p></details>
+    <h3>Trace It</h3>
+    <label class="set-row">Path width${whose}
+      <select id="set-trace-width">
+        ${[['narrow', 'Narrow (more practice)'], ['normal', 'Normal'], ['wide', 'Wide (easier)']].map(([id, label]) => `<option value="${id}"${id === traceWidth() ? ' selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </label>
+    <h3>Calm &amp; bedtime</h3>
+    <label class="set-row">Celebrations
+      <select id="set-celebrate">
+        ${[['full', 'Full (confetti and fanfare)'], ['gentle', 'Gentle'], ['calm', 'Calm (no confetti)']].map(([id, label]) => `<option value="${id}"${id === calm.celebrationLevel() ? ' selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </label>
+    <label class="set-check"><input type="checkbox" id="set-keep-mute" ${calm.keepMute() ? 'checked' : ''}> Keep sound muted between games</label>
+    <label class="set-row">Bedtime timer
+      <select id="set-bedtime">
+        ${calm.BEDTIME_CHOICES.map(n => `<option value="${n}"${n === calm.bedtimeMinutes() ? ' selected' : ''}>${n ? `${n} minutes` : 'Off'}</option>`).join('')}
+      </select>
+    </label>
+    <p class="set-note">The timer starts when Tiny Taps is opened (or when you choose a time). Near the end, only calm games stay on the menu and the sound softens; then a goodnight screen appears. Hold the moon for two seconds to unlock it.</p>
     <h3>Your voice</h3>
     <p>Record yourself for praise and encouragement. These recordings remain
     active even though general computer narration is off.${canRecord ? '' : ' (Not supported on this browser.)'}</p>
     <div id="rec-rows"></div>
-    <h3>Games on the menu</h3>
+    <h3>Games on the menu${whose}</h3>
     <p class="set-games-hint">Drag ☰ to reorder a game, or move it between the two groups.</p>
     <div class="set-group-label">On Home Screen</div>
     <div class="set-game-list" id="set-home-list"></div>
@@ -587,10 +724,23 @@ function showSettings() {
     audio.setVolume(v);
   });
   panel.querySelector('#set-profile').addEventListener('change', e => {
-    localStorage.setItem(LS_PROFILE, e.target.value);
+    localStorage.setItem(childKey(LS_PROFILE), e.target.value);
   });
   panel.querySelector('#set-mix').addEventListener('change', e =>
     localStorage.setItem(LS_MIX, e.target.checked ? '1' : '0'));
+  panel.querySelector('#set-tap-place').addEventListener('change', e => setTapPlace(e.target.checked));
+  setupChildren(panel, focusId => {
+    overlay.remove();
+    showSettings(focusId);
+  });
+  panel.querySelector('#set-trace-width').addEventListener('change', e => setTraceWidth(e.target.value));
+  panel.querySelector('#set-celebrate').addEventListener('change', e => {
+    calm.setCelebrationLevel(e.target.value);
+    const r = e.target.getBoundingClientRect();
+    celebrate.burst(r.left + r.width / 2, r.top, { count: 18 });
+  });
+  panel.querySelector('#set-keep-mute').addEventListener('change', e => calm.setKeepMute(e.target.checked));
+  panel.querySelector('#set-bedtime').addEventListener('change', e => calm.setBedtimeMinutes(Number(e.target.value)));
   panel.querySelector('.progress-open').addEventListener('pointerdown', () => showProgress(panel));
   panel.querySelector('#set-vol').addEventListener('change', () => audio.chime());
 
@@ -679,6 +829,10 @@ function showSettings() {
   });
 
   setupGameGroups(panel);
+  if (focusChildId) {
+    const input = panel.querySelector(`.kid-row[data-id="${focusChildId}"] .kid-name`);
+    if (input) input.focus();
+  }
 
   panel.querySelector('.settings-close').addEventListener('pointerdown', () => {
     if (activeRecorder) { try { activeRecorder.stop(); } catch (e) { /* ok */ } }
@@ -698,8 +852,10 @@ function showProgress(parentPanel) {
   const needs = [
     ...progress.hardestDetails('colors').map(x => `${x} color`),
     ...progress.hardestDetails('shapes').map(x => `${x} shape`),
-  ].slice(0, 4);
-  box.innerHTML = `<h3>Play observations</h3>
+    ...progress.hardestDetails('animals').map(x => `the word “${x}”`),
+  ].slice(0, 5);
+  const whose = children().length > 1 ? ` · ${esc(displayName(activeChild()))}` : '';
+  box.innerHTML = `<h3>Play observations${whose}</h3>
     <p><strong>Favorite games:</strong> ${favorites}</p>
     <p><strong>Completed activities:</strong> ${data.totalWins || 0}</p>
     <p><strong>Currently practicing:</strong> ${needs.join(', ') || 'The app is still learning'}</p>
@@ -707,7 +863,7 @@ function showProgress(parentPanel) {
     <p class="privacy-note">Stored only on this device. No scores, comparisons, accounts or uploads.</p>
     <button class="big-btn progress-reset">Reset progress</button>`;
   box.querySelector('.progress-reset').addEventListener('pointerdown', () => {
-    if (window.confirm('Reset all local play observations and difficulty levels?')) {
+    if (window.confirm(`Reset ${children().length > 1 ? `${displayName(activeChild())}’s` : 'all local'} play observations and difficulty levels?`)) {
       progress.reset();
       box.remove();
       showProgress(parentPanel);
@@ -758,6 +914,7 @@ function makeMuteButton(parent) {
     const next = !audio.isMuted();
     if (next) speech.stop();
     audio.setMuted(next);
+    calm.rememberMute(next);
     if (!next) audio.chime();
     render();
   });
@@ -772,8 +929,11 @@ function startGame(game, mix = false) {
   if (now - lastStart < 600) return;
   lastStart = now;
 
-  audio.setMuted(false);
+  if (calm.goodnightLocked()) { showGoodnight(); return; }
+  // Unmuted for every new game, unless a parent asked to keep a mute.
+  audio.setMuted(calm.savedMute());
   clearScreen();
+  currentView = 'game';
   const s = el('div', 'screen game-screen', screenEl);
   const stage = el('div', 'game-stage', s);
   makeHomeButton(s);
@@ -793,7 +953,7 @@ function startGame(game, mix = false) {
   currentCleanup = game.start(ctx) || null;
   if (mix) {
     const mixTimer = setTimeout(() => {
-      const pool = games.filter(g => profileGames().includes(g.id) && !hiddenGames().has(g.id) && g.id !== game.id && g.id !== 'stickers');
+      const pool = mixPool(game.id);
       if (pool.length) startGame(pool[Math.floor(Math.random() * pool.length)], true);
     }, 90000);
     const cleanup = currentCleanup;
@@ -801,11 +961,68 @@ function startGame(game, mix = false) {
   }
 }
 
+/* ---------------- goodnight (bedtime timer) ---------------- */
+
+const MOON_SVG = `
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M64 10 A40 40 0 1 0 90 66 A32 32 0 1 1 64 10 Z" fill="#fff3b0" stroke="#ffd54a" stroke-width="3"/>
+  <circle cx="44" cy="62" r="5" fill="#f5df8a"/><circle cx="32" cy="42" r="3.5" fill="#f5df8a"/>
+</svg>`;
+
+// Twinkle, twinkle on the music-box bell — once, softly.
+const LULLABY = [0, 0, 3, 3, 4, 4, 3];
+
+function showGoodnight() {
+  clearScreen();
+  currentView = 'goodnight';
+  const s = el('div', 'screen goodnight', screenEl);
+  const stars = Array.from({ length: 26 }, () =>
+    `<span class="gn-star" style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 62).toFixed(1)}%;animation-delay:${(Math.random() * 3).toFixed(2)}s"></span>`).join('');
+  s.innerHTML = `
+    <div class="gn-sky">${stars}</div>
+    <button class="gn-moon" aria-label="Grown-ups: hold the moon for two seconds to keep playing">${MOON_SVG}</button>
+    <img class="gn-sleeper" src="assets/mascot_winter_sleep.PNG" alt="">
+    <div class="gn-title">Goodnight!</div>
+    <div class="gn-hint">Grown-ups: hold the moon to keep playing</div>`;
+  if (audio.isRunning()) {
+    LULLABY.forEach((step, i) => setTimeout(() => {
+      if (currentView === 'goodnight') audio.bell(step);
+    }, 400 + i * 650));
+  }
+  const moon = s.querySelector('.gn-moon');
+  let hold = null;
+  const cancel = () => { clearTimeout(hold); hold = null; moon.classList.remove('holding'); };
+  moon.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    cancel();
+    moon.classList.add('holding');
+    hold = setTimeout(() => {
+      hold = null;
+      calm.unlockGoodnight();
+      audio.setVolume(baseVolume());
+      audio.chime();
+      showMenu();
+    }, 2000);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => moon.addEventListener(ev, cancel));
+}
+
+function baseVolume() {
+  return Number(localStorage.getItem(LS_VOLUME) || 0.9);
+}
+
 /* ---------------- boot ---------------- */
 
 celebrate.init(document.getElementById('celebrate-canvas'));
 speech.init();
-audio.setVolume(Number(localStorage.getItem(LS_VOLUME) || 0.9));
+audio.setVolume(baseVolume());
+
+calm.startBedtime({
+  // Wind-down starting (or the timer changing) refreshes an open menu.
+  onChange: () => { if (currentView === 'menu') showMenu(); },
+  onVolume: f => audio.setVolume(baseVolume() * f),
+  onGoodnight: () => showGoodnight(),
+});
 
 // Load any parent voice recordings saved in IndexedDB.
 (async () => {
@@ -858,4 +1075,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   }).catch(() => {});
 }
 
-showSplash();
+if (calm.goodnightLocked()) showGoodnight();
+else showSplash();

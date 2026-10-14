@@ -9,6 +9,7 @@
 import { SIZE, PLACES, WORLD, depthAt, clampToFloor, floorFor, roomAt } from './layout.js';
 import { OUTFITS, BOY_POSE_H, OUTFIT_SCALE, BABY_POSES, boundsOf, loadOutfit } from './assets.js';
 import { heartPath } from './fx.js';
+import { childKey } from '../../engine/children.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -66,7 +67,7 @@ export function createKids(W) {
   };
 
   let saved = 0;
-  try { saved = clamp(parseInt(localStorage.getItem(LS_OUTFIT) || '0', 10) || 0, 0, OUTFITS.length - 1); } catch (e) { /* private mode */ }
+  try { saved = clamp(parseInt(localStorage.getItem(childKey(LS_OUTFIT)) || '0', 10) || 0, 0, OUTFITS.length - 1); } catch (e) { /* private mode */ }
 
   /* ================= the big brother ================= */
 
@@ -283,7 +284,7 @@ export function createKids(W) {
       if (!W.isAlive()) return;
       this.outfit = i;
       this.imgs = set || {};
-      try { localStorage.setItem(LS_OUTFIT, String(i)); } catch (e) { /* private mode */ }
+      try { localStorage.setItem(childKey(LS_OUTFIT), String(i)); } catch (e) { /* private mode */ }
       const h = this.height('stand', depthAt(this.y));
       fx.poof(this.x, this.y - h * 0.5, 12, 130);
       fx.sparkle(this.x, this.y - h * 0.6, 18, 240);

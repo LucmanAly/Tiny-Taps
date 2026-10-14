@@ -8,6 +8,7 @@
 import { ANIMALS, displayArt } from '../data/animals.js';
 import { cycler, randInt } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
+import { childKey } from '../engine/children.js';
 
 const WORDS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
@@ -28,7 +29,7 @@ function start(ctx) {
   let alive = true;
   let n = 0;
   let counted = 0;
-  let max = Number(localStorage.getItem('tinytaps-count-max') || 5);
+  let max = Number(localStorage.getItem(childKey('tinytaps-count-max')) || 5);
   const nextAnimal = cycler(ANIMALS);
 
   const bigNum = document.createElement('div');
@@ -48,7 +49,7 @@ function start(ctx) {
     e.stopPropagation();
     holdTimer = setTimeout(() => {
       max = max === 5 ? 10 : 5;
-      localStorage.setItem('tinytaps-count-max', String(max));
+      localStorage.setItem(childKey('tinytaps-count-max'), String(max));
       setLevelLabel();
       audio.chime();
       newRound();
