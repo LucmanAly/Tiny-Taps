@@ -39,7 +39,11 @@ export function createGarden(W) {
 
   // An animal in the bushes who would like to eat `kind`, favourites first.
   function hungryFor(kind) {
-    const pool = (W.dayT > 0.5 ? BUSH_ANIMALS.night : BUSH_ANIMALS.day).filter(a => eats(a, kind));
+    const night = W.dayT > 0.5;
+    let pool = (night ? BUSH_ANIMALS.night : BUSH_ANIMALS.day).filter(a => eats(a, kind));
+    // The owl, frog and cat of the night bushes eat nothing from the patch,
+    // so after dark someone hungry from the daytime pops up instead.
+    if (!pool.length && night) pool = BUSH_ANIMALS.day.filter(a => eats(a, kind));
     const showing = new Set(bushes.map(b => b.animal && b.animal.id));
     const free = pool.filter(a => !showing.has(a.id));
     if (!free.length) return null;
@@ -492,7 +496,7 @@ export function createGarden(W) {
       if (W.t > this.squeakAt && Math.hypot(p.x - this.x, p.y - this.y) > 6) {
         this.squeakAt = W.t + 0.45;
         audio.squeak();
-        if (this.hasBaby() && !W.baby.nap && Math.random() < 0.3) audio.giggle();
+        if (this.hasBaby() && !W.baby.nap && Math.random() < 0.3) W.voice.baby('laugh');
       }
       this.x = p.x; this.y = p.y;
     },
@@ -541,7 +545,7 @@ export function createGarden(W) {
     baby.x = pram.x; baby.y = pram.y + 1;
     baby.squash = 0.7;
     pram.wob = 1;
-    audio.giggle();
+    W.voice.baby('laugh');
     fx.sparkle(pram.x, pram.y - 220, 10, 140);
     // Her brother comes to give her a ride, if he is free and nearby.
     setTimeout(() => {
@@ -559,7 +563,7 @@ export function createGarden(W) {
     if (!baby.free() || Math.abs(baby.x - pram.x) > PRAM_CALL) return false;
     const f = floorFor(pram.x);
     const side = baby.x < pram.x ? -1 : 1;
-    audio.babble();
+    W.voice.baby('babble');
     baby.crawlOver(clamp(pram.x + side * 120, f.x0, f.x1), pram.y, () => {
       if (!pram.hasBaby() && !pram.held && Math.abs(baby.x - pram.x) < 220) seat();
     });
@@ -569,7 +573,7 @@ export function createGarden(W) {
   function startRide() {
     if (pram.ride) return;
     const boy = W.boy;
-    if (W.baby.nap) { W.baby.nap = false; audio.giggle(); }
+    if (W.baby.nap) { W.baby.nap = false; W.voice.baby('coo'); }
     const f = floorFor(pram.x);
     const dir = pram.x + 620 < f.x1 ? 1 : -1;
     pram.dir = dir;
@@ -599,13 +603,14 @@ export function createGarden(W) {
         r.back = true;
         pram.dir = -r.dir;
         boy.facing = -r.dir;
-        audio.giggle();
+        W.voice.baby('laugh');
+        setTimeout(() => W.voice.boy('laugh'), 300);
       } else {
         pram.ride = null;
         boy.setState('idle');
         boy.facing = r.dir;
         W.baby.wob = 1;
-        audio.giggle();
+        W.voice.baby('delight');
         fx.hearts(pram.x, pram.y - 260, 4);
         W.moments.snap('ride', pram.x, pram.y - 220);
         return;

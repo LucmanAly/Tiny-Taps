@@ -29,6 +29,28 @@ recording, and butterfly, generic fish, giraffe, shark, and turtle do not have
 a clear, species-appropriate call suitable for a toddler guessing game. Tiny
 Taps does not substitute fabricated roars or unrelated ambient effects.
 
+## Play House children's voices
+
+The baby sister's and big brother's giggles, delighted squeals, babble, coos,
+gulps, yawn and sneeze, and the baby's rattle, in `assets/audio/playhouse/`,
+are short excerpts of real recordings from Wikimedia Commons. They were cut,
+high-passed, lightly denoised and levelled by `scripts/cut-playhouse-voices.py`
+(which records each clip's source and timing); the derivatives are
+distributed under the same license as each original. They are wordless
+vocalisations, not narration.
+
+| Clips | Source file | Author | License |
+|---|---|---|---|
+| baby-laugh-1, baby-delight-1 | [File:Baby Laugh.ogg](https://commons.wikimedia.org/wiki/File:Baby_Laugh.ogg) | reinsamba | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| baby-laugh-2 to 7, baby-delight-2 | [File:Rire de bébé de 9 mois.ogg](https://commons.wikimedia.org/wiki/File:Rire_de_b%C3%A9b%C3%A9_de_9_mois.ogg) | Litlok | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| baby-babble-1 to 6, baby-coo-1 to 6, baby-delight-3 | [File:Baby 5 months old gabbling laughing practising voice.ogg](https://commons.wikimedia.org/wiki/File:Baby_5_months_old_gabbling_laughing_practising_voice.ogg) | stephan | Public domain |
+| baby-babble-7 to 10 | [File:Even tempered baby 14 months communicative.ogg](https://commons.wikimedia.org/wiki/File:Even_tempered_baby_14_months_communicative.ogg) | stephan | Public domain |
+| baby-gulp-1, 2 | [File:Baby swallow up.ogg](https://commons.wikimedia.org/wiki/File:Baby_swallow_up.ogg) | natalie | Public domain |
+| baby-yawn-1 | [File:Baby yawning cute.ogg](https://commons.wikimedia.org/wiki/File:Baby_yawning_cute.ogg) | natalie | Public domain |
+| baby-sneeze-1, 2 | [File:Baby sneeze.ogg](https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg) | stephan | Public domain |
+| rattle-1, 2 | [File:Babys rattle.ogg](https://commons.wikimedia.org/wiki/File:Babys_rattle.ogg) | ezwa | Public domain |
+| boy-laugh-1 to 5 | [File:Four Years Old child laughing.ogg](https://commons.wikimedia.org/wiki/File:Four_Years_Old_child_laughing.ogg) | morgantj | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+
 UI sounds (pops, chimes, fanfares) are synthesized in-app via WebAudio.
 Spoken prompts use the device's text-to-speech.
 Most artwork is original for this app (hand-built SVG); the Play House

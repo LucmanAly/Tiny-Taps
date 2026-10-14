@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.22';
+const VERSION = 'tiny-taps-v5.23';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -64,6 +64,7 @@ const ASSETS = [
   'js/games/playhouse/layout.js', 'js/games/playhouse/world.js', 'js/games/playhouse/art.js', 'js/games/playhouse/assets.js',
   'js/games/playhouse/fx.js', 'js/games/playhouse/sky.js', 'js/games/playhouse/props.js', 'js/games/playhouse/kids.js',
   'js/games/playhouse/home.js', 'js/games/playhouse/garden.js', 'js/games/playhouse/patch.js', 'js/games/playhouse/moments.js',
+  'js/games/playhouse/voices.js',
   'js/games/animals.js',
   'js/games/vehicles.js',
   'js/games/paintpots.js',
@@ -164,6 +165,21 @@ const ASSETS = [
   'assets/playhouse/bush-small.png', 'assets/playhouse/toy-ball.png', 'assets/playhouse/toy-blanket.png',
   'assets/playhouse/toy-duck.png', 'assets/playhouse/toy-rattle.png', 'assets/playhouse/toy-teddy.png',
   'assets/playhouse/toybox-closed.png', 'assets/playhouse/toybox-empty.png', 'assets/playhouse/toybox-open.png',
+  // Play House children's voices (giggles, coos, babble, yawns, sneezes) and
+  // the rattle, cut from Commons recordings by scripts/cut-playhouse-voices.py.
+  'assets/audio/playhouse/baby-babble-1.mp3', 'assets/audio/playhouse/baby-babble-10.mp3', 'assets/audio/playhouse/baby-babble-2.mp3',
+  'assets/audio/playhouse/baby-babble-3.mp3', 'assets/audio/playhouse/baby-babble-4.mp3', 'assets/audio/playhouse/baby-babble-5.mp3',
+  'assets/audio/playhouse/baby-babble-6.mp3', 'assets/audio/playhouse/baby-babble-7.mp3', 'assets/audio/playhouse/baby-babble-8.mp3',
+  'assets/audio/playhouse/baby-babble-9.mp3', 'assets/audio/playhouse/baby-coo-1.mp3', 'assets/audio/playhouse/baby-coo-2.mp3',
+  'assets/audio/playhouse/baby-coo-3.mp3', 'assets/audio/playhouse/baby-coo-4.mp3', 'assets/audio/playhouse/baby-coo-5.mp3',
+  'assets/audio/playhouse/baby-coo-6.mp3', 'assets/audio/playhouse/baby-delight-1.mp3', 'assets/audio/playhouse/baby-delight-2.mp3',
+  'assets/audio/playhouse/baby-delight-3.mp3', 'assets/audio/playhouse/baby-gulp-1.mp3', 'assets/audio/playhouse/baby-gulp-2.mp3',
+  'assets/audio/playhouse/baby-laugh-1.mp3', 'assets/audio/playhouse/baby-laugh-2.mp3', 'assets/audio/playhouse/baby-laugh-3.mp3',
+  'assets/audio/playhouse/baby-laugh-4.mp3', 'assets/audio/playhouse/baby-laugh-5.mp3', 'assets/audio/playhouse/baby-laugh-6.mp3',
+  'assets/audio/playhouse/baby-laugh-7.mp3', 'assets/audio/playhouse/baby-sneeze-1.mp3', 'assets/audio/playhouse/baby-sneeze-2.mp3',
+  'assets/audio/playhouse/baby-yawn-1.mp3', 'assets/audio/playhouse/boy-laugh-1.mp3', 'assets/audio/playhouse/boy-laugh-2.mp3',
+  'assets/audio/playhouse/boy-laugh-3.mp3', 'assets/audio/playhouse/boy-laugh-4.mp3', 'assets/audio/playhouse/boy-laugh-5.mp3',
+  'assets/audio/playhouse/rattle-1.mp3', 'assets/audio/playhouse/rattle-2.mp3',
   // "Play Together" sibling moments.
   'assets/moment_teddy.PNG', 'assets/moment_crawl.PNG', 'assets/moment_hug.PNG',
   'assets/moment_rattle.PNG', 'assets/moment_peekaboo.PNG', 'assets/moment_clap.PNG',

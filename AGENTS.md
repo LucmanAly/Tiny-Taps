@@ -12,7 +12,8 @@ usable without reading.
 - `js/games/` — one module per mini-game plus the registry in `js/games/index.js`.
 - `js/games/playhouse/` — Play House's world modules (camera/input, scenery art,
   sky and weather, house, garden, vegetable patch, toys, characters, photo
-  wall); the entry and its single voice trigger stay in `js/games/playhouse.js`.
+  wall, the children's recorded voices in `voices.js`); the entry and its
+  single voice trigger stay in `js/games/playhouse.js`.
 - `js/engine/` — audio, speech, dragging (with tap-to-place), rounds, progress,
   celebrations, stickers, calm & bedtime (`calm.js`), child profiles
   (`children.js`), and UI helpers.
@@ -23,8 +24,11 @@ usable without reading.
 - `css/games.css` — mini-game layouts and interaction visuals.
 - `assets/` — original SVG art, licensed animal audio, and credits.
   `assets/playhouse/` holds sprites sliced from the uploaded Play House sheets
-  by `scripts/slice-playhouse-art.py`.
-- `scripts/check.mjs` — import, offline-asset, manifest, and voice-boundary checks.
+  by `scripts/slice-playhouse-art.py`; `assets/audio/playhouse/` holds the
+  children's giggles, coos, babble, yawns and sneezes (and a real rattle) cut
+  from Commons recordings by `scripts/cut-playhouse-voices.py`.
+- `scripts/check.mjs` — import, offline-asset, manifest, voice-boundary, and
+  Play House voice-clip checks.
 - `sw.js` — offline precache and network-first code/cache-first media strategy.
 - `docs/ARCHITECTURE.md` — deeper system and game behavior reference.
 
@@ -51,7 +55,7 @@ The current registry contains 24 games:
 17. Sort It — drag (or tap, then tap a home) animals to their habitat; `js/games/sort.js` `start`.
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, animal-specific paths, and the playing child's own name (from Settings → Children); a glowing dot demonstrates each stroke first and again after a quiet spell; parents choose the path width; `js/games/trace.js` `start`.
-20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, the baby's cot with a music-box mobile (she goes to it at bedtime), a pull-cord lamp, a weather cloud (rain over the whole garden, snow, rainbow) that follows the view, a sun and moon that stay on screen for day-night anywhere outside, bushes with animals that come out to be fed produce, an eight-apple tree that regrows while away, colourful perching birds, trampoline, pram, a persistent ten-photo sibling wall, and a per-child vegetable patch (plant seed packets, water with rain or the watering can, plants grow in daylight and shoot up at sunrise, bees and butterflies visit the flowers, the brother comes from anywhere to help and carries the harvest to his sister, a harvest basket); `js/games/playhouse.js` `start`, world in `js/games/playhouse/`, patch in `patch.js`.
+20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, the baby's cot with a music-box mobile (she goes to it at bedtime), a pull-cord lamp, a weather cloud (rain over the whole garden, snow, rainbow) that follows the view, a sun and moon that stay on screen for day-night anywhere outside, bushes with animals that come out to be fed produce, an eight-apple tree that regrows while away, colourful perching birds, trampoline, pram, a persistent ten-photo sibling wall, real children's giggles, coos, babble and yawns for both siblings, and a per-child vegetable patch (plant seed packets, water with rain or the watering can, plants grow in daylight and shoot up at sunrise, bees and butterflies visit the flowers, the brother comes from anywhere to help and carries the harvest to his sister, a harvest basket); `js/games/playhouse.js` `start`, world in `js/games/playhouse/`, patch in `patch.js`.
 21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three photos to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
 22. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
 23. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
@@ -87,6 +91,9 @@ The current registry contains 24 games:
 - Things That Go, Paint Pots and Silly Faces use Web Audio effects only.
 - Parent praise/encouragement uses `speech.praise` and `speech.encourage`; preserve it.
 - Authentic animal recordings and Web Audio effects are not computer narration.
+  Neither are Play House's recorded children's vocalisations (giggles, coos,
+  babble, gulps, yawns, sneezes): keep them wordless, play them through
+  `W.voice` / `audio.playVoice`, and credit any new clip in `assets/CREDITS.md`.
 - Trace progress must be sequential movement along the active path; a tap cannot complete it.
 - Puzzle Fit Shapes mode is negative-space piece fitting (several pieces build one
   toy), never sequence continuation, and never a single-choice quiz (the separate

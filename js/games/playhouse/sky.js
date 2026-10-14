@@ -24,6 +24,7 @@ export function createSky(W) {
     rainbowUntil: 0,
     rainbowX: 2560,
     gloom: 0,                // 0..1 how grey the sky is while it rains
+    veil: 0,                 // 0..1 how far the sun is behind a cloud (rain, snow)
     dayTarget: 0,
   };
   W.sky = sky;
@@ -90,6 +91,29 @@ export function createSky(W) {
   }
   sky.playAnimal = playAnimal;
 
+  // A small puffy cloud that rises over the lower half of the sun in rain or
+  // snow, so the weather reads as weather and the sun is plainly still there,
+  // its eyes peeking out over the top, ready to come back.
+  const PUFFS = [[-92, 80, 40], [-44, 62, 52], [16, 58, 56], [74, 68, 48], [112, 88, 34], [-120, 98, 28]];
+  function drawVeil(g, x, y, veil) {
+    const rise = (1 - veil) * 70;
+    const rain = sky.weather === 'rain' || (sky.weather === 'clear' && sky.gloom > 0.3);
+    g.save();
+    g.translate(x, y + rise);
+    g.globalAlpha = veil;
+    g.beginPath();
+    for (const [px, py, r] of PUFFS) { g.moveTo(px + r, py); g.arc(px, py, r, 0, Math.PI * 2); }
+    g.rect(-120, 88, 232, 34);
+    g.fillStyle = rain ? '#e1e6ef' : '#f7f9fd';
+    g.fill();
+    g.strokeStyle = rain ? 'rgba(96,108,142,0.55)' : 'rgba(120,136,176,0.45)';
+    g.lineWidth = 4;
+    g.stroke();
+    // Fill again without the inner outlines, so only the outer edge shows.
+    g.fill();
+    g.restore();
+  }
+
   const sun = {
     layer: 'sky', held: false, wob: 0,
     pos() {
@@ -101,12 +125,14 @@ export function createSky(W) {
       const { x, y } = this.held ? this.hold : this.pos();
       const sprite = W.sprites.sun;
       const squash = 1 + Math.sin(this.wob * 18) * 0.08 * Math.max(0, this.wob);
+      const veil = ease(sky.veil);
       g.save();
       g.translate(x, y);
-      g.globalAlpha = 1 - sky.gloom * 0.35;     // paler behind the rain
-      // Soft glow, then slowly turning rays, then the face.
+      g.globalAlpha = 1 - sky.gloom * 0.35 - veil * 0.15;     // paler behind the rain
+      // Soft glow, then slowly turning rays (drawn in behind a cloud), then
+      // the face.
       const glow = g.createRadialGradient(0, 0, 40, 0, 0, 170);
-      glow.addColorStop(0, 'rgba(255,240,170,0.55)');
+      glow.addColorStop(0, `rgba(255,240,170,${0.55 * (1 - veil * 0.7)})`);
       glow.addColorStop(1, 'rgba(255,240,170,0)');
       g.fillStyle = glow;
       g.beginPath(); g.arc(0, 0, 170, 0, Math.PI * 2); g.fill();
@@ -116,7 +142,7 @@ export function createSky(W) {
       g.lineWidth = 3;
       for (let i = 0; i < 12; i++) {
         g.rotate(Math.PI / 6);
-        const len = i % 2 ? 98 : 110;
+        const len = 74 + ((i % 2 ? 98 : 110) - 74) * (1 - veil * 0.75);
         g.beginPath();
         g.moveTo(-11, -74); g.lineTo(0, -len); g.lineTo(11, -74); g.closePath();
         g.fill(); g.stroke();
@@ -125,6 +151,7 @@ export function createSky(W) {
       g.scale(squash, 2 - squash);
       if (sprite) W.blit(g, sprite);
       g.restore();
+      if (veil > 0.01) drawVeil(g, x, y, veil);
     },
     hit(x, y) {
       if (W.dayT > 0.85) return false;
@@ -441,8 +468,12 @@ export function createSky(W) {
     }
     flakes = flakes.filter(f => f.y < f.land && (sky.weather === 'snow' || f.y > W.cam.top - 50));
 
+    // In rain or snow the sun slips behind a little cloud of its own.
+    sky.veil = clamp(sky.veil + (sky.weather === 'clear' ? -dt / 1.2 : dt / 1.6), 0, 1);
+
     if (sky.rainbow > 0) {
-      const target = W.t < sky.rainbowUntil && sky.weather === 'clear' ? 1 : 0;
+      // It fades with the daylight rather than hanging in the night sky.
+      const target = W.t < sky.rainbowUntil && sky.weather === 'clear' && W.dayT < 0.35 ? 1 : 0;
       sky.rainbow = clamp(sky.rainbow + (target ? dt / 1.5 : -dt / 2.5), 0, 1);
     }
   }
@@ -651,12 +682,20 @@ export function createSky(W) {
   };
   sky.snowman = snowman;
 
+  // The lawn a snowman can stand on: up to the apple tree, since past it the
+  // vegetable patch fills the ground.
+  const SNOW_X1 = 3240;
   function grow(x, y) {
     if (!snowman.stage) {
-      const p = clampToFloor(clamp(x, 1760, 3300), y);
+      // Tapped at the patch, he is built at the edge of the lawn, at the
+      // front, and the view eases over a little so he is not squeezed
+      // against the edge of the screen.
+      const atPatch = x > SNOW_X1;
+      const p = clampToFloor(clamp(x, 1760, SNOW_X1), atPatch ? 790 : y);
       snowman.x = p.x;
       snowman.y = p.y;
       snowman.melt = 0;
+      if (snowman.x < W.cam.x + 240) W.panTo(snowman.x - 300 + W.cam.viewW / 2);
     }
     if (snowman.stage < 4) {
       snowman.stage++;

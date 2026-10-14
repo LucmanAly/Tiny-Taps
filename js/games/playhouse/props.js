@@ -146,7 +146,7 @@ export function createProps(W) {
           break;
         case 'rattle':
           this.shake = 1;
-          audio.rattleShake();
+          W.voice.rattle();
           fx.notes(this.x, this.y - this.height(), 2);
           break;
         case 'teddy':

@@ -168,9 +168,11 @@ export function createKids(W) {
     },
 
     hit(x, y) {
+      this.bubbleTap = false;
       const b = this.box;
       if (!b) return false;
       if (this.state === 'sleep') return false;
+      if (this.want && this.bubbleAt && Math.hypot(x - this.bubbleAt.x, y - this.bubbleAt.y) < 80) { this.bubbleTap = true; return true; }
       const pad = 18;
       return x > b.x + b.w * 0.12 - pad && x < b.x + b.w * 0.88 + pad && y > b.y - pad && y < b.y + b.h + pad;
     },
@@ -181,6 +183,9 @@ export function createKids(W) {
     },
 
     tap() {
+      // His thought bubble: the clothes he is thinking of go straight on,
+      // wherever he is (the wardrobe can be a whole garden away).
+      if (this.bubbleTap) { this.wear(OUTFITS.findIndex(o => o.id === this.want)); return; }
       if (this.carrying) return;      // busy taking something somewhere
       if (this.state === 'bounce') { boostBounce(); return; }
       if (baby.want === 'brother' && !baby.busy()) { visitBaby(true); return; }
@@ -191,6 +196,7 @@ export function createKids(W) {
         this.setState('hop');
         this.vAir = 820;
         audio.boing();
+        W.voice.boy('laugh');
         fx.stars(this.x, this.y - 40, 6, 200);
       } else if (r === 1) {
         this.setState('magic', 1.3);
@@ -198,6 +204,7 @@ export function createKids(W) {
         fx.sparkle(this.x, this.y - this.height('stand', depthAt(this.y)) * 0.75, 24, 260);
       } else {
         this.setState('wave', 1.2);
+        W.voice.boy('laugh');
         fx.hearts(this.x, this.y - this.height('stand', depthAt(this.y)), 3);
       }
     },
@@ -226,6 +233,7 @@ export function createKids(W) {
       this.then = null;
       this.setState('held');
       audio.whoosh();
+      W.voice.boy('laugh');
     },
     drag(x, y) {
       this.swingV -= (x - this.hold.x) * 0.02;
@@ -244,7 +252,7 @@ export function createKids(W) {
       this.stateT += dt;
       this.wob = Math.max(0, this.wob - dt * 1.8);
       this.squash = Math.max(0, this.squash - dt * 3);
-      if (this.want && W.t > this.wantT + 9) this.want = null;
+      if (this.want && W.t > this.wantT + 20) this.want = null;
       // Sent off to do something else (or left standing about), he puts
       // down whatever he was carrying rather than holding it forever.
       if (this.carrying && (this.held || !['walk', 'idle', 'kneel'].includes(this.state)
@@ -293,11 +301,13 @@ export function createKids(W) {
 
     // Thinking of the clothes this weather needs.
     drawUI(g) {
+      this.bubbleAt = null;
       if (!this.want || this.held || this.state === 'sleep' || !this.box) return;
       const img = W.img['card_' + this.want];
       if (!img) return;
       const side = this.x > W.cam.x + W.cam.viewW * 0.4 ? -1 : 1;
       const bx = this.x + side * 110, by = this.box.y - 70;
+      this.bubbleAt = { x: bx, y: by };
       drawBubble(g, bx, by, W.t - this.wantT, W.t, gg => {
         const bb = boundsOf(img);
         const h = 104;
@@ -394,6 +404,7 @@ export function createKids(W) {
         audio.splash();
         fx.splash(boy.x, boy.y, 1.6);
         W.say('Splash');
+        W.voice.boy('laugh');
       } else {
         audio.thud();
         fx.dust(boy.x, boy.y, 0);
@@ -444,7 +455,7 @@ export function createKids(W) {
         fx.stars(boy.x, tr.matY() - 40, 4 + boy.boost * 2, 240);
         audio.shimmer(523.25 * (1 + boy.boost * 0.25));
       }
-      if (boy.boost === BOUNCE_PEAKS.length - 1) W.say('Up');
+      if (boy.boost === BOUNCE_PEAKS.length - 1) { W.say('Up'); W.voice.boy('laugh'); }
       boy.boost = Math.max(0, boy.boost - 1);
     }
   }
@@ -539,6 +550,10 @@ export function createKids(W) {
   W.on('weather:rain', () => wish('rain'));
   W.on('weather:snow', () => wish('winter'));
   W.on('weather:clear', () => { if (boy.outfit !== 2) wish('summer'); });
+  // The first snowflakes make his little sister sneeze.
+  W.on('weather:snow', () => {
+    setTimeout(() => { if (baby.free() && roomAt(baby.x) === 'garden') W.voice.baby('sneeze'); }, 1400);
+  });
 
   /* ================= the baby sister ================= */
 
@@ -631,15 +646,7 @@ export function createKids(W) {
         g.translate(-x, -this.hold.y);
       }
       const r = this.drawAt(g, x, foot, depth, key);
-      if (this.state === 'drink' && W.sprites.bottle) {
-        g.save();
-        g.translate(x + 26 * depth, foot - h * 0.62);
-        g.rotate(-2.3 + Math.sin(this.stateT * 6) * 0.08);
-        const k = 0.62 * depth;
-        g.scale(k, k);
-        W.blit(g, W.sprites.bottle);
-        g.restore();
-      }
+      if (this.state === 'drink' && W.sprites.bottle) drawBottle(g, x, foot, depth, h, this.stateT);
       if (r && this.using && this.using.spec.produce) drawUsing(g, this.using, x, foot, depth, r);
       if (this.state === 'sleep' && this.blanket && W.img.toy_blanket) {
         const bi = W.img.toy_blanket;
@@ -685,7 +692,7 @@ export function createKids(W) {
       this.wob = 1;
       if (this.state === 'stroller' && this.stroller) this.stroller.wob = 0.5;
       if (this.state === 'cot' && this.cot) this.cot.wob = 0.5;
-      if (this.state !== 'sleep' && !this.nap) audio.giggle();
+      if (this.state !== 'sleep' && !this.nap) W.voice.baby('laugh');
     },
 
     tap() {
@@ -694,7 +701,7 @@ export function createKids(W) {
         if (this.nap) {
           this.nap = false;
           this.stateT = 0;
-          audio.coo();
+          W.voice.baby('coo');
         }
         fx.hearts(this.x, this.y - 230, 2);
         return;
@@ -702,7 +709,7 @@ export function createKids(W) {
       if (this.state === 'stroller') {
         if (this.nap) {
           this.nap = false;
-          audio.coo();
+          W.voice.baby('coo');
           fx.hearts(this.x, this.y - 240, 2);
         } else if (this.stroller) {
           this.stroller.tap();   // off for a ride, as when the pram is tapped
@@ -714,7 +721,7 @@ export function createKids(W) {
       if (this.state === 'sleep') {
         shedBlanket();
         this.setState('happy', 1.6);
-        audio.coo();
+        W.voice.baby('coo');
         fx.hearts(this.x, this.y - 120, 2);
         return;
       }
@@ -745,7 +752,7 @@ export function createKids(W) {
       this.then = null;
       releaseUsing();
       this.setState('held');
-      audio.giggle();
+      W.voice.baby('laugh');
     },
     drag(x, y) {
       // Carried in arms, she sways a little rather than swinging.
@@ -783,7 +790,7 @@ export function createKids(W) {
           if (this.air <= 0 && this.vAir <= 0) {
             this.air = 0; this.vAir = 0; this.vx = 0;
             this.squash = 0.6;
-            audio.coo();
+            W.voice.baby('coo');
             this.setState('sit');
             this.lookAt = rand(1.5, 3);
             this.nextWantAt = Math.max(this.nextWantAt, W.t + 4);
@@ -918,7 +925,7 @@ export function createKids(W) {
     baby.wantT = W.t;
     baby.look = false;
     baby.setState(want === 'blanket' ? 'sleepy' : 'reach');
-    audio.babble();
+    W.voice.baby('babble');
   }
 
   function clearWant() {
@@ -932,7 +939,7 @@ export function createKids(W) {
   function pointToWant() {
     const want = baby.want;
     if (!want) return;
-    audio.babble();
+    W.voice.baby('babble');
     let target = null;
     if (want === 'brother') target = boy;
     else {
@@ -1030,26 +1037,55 @@ export function createKids(W) {
   }
 
   const REACTIONS = {
-    teddy: { state: 'hug', dur: 3.2, moment: 'teddy', sound: () => { audio.gentleGift(); setTimeout(() => audio.giggle(), 300); } },
-    duck: { state: 'happy', dur: 2.4, moment: 'duck', sound: () => { audio.quack(); setTimeout(() => audio.quack(), 380); } },
-    rattle: { state: 'shake', dur: 2.4, moment: 'rattle', sound: () => { audio.rattleShake(); setTimeout(() => audio.rattleShake(), 500); } },
-    ball: { state: 'clap', dur: 2.4, moment: 'clap', sound: () => { audio.clapClap(); setTimeout(() => audio.clapClap(), 520); } },
-    bottle: { state: 'drink', dur: 2.6, moment: null, sound: () => audio.glug() },
+    teddy: { state: 'hug', dur: 3.2, moment: 'teddy', sound: () => { audio.gentleGift(); later(300, 'coo'); } },
+    duck: { state: 'happy', dur: 2.4, moment: 'duck', sound: () => { audio.quack(); setTimeout(() => audio.quack(), 380); later(800, 'laugh'); } },
+    rattle: { state: 'shake', dur: 2.4, moment: 'rattle', sound: () => { W.voice.rattle(); setTimeout(() => W.voice.rattle(), 1100); later(250, 'laugh'); } },
+    ball: { state: 'clap', dur: 2.4, moment: 'clap', sound: () => { audio.clapClap(); setTimeout(() => audio.clapClap(), 520); later(300, 'laugh'); } },
+    bottle: { state: 'drink', dur: 2.6, moment: null, sound: () => { later(150, 'gulp'); later(800, 'gulp'); later(1450, 'gulp'); later(2100, 'coo'); } },
     apple: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
     carrot: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
     tomato: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
     strawberry: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
-    pumpkin: { state: 'clap', dur: 2.4, moment: null, sound: () => { audio.clapClap(); setTimeout(() => audio.giggle(), 450); } },
-    sunflower: { state: 'flower', dur: 3, moment: null, sound: () => { audio.gentleGift(); setTimeout(() => audio.giggle(), 400); } },
-    tulip: { state: 'flower', dur: 3, moment: null, sound: () => { audio.gentleGift(); setTimeout(() => audio.giggle(), 400); } },
-    wand: { state: 'bubbles', dur: 3.2, moment: 'bubbles', sound: () => audio.shimmer(987.77) },
+    pumpkin: { state: 'clap', dur: 2.4, moment: null, sound: () => { audio.clapClap(); later(450, 'laugh'); } },
+    sunflower: { state: 'flower', dur: 3, moment: null, sound: sniff },
+    tulip: { state: 'flower', dur: 3, moment: null, sound: sniff },
+    wand: { state: 'bubbles', dur: 3.2, moment: 'bubbles', sound: () => { audio.shimmer(987.77); later(700, 'laugh'); } },
   };
 
-  // Three happy bites.
+  // A sound of hers a moment after the toy's own.
+  function later(ms, kind) {
+    setTimeout(() => W.voice.baby(kind), ms);
+  }
+
+  // A flower held up to her nose: now and then a tiny sneeze, then giggles.
+  function sniff() {
+    audio.gentleGift();
+    if (Math.random() < 0.4) { later(500, 'sneeze'); later(1300, 'laugh'); } else later(400, 'laugh');
+  }
+
+  // Three happy bites, and a contented sound when it is all gone.
   function munch() {
     audio.chomp();
     setTimeout(() => { if (W.isAlive() && baby.state === 'eat') audio.chomp(); }, 650);
     setTimeout(() => { if (W.isAlive() && baby.state === 'eat') audio.chomp(); }, 1300);
+    setTimeout(() => { if (baby.state === 'eat') W.voice.baby('coo'); }, 1900);
+  }
+
+  // Her bottle: the teat at her lips and the bottle tipped up and away to
+  // the side, clear of her eyes, bobbing a little with each gulp.
+  function drawBottle(g, x, foot, depth, h, t) {
+    const sp = W.sprites.bottle;
+    const k = 0.56 * depth;
+    const lift = 0.42 + Math.sin(t * 5.5) * 0.05;     // radians above level
+    const a = -(Math.PI / 2 + lift);
+    const reach = 128 * k;                              // base to teat tip
+    const mx = x - 3 * depth, my = foot - h * 0.595;    // her mouth
+    g.save();
+    g.translate(mx - Math.sin(a) * reach, my + Math.cos(a) * reach);
+    g.rotate(a);
+    g.scale(k, k);
+    W.blit(g, sp);
+    g.restore();
   }
 
   // Produce she is busy with: nibbled at her mouth, a flower waved in her
@@ -1120,8 +1156,7 @@ export function createKids(W) {
       toy.landFrom(baby.x + 110, baby.y + 10, 200, -700);
     }
     baby.setState('happy', 1.8);
-    audio.giggle();
-    setTimeout(() => audio.giggle(), 350);
+    W.voice.baby('delight');
     fx.sparkle(baby.x, baby.y - 120, 16, 200);
     fx.hearts(baby.x, baby.y - 160, 4);
     W.moments.snap('peekaboo', baby.x, baby.y - 140);
@@ -1146,15 +1181,15 @@ export function createKids(W) {
     if (!withBlanket && baby.blanketToy) { baby.blanketToy.hidden = false; baby.blanketToy = null; }
     baby.want = null;
     baby.setState('sleep');
-    audio.sleepyCoo();
+    W.voice.baby('yawn');
   }
 
   W.on('morning', () => {
-    if (baby.nap) { baby.nap = false; audio.coo(); }
+    if (baby.nap) { baby.nap = false; W.voice.baby('coo'); }
     if (baby.state === 'sleep') {
       shedBlanket();
       baby.setState('happy', 1.8);
-      audio.coo();
+      W.voice.baby('coo');
     }
   });
   // Her brother gone to bed, she goes to hers.
@@ -1183,7 +1218,9 @@ export function createKids(W) {
       const finish = () => {
         baby.setState('happy', 2);
         baby.facing = boy.x > baby.x ? 1 : -1;
-        audio.giggle();
+        // Giggling together.
+        W.voice.baby('laugh');
+        setTimeout(() => W.voice.boy('laugh'), 250);
         fx.hearts((boy.x + baby.x) / 2, baby.y - 200, 5);
         if (matched) { clearWantQuiet(); celebrate((boy.x + baby.x) / 2, baby.y - 220, 'brother'); }
         W.moments.snap(moment, (boy.x + baby.x) / 2, baby.y - 160);
@@ -1274,7 +1311,7 @@ export function createKids(W) {
       hum(pram.x, pram.y - 300, () => pram.hasBaby() && boy.state === 'rock', () => {
         baby.nap = true;
         baby.stateT = 0;
-        audio.sleepyCoo();
+        W.voice.baby('yawn');
         fx.hearts(pram.x, pram.y - 260, 2);
       });
     });
@@ -1293,7 +1330,7 @@ export function createKids(W) {
       hum(cot.x, cot.y - 300, () => cot.hasBaby() && !baby.nap && boy.state === 'kneel', () => {
         baby.nap = true;
         baby.stateT = 0;
-        audio.sleepyCoo();
+        W.voice.baby('yawn');
         fx.hearts(cot.x, cot.y - 210, 2);
       });
     });
@@ -1331,6 +1368,10 @@ export function createKids(W) {
     fx.confetti(x, y, 34);
     fx.stars(x, y, 6, 260);
     audio.softFanfare();
+    // Whoever made the wish is delighted (unless it was her blanket, and she
+    // is already yawning).
+    if (what === 'outfit') W.voice.boy('laugh');
+    else if (what !== 'blanket') W.voice.baby('delight');
     W.praise();
     W.recordOutcome(true, String(what));
   }

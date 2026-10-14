@@ -21,6 +21,7 @@
 //   props.js   toys with simple physics
 //   kids.js    the brother and the baby sister
 //   moments.js the photo wall
+//   voices.js  the children's recorded giggles, coos, babble and yawns
 
 import { createWorld } from './playhouse/world.js';
 import { createSky } from './playhouse/sky.js';
@@ -30,6 +31,7 @@ import { createHome } from './playhouse/home.js';
 import { createGarden } from './playhouse/garden.js';
 import { createPatch } from './playhouse/patch.js';
 import { createMoments } from './playhouse/moments.js';
+import { createVoices } from './playhouse/voices.js';
 import { PLACES, TIMING } from './playhouse/layout.js';
 import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, BEE, BUTTERFLY, loadImages } from './playhouse/assets.js';
 import { isWindingDown, quietMotion } from '../engine/calm.js';
@@ -73,6 +75,7 @@ function start(ctx) {
   W.praise = () => speech.praise({ quick: true });
   W.recordOutcome = (correct, detail) => recordOutcome(correct, detail);
 
+  createVoices(W);
   createSky(W);
   // Bedtime wind-down: the house is already settling into night.
   if (isWindingDown()) {

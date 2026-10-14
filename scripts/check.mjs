@@ -420,6 +420,14 @@ for (const id of VISITORS) {
   if (!soundAnimal(id)) errors.push(`Shape Builder visitor ${id} needs an animal recording`);
 }
 
+// Play House children's voices: every clip the game asks for exists and
+// works offline.
+const { VOICE_FILES } = await import('../js/games/playhouse/voices.js');
+for (const file of VOICE_FILES) {
+  if (!fs.existsSync(path.join(root, file))) errors.push(`Play House voice clip missing: ${file}`);
+  if (!sw.includes(`'${file}'`)) errors.push(`Service worker does not precache ${file}`);
+}
+
 if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);

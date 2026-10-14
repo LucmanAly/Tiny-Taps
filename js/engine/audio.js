@@ -187,6 +187,38 @@ export function hasBuffer(name) {
   return buffers.has(name);
 }
 
+// A character's recorded vocalisation (a giggle, a coo) played over whatever
+// else is sounding, rather than taking turns with it as play() does: one at a
+// time per `channel` (a new giggle replaces her last one), and softer while a
+// parent's own recording is speaking. Returns false, playing nothing, when the
+// clip is not loaded yet or audio is not running, so the caller can fall back
+// to a synthesized sound.
+const voices = new Map();
+export function playVoice(name, { channel = 'voice', volume = 1, rate = 1 } = {}) {
+  ensureCtx();
+  const buf = buffers.get(name);
+  if (!buf) return false;
+  if (ctx.state !== 'running') { ctx.resume().catch(() => {}); return false; }
+  const t0 = ctx.currentTime;
+  const prev = voices.get(channel);
+  if (prev) {
+    prev.gain.gain.setTargetAtTime(0, t0, 0.02);
+    try { prev.src.stop(t0 + 0.1); } catch (e) { /* already stopped */ }
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const gain = ctx.createGain();
+  const parentSpeaking = currentName && currentName.startsWith('rec:');
+  gain.gain.value = volume * (parentSpeaking ? 0.45 : 1);
+  src.connect(gain).connect(master);
+  const entry = { src, gain };
+  voices.set(channel, entry);
+  src.onended = () => { if (voices.get(channel) === entry) voices.delete(channel); };
+  src.start(t0);
+  return true;
+}
+
 export function setVolume(v) {
   ensureCtx();
   master.gain.value = Math.max(0, Math.min(1, v));

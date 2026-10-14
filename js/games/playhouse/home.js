@@ -207,7 +207,7 @@ export function createHome(W) {
         if (!lull || !this.hasBaby()) return;
         W.baby.nap = true;
         W.baby.stateT = 0;
-        audio.sleepyCoo();
+        W.voice.baby('yawn');
         fx.hearts(this.x, this.y - 210, 2);
       });
     },
@@ -217,7 +217,7 @@ export function createHome(W) {
       if (!baby.free() || roomAt(baby.x) !== 'home') return false;
       const f = floorFor(this.x);
       const side = baby.x < this.x ? -1 : 1;
-      audio.babble();
+      W.voice.baby('babble');
       baby.crawlOver(clamp(this.x + side * 165, f.x0, f.x1), f.y0 + 30, () => {
         if (!this.hasBaby() && baby.free() && Math.abs(baby.x - this.x) < 260) seatInCot({ x: baby.x, y: baby.y });
       });
@@ -269,7 +269,7 @@ export function createHome(W) {
     cot.hop = from ? { from, t0: W.t } : null;
     cot.wob = 1;
     cot.awakeSince = W.t;
-    audio.giggle();
+    W.voice.baby('coo');
     fx.sparkle(cot.x, cot.y - 200, 10, 140);
     setTimeout(() => { if (W.isAlive() && cot.hasBaby()) cot.playTune(true); }, from ? 650 : 350);
   }

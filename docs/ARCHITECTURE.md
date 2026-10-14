@@ -85,6 +85,18 @@ cord). Authentic animal sounds and the bundled My First Words
 Piper MP3s are data/media sounds, not browser narration. `js/data/animals.js`
 records which animals have authentic sound files.
 
+Play House's children have recorded voices too: the baby's giggles, delighted
+squeals, babble, coos, gulps, a yawn and a sneeze, the brother's laughs, and
+the real beads of her rattle, in `assets/audio/playhouse/`. They are wordless
+vocalisations cut from public-domain and Creative Commons recordings
+(`scripts/cut-playhouse-voices.py`, credits in `assets/CREDITS.md`), so like
+the animal recordings they are not computer narration and carry no words,
+instructions or praise. `audio.playVoice(name, { channel })` plays them over
+other sound instead of taking turns like `audio.play`: one at a time per
+channel, and softer while a parent recording is speaking. It returns false
+when a clip is not loaded so the caller can fall back to the synthesized
+`giggle`, `babble`, `coo`, `sleepyCoo`, `glug` or `rattleShake`.
+
 ## Navigation and lifecycle
 
 `showSplash()` unlocks audio on the first gesture and opens `showMenu()`, or
@@ -389,8 +401,12 @@ lives in `js/games/playhouse/`:
   about 10 s awake. At bedtime (`boySleep`), when sleepy, or late at night in
   the house she crawls to the cot instead of sleeping on the floor (`toCot`).
   `W.kids.hum` is the shared music-box tune. Fulfilled wishes call
-  `celebrate`, which plays parent praise only (`speech.praise`) and records
-  an outcome. The brother can carry a toy in his arms (`carry`/`putDown`,
+  `celebrate`, which plays parent praise only (`speech.praise`), the wisher's
+  recorded delight (see `voices.js`) and records an outcome. The brother's
+  weather outfit wish lasts 20 s, and tapping his thought bubble puts those
+  clothes on where he stands (the wardrobe may be a whole garden away). When
+  she drinks, the bottle's teat is at her lips and the bottle tips up and
+  away from her face (`drawBottle`). The brother can carry a toy in his arms (`carry`/`putDown`,
   drawn in his carry and kneel poses); sent to do something else, picked up,
   or left standing for 2.5 s, he puts it down. The baby eats food (apple,
   carrot, tomato, strawberry: it shrinks at her mouth and is gone), waves a
@@ -414,7 +430,8 @@ lives in `js/games/playhouse/`:
   that eats it (`EATS`, favourite first) and shows a "let go here" ring;
   dropped on them it is munched away (chomps, its recording and name, parent
   praise for a favourite, a `feed:<animal>` outcome), while the cat and frog
-  sniff it and hand it back. The apple tree holds eight apples dropped one per
+  sniff it and hand it back. After dark, when none of the night animals (owl,
+  frog, cat) eats what is carried, a hungry daytime animal pops up instead. The apple tree holds eight apples dropped one per
   tap; a picked one regrows after 20 s in view, or quickly once the tree has
   been off screen for 2 s, and more than six loose apples are tidied into the
   basket (`W.patch.stash`). Night owl, trampoline, pram rides. Birds come in
@@ -431,12 +448,16 @@ lives in `js/games/playhouse/`:
   porch light. The sun and moon are screen-anchored (`anchor(f)`, sun 0.72 and
   moon 0.3 of the view, never left of x 1900 so they are never behind the
   house), glide to another spot when the apple tree's canopy would hide them
-  (`placeBodies`), and ride higher on tall screens (`sunTop`). Rain falls over
+  (`placeBodies`), and ride higher on tall screens (`sunTop`). In rain or snow
+  the sun slips behind a little cloud of its own, its eyes peeking over the
+  top (`sky.veil`, `drawVeil`). Rain falls over
   the whole visible garden (about 170 drops per 1600 wu, none indoors), fills
   every puddle, greys the sky (`sky.gloom`, mixed in by `skyStops` in
   world.js) and shows through the bedroom window (`windowWeather`, as does
-  snow). The rainbow is centred on the view (`sky.rainbowX`) and emits
-  `rainbow`. The cloud can be dragged over the whole garden; once the view has
+  snow). The rainbow is centred on the view (`sky.rainbowX`), emits
+  `rainbow`, and fades with the daylight if the sun is sent down. A tap on
+  snowy lawn starts the snowman there; tapped at the vegetable patch, he is
+  built at the edge of the lawn (x 3240) and the view eases over to show him. The cloud can be dragged over the whole garden; once the view has
   rested for 2 s with the cloud off screen, behind the tree or in front of the
   sun or moon, it floats (`cloud.glideTo`, at most 900 wu/s) to the best clear
   spot in view (`followView`).
@@ -463,7 +484,8 @@ lives in `js/games/playhouse/`:
   parent praise, `garden:<crop>` outcome, confetti the first time a crop is
   ever grown); the baby claps if she is within 750 wu. A brother who pulled it
   picks it up and carries it to his sister if she is free in the garden, who
-  then eats it, waves it or claps; otherwise he puts it in the basket. The
+  then eats it, waves it or claps; otherwise he puts it in the basket and
+  steps back beside the seed stand, clear of the can and basket. The
   basket is a drop target for produce (apples too) and keeps a heap of the
   last 14; dragging from it takes the top one out again. More than six loose
   crops are tidied into the basket. Plots, the heap and the crops ever grown
@@ -482,6 +504,19 @@ lives in `js/games/playhouse/`:
   7 s; the polaroid flies to its fixed frame. Collected ids persist in
   `localStorage` (`tinytaps-playhouse-photos`); the last outfit persists in
   `tinytaps-playhouse-outfit`.
+- `voices.js` — the children's recorded voices (`W.voice.baby(kind)`,
+  `W.voice.boy('laugh')`, `W.voice.rattle()`; files in
+  `assets/audio/playhouse/`, listed by `VOICE_FILES`). The baby laughs when
+  tapped or lifted and after a toy's own sound, babbles when she wishes for
+  something or points at it, coos when set down, woken or settled, gulps her
+  bottle, yawns as she falls asleep, sneezes now and then at a flower or the
+  first snow, and squeals with delight at a granted wish, peekaboo or the end
+  of a pram ride; the brother laughs when lifted, hopping, waving, splashing,
+  at the top of a big bounce, with his sister, and when he gets his clothes.
+  Each kind has several takes (never the same twice running, pitch varied by
+  ±4%), one sound at a time per child: a bigger moment cuts in over a smaller
+  one, a smaller one is skipped rather than chopping the last off (the rattle
+  always answers). Until a clip loads the old synthesized sound plays.
 
 After seven seconds without a touch, an on-screen interactive thing wiggles
 with a sparkle every few seconds as a hint (a smaller wiggle and no sparkle
@@ -630,7 +665,8 @@ Screen launch, in both orientations where the game supports them.
 Run `npm run check` after every change (it normalizes Windows path separators
 and CRLF line endings, so it runs the same on every OS). It verifies relative JS imports, service
 worker assets, animal media references, manifest icons, the four-game
-computer-speech boundary, and the exact My First Words category partition. Also
+computer-speech boundary, the exact My First Words category partition, and that
+every Play House voice clip exists and is precached. Also
 run JavaScript syntax checks and `git diff --check`.
 For tracing/catalog work, verify all 23 animal IDs have non-empty, unique path
 sets and that pointerdown alone cannot advance or finish a stroke.

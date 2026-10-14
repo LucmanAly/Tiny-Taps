@@ -811,6 +811,7 @@ export function createPatch(W) {
       baby.setState('clap', 1.6);
       baby.facing = p.x > baby.x ? 1 : -1;
       setTimeout(() => { if (W.isAlive()) audio.clapClap(); }, 250);
+      setTimeout(() => W.voice.baby('laugh'), 500);
       fx.hearts(baby.x, baby.y - 200, 2);
     }
     if (helper) setTimeout(() => pickUp(toy, helper), 750);
@@ -863,6 +864,13 @@ export function createPatch(W) {
         if (!W.isAlive() || b.carrying !== toy) return;
         b.carrying = null;
         basket.add(toy);
+        // Then out of the way of the can and the basket, back beside the
+        // seed stand, unless he has been given something else to do.
+        setTimeout(() => {
+          if (W.isAlive() && b.state === 'idle' && !b.held && !b.carrying && Math.abs(b.x - basket.x) < 260) {
+            b.walkTo(S.x - 190, B.y + 70);
+          }
+        }, 700);
       }, 450);
     });
   }
