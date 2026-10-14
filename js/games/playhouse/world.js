@@ -2,7 +2,7 @@
 // touch routing that every other Play House module plugs into.
 //
 // Things in the world are plain objects ("entities") with optional methods:
-//   layer        'sky' | 'decal' | 'sorted' (default) | 'front'
+//   layer        'sky' | 'outside' (behind fence) | 'decal' | 'sorted' | 'front'
 //   z            sort key for the 'sorted' layer — the y of the thing's base
 //   update(dt)   draw(g)            per frame, in world units
 //   hit(x, y)    true when a touch at (x, y) belongs to it
@@ -179,6 +179,7 @@ export function createWorld({ stage, audio }) {
   let sorted = [];
   function drawWorld(ctx) {
     drawHills(ctx);
+    for (const e of W.entities) if (e.layer === 'outside' && e.draw) e.draw(ctx);
     if (backdrops.garden) blit(ctx, backdrops.garden);
     for (const e of W.entities) if (e.layer === 'decal' && e.draw) e.draw(ctx);
     if (backdrops.home) blit(ctx, backdrops.home);
@@ -306,6 +307,7 @@ export function createWorld({ stage, audio }) {
     for (const e of W.entities) if (e.layer === 'front') list.unshift(e);
     for (const e of list) if (e.hit && e.hit(x, y)) return e;
     for (const e of W.entities) if ((e.layer === 'decal' || e.layer === 'houseDecal') && e.hit && e.hit(x, y)) return e;
+    for (const e of W.entities) if (e.layer === 'outside' && e.hit && e.hit(x, y)) return e;
     for (const e of [...W.entities].reverse()) if (e.layer === 'sky' && e.hit && e.hit(x, y)) return e;
     return null;
   }

@@ -22,6 +22,8 @@
 //   kids.js    the brother and the baby sister
 //   moments.js the photo wall
 //   voices.js  the children's recorded giggles, coos, babble and yawns
+//   petbird.js the pet budgie, opening cage and baby's seed feeding
+//   visitors.js occasional zombies and skeletons outside the fence
 
 import { createWorld } from './playhouse/world.js';
 import { createSky } from './playhouse/sky.js';
@@ -32,6 +34,8 @@ import { createGarden } from './playhouse/garden.js';
 import { createPatch } from './playhouse/patch.js';
 import { createMoments } from './playhouse/moments.js';
 import { createVoices } from './playhouse/voices.js';
+import { createPetBird } from './playhouse/petbird.js';
+import { createVisitors } from './playhouse/visitors.js';
 import { PLACES, TIMING } from './playhouse/layout.js';
 import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, BEE, BUTTERFLY, loadImages } from './playhouse/assets.js';
 import { isWindingDown, quietMotion } from '../engine/calm.js';
@@ -88,6 +92,8 @@ function start(ctx) {
   createHome(W);
   createGarden(W);
   createPatch(W);
+  createPetBird(W);
+  createVisitors(W);
 
   /* ---- artwork ---- */
   const art = {};

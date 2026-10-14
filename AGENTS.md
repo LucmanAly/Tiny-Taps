@@ -12,7 +12,8 @@ usable without reading.
 - `js/games/` — one module per mini-game plus the registry in `js/games/index.js`.
 - `js/games/playhouse/` — Play House's world modules (camera/input, scenery art,
   sky and weather, house, garden, vegetable patch, toys, characters, photo
-  wall, the children's recorded voices in `voices.js`); the entry and its
+  wall, pet bird and cage (`petbird.js`), outside-fence visitors (`visitors.js`),
+  the children's recorded voices in `voices.js`); the entry and its
   single voice trigger stay in `js/games/playhouse.js`.
 - `js/engine/` — audio, speech, dragging (with tap-to-place), rounds, progress,
   celebrations, stickers, calm & bedtime (`calm.js`), child profiles
@@ -60,6 +61,13 @@ The current registry contains 24 games:
 22. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
 23. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
 24. Silly Faces — dress up a face (kid, monster, potato, robot) with eyes, noses, mouths, hats and extras; tap to pop a part in place or drag it anywhere, tap parts to make them react, dice for a surprise face; `js/games/faces.js` `start`.
+
+Play House also has a pet budgie beside the trampoline: tap its cage to open
+or recall it, tap the seed bowl to have the baby crawl over and feed it from
+her hand, and tap the bird to make short flights and play with her. Cartoon
+zombies and skeletons occasionally stroll on the path outside the fence;
+tap their heads to wave. They stay behind the fence, and pause their roaming
+under Calm or reduced motion. These are Play House features, not extra games.
 
 ## Core conventions
 

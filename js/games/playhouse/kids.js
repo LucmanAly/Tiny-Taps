@@ -578,7 +578,7 @@ export function createKids(W) {
     get layer() { return this.held ? 'front' : 'sorted'; },
 
     setState(s, dur = 0) { this.state = s; this.stateT = 0; this.dur = dur; },
-    busy() { return ['held', 'fall', 'stroller', 'cot', 'visit', 'lull'].includes(this.state) || !!this.using; },
+    busy() { return ['held', 'fall', 'stroller', 'cot', 'visit', 'lull', 'feedbird'].includes(this.state) || !!this.using; },
     // Awake, on the floor and not in the middle of anything.
     free() { return !this.busy() && !['sleep', 'peek'].includes(this.state); },
     // Where her feet are while she is carried with the finger at `y`.
@@ -588,7 +588,7 @@ export function createKids(W) {
       switch (this.state) {
         case 'crawl': return 'crawl';
         case 'held': case 'fall': case 'happy': case 'clap': case 'shake': case 'bubbles': case 'flower': return 'happy';
-        case 'reach': return 'reach';
+        case 'reach': case 'feedbird': return 'reach';
         case 'sleepy': return 'sleepy';
         case 'hug': return 'hug';
         case 'sleep': return 'sleep';

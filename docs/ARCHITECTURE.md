@@ -369,7 +369,8 @@ lives in `js/games/playhouse/`:
   portrait a 620 wu view; the child pans by swiping empty space, by carrying
   something to a screen edge, or with the round edge arrows. Drawing order:
   sky (gradient, stars, sun, moon, weather cloud), then the world (parallax
-  hills, garden backdrop, ground decals, house backdrop, house decals, things
+  hills, outside-fence path and visitors (`outside` layer), garden backdrop
+  including the fence, ground decals, house backdrop, house decals, things
   sorted by base y, then held things), weather particles, effects, world-space
   UI (thought bubbles, polaroids) and screen-space UI (arrows, photo zoom,
   camera flash). After dusk the world is drawn on a second canvas, tinted with
@@ -443,6 +444,24 @@ lives in `js/games/playhouse/`:
   empty pram has her crawl in (within 600 wu), as does wheeling it up to
   her. In the pram, `seatHit` (her, the hood and basket top) lifts her out,
   while the handle and wheels drag the pram from where it was grabbed.
+- `petbird.js` — pet budgie at `PLACES.birdcage` beside the trampoline. Tapping
+  the cage opens the door and sends it on a short flight to the ground;
+  tapping again recalls it and closes the door only after it lands inside.
+  The seed bowl calls the awake, free baby from anywhere: she crawls over,
+  holds seeds out (`feedbird` state, reach pose), the bird lands at her hand
+  and pecks, then she claps and it flutters to the ground. A finished feeding
+  records `feed:petbird` through the shared outcome channel and plays parent
+  praise. Tapping the free bird makes a short flight and the nearby baby
+  claps. Lifting her or starting another activity cancels feeding; callbacks
+  belong to their own crawl and cannot cancel a later one. All timing uses
+  world updates. The bird stays near its cage, shelters at night or in bad
+  weather, and has lower, slower flights with Calm/reduced motion.
+- `visitors.js` — two cartoon zombies and two skeletons pause and occasionally
+  walk along the path outside the garden. The `outside` layer draws before
+  the garden backdrop, so the fence always covers their lower bodies; hit
+  targets cover only the visible heads above the pickets. Tapping makes them
+  wave with a bell note. They never enter the garden or chase the children.
+  Ambient roaming and animated waving stop with Calm/reduced motion.
 - `sky.js` — day/night (`W.dayT`), sun/moon tap or drag, weather cloud
   (rain → snow cover and snowman → rainbow), rain weather bed, fireflies and
   porch light. The sun and moon are screen-anchored (`anchor(f)`, sun 0.72 and

@@ -82,6 +82,7 @@ export const PLACES = {
   boyHome: { x: 1000, y: 742 },
   door: { x: 1600, y0: 330, y1: 790 },
   stroller: { x: 1830, y: 744 },
+  birdcage: { x: 2200, y: 690 },
   bushes: [
     { x: 2020, y: 575, art: 'bushBig', w: 300 },
     { x: 2905, y: 566, art: 'bushMedium', w: 250 },
