@@ -11,6 +11,8 @@
 // the SVG viewBox in the piece's own local space, where (0, 0) is the point
 // the game positions it by (the middle of its base, for furniture).
 
+import { WORLD } from './layout.js';
+
 const INK = '#6b4a3a';
 const C = {
   ink: INK,
@@ -336,43 +338,49 @@ function flowerHead(x, y, r, col) {
 
 export function gardenBackdrop() {
   const r = rng(23);
+  const R = WORLD.W + 20;             // the right-hand end of the world
+  const span = R - 1640;
   let pickets = '';
-  for (let x = 1666; x < 3500; x += 62) {
+  for (let x = 1666; x < R; x += 62) {
     pickets += `<path d="M${x},508 V412 L${x + 14},394 L${x + 28},412 V508 Z" fill="#fff7ea" ${ink(2.5, 0.6)}/>`;
     pickets += `<path d="M${x + 20},410 V506" stroke="#e7d6bf" stroke-width="7"/>`;
   }
   let flowers = '';
-  for (let x = 1690; x < 3480; x += 20 + r() * 28) {
+  for (let x = 1690; x < R - 20; x += 20 + r() * 28) {
     const y = 486 + r() * 26;
     flowers += `<path d="M${f1(x)},${f1(y)} q${f1(-3 + r() * 6)},16 0,${f1(26 + r() * 8)}" stroke="#6aa958" stroke-width="3" fill="none"/>`;
     flowers += flowerHead(f1(x), f1(y), 5 + r() * 3, C.flowers[Math.floor(r() * C.flowers.length)]);
   }
   let tufts = '';
-  for (let i = 0; i < 170; i++) {
-    const x = 1650 + r() * 1830, y = 530 + r() * 262, s = 0.7 + r() * 0.7;
+  for (let i = 0, n = Math.round(span / 10.8); i < n; i++) {
+    const x = 1650 + r() * (span - 30), y = 530 + r() * 262, s = 0.7 + r() * 0.7;
     tufts += `M${f1(x)},${f1(y)} q${f1(-3 * s)},${f1(-14 * s)} ${f1(-9 * s)},${f1(-20 * s)} M${f1(x)},${f1(y)} q0,${f1(-16 * s)} ${f1(1 * s)},${f1(-24 * s)} M${f1(x)},${f1(y)} q${f1(4 * s)},${f1(-13 * s)} ${f1(10 * s)},${f1(-19 * s)} `;
   }
   let daisies = '';
-  for (let i = 0; i < 30; i++) {
-    daisies += flowerHead(f1(1700 + r() * 1760), f1(560 + r() * 220), 4 + r() * 2, r() < 0.7 ? '#ffffff' : '#ffd6e0');
+  for (let i = 0, n = Math.round(span / 62); i < n; i++) {
+    daisies += flowerHead(f1(1700 + r() * (span - 80)), f1(560 + r() * 220), 4 + r() * 2, r() < 0.7 ? '#ffffff' : '#ffd6e0');
   }
   let stripes = '';
-  for (let x = 1500; x < 3700; x += 240) {
+  for (let x = 1500; x < R + 200; x += 240) {
     stripes += `<polygon points="${x},500 ${x + 120},500 ${x - 140},800 ${x - 260},800" fill="#fff" opacity="0.07"/>`;
   }
+  // A worn earth path along the vegetable patch, where the gardening happens.
+  const bed = 3990;
+  const path = `<path d="M${bed - 560},700 C${bed - 300},690 ${bed + 300},690 ${bed + 520},702 C${bed + 540},740 ${bed + 300},760 ${bed},758 C${bed - 300},758 ${bed - 560},744 ${bed - 560},700 Z" fill="#d9bf8f" opacity="0.55"/>`;
 
   const body = `
   <linearGradient id="lawnG" x1="0" y1="480" x2="0" y2="800" gradientUnits="userSpaceOnUse">
     <stop offset="0" stop-color="#c2e49c"/><stop offset="1" stop-color="#8cc56a"/>
   </linearGradient>
-  <rect x="1640" y="420" width="1860" height="382" fill="url(#lawnG)"/>
-  <clipPath id="lawnClip"><rect x="1640" y="500" width="1860" height="302"/></clipPath>
+  <rect x="1640" y="420" width="${span}" height="382" fill="url(#lawnG)"/>
+  <clipPath id="lawnClip"><rect x="1640" y="500" width="${span}" height="302"/></clipPath>
   <g clip-path="url(#lawnClip)">${stripes}</g>
-  <rect x="1660" y="420" width="1840" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
-  <rect x="1660" y="468" width="1840" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
+  <rect x="1660" y="420" width="${span - 20}" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
+  <rect x="1660" y="468" width="${span - 20}" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
   ${pickets}
-  <rect x="1640" y="506" width="1860" height="22" fill="#4f7a34" opacity="0.12"/>
+  <rect x="1640" y="506" width="${span}" height="22" fill="#4f7a34" opacity="0.12"/>
   ${flowers}
+  ${path}
   <path d="${tufts}" stroke="#72ad57" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.75"/>
   ${daisies}
   <rect x="1662" y="770" width="112" height="22" rx="5" fill="#c99a63" ${ink(2.5, 0.6)}/>
@@ -381,7 +389,7 @@ export function gardenBackdrop() {
   <path d="M1674,276 L1702,276 L1696,264 L1680,264 Z" fill="#3f3a52"/>
   <rect x="1674" y="276" width="28" height="44" rx="5" fill="#3f3a52" ${ink(2)}/>
   <rect x="1679" y="282" width="18" height="32" rx="3" fill="#fff1bf"/>`;
-  return { vb: [1600, 250, 1900, 554], body: painted(body) };
+  return { vb: [1600, 250, R - 1600, 554], body: painted(body) };
 }
 
 function hills({ seed, width, top, amp, color, shade, trees, treeColor, extra = '' }) {
@@ -700,6 +708,169 @@ export function wand() {
   return { vb: [-46, -162, 92, 166], body: painted(body) };
 }
 
+/* ---------------- the vegetable patch ----------------
+   Produce is drawn standing on its base at (0, 0), like the toys, so a
+   harvested carrot can be carried and given just like the apple. */
+
+export function carrot() {
+  const body = `
+  <g transform="translate(-34,0) rotate(30)">
+    <path d="M0,-72 C-6,-90 -18,-100 -24,-112 M0,-72 C0,-92 3,-104 0,-120 M0,-72 C8,-90 18,-98 26,-108" stroke="#5f9d4f" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M0,-72 C-6,-90 -18,-100 -24,-112 M0,-72 C0,-92 3,-104 0,-120 M0,-72 C8,-90 18,-98 26,-108" stroke="#8ccc6e" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M-20,-70 C-22,-50 -10,-14 0,0 C10,-14 22,-50 20,-70 C10,-77 -10,-77 -20,-70 Z" fill="#f39237" ${ink(3)}/>
+    <path d="M-15,-52 h9 M5,-40 h9 M-9,-26 h7 M3,-14 h5" stroke="#c96a1c" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-12,-64 C-12,-50 -8,-36 -4,-26" stroke="#ffc58a" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+  </g>`;
+  return { vb: [-58, -116, 116, 120], body: painted(body) };
+}
+
+export function tomato() {
+  const body = `
+  <path d="M0,-4 C-30,-4 -40,-22 -38,-38 C-36,-54 -20,-62 0,-60 C20,-62 36,-54 38,-38 C40,-22 30,-4 0,-4 Z" fill="#ef5b4f" ${ink(3)}/>
+  <path d="M-20,-48 C-28,-40 -28,-28 -22,-20" stroke="#ff9a8a" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M0,-56 L-18,-64 L-5,-63 L-9,-76 L1,-65 L12,-74 L8,-62 L21,-60 L6,-58 Z" fill="#6aa958" ${ink(2, 0.6)}/>
+  <path d="M1,-66 q1,-8 6,-12" stroke="#5f9d4f" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  return { vb: [-44, -84, 88, 88], body: painted(body) };
+}
+
+export function strawberry() {
+  const seeds = [[-16, -44], [-2, -48], [13, -42], [-20, -30], [-6, -32], [9, -28], [20, -32], [-10, -18], [4, -16], [-1, -6]]
+    .map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="2.4" ry="3.4" fill="#ffe28a"/>`).join('');
+  const body = `
+  <path d="M0,0 C-14,-6 -32,-26 -32,-44 C-32,-58 -18,-64 0,-60 C18,-64 32,-58 32,-44 C32,-26 14,-6 0,0 Z" fill="#f2545b" ${ink(3)}/>
+  ${seeds}
+  <path d="M-25,-57 C-17,-72 -6,-66 0,-62 C6,-66 17,-72 25,-57 C14,-60 6,-55 0,-55 C-6,-55 -14,-60 -25,-57 Z" fill="#6aa958" ${ink(2, 0.6)}/>
+  <path d="M0,-62 q0,-10 5,-15" stroke="#5f9d4f" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  return { vb: [-38, -82, 76, 86], body: painted(body) };
+}
+
+export function pumpkin() {
+  const body = `
+  <ellipse cx="-27" cy="-38" rx="34" ry="37" fill="#f08a2c" ${ink(3)}/>
+  <ellipse cx="27" cy="-38" rx="34" ry="37" fill="#f08a2c" ${ink(3)}/>
+  <ellipse cx="0" cy="-39" rx="31" ry="39" fill="#f7a346" ${ink(3)}/>
+  <path d="M-12,-66 C-18,-50 -18,-28 -12,-12" stroke="#ffd08a" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M-5,-74 C-8,-90 2,-98 12,-96 L11,-88 C4,-88 4,-82 6,-74 Z" fill="#7a5a2a" ${ink(2.5)}/>
+  <path d="M8,-80 C24,-94 40,-88 42,-76 C30,-72 18,-74 8,-80 Z" fill="#7dbd66" ${ink(2, 0.6)}/>
+  <path d="M-6,-84 c-14,-6 -20,6 -12,10 c6,3 10,-4 4,-6" stroke="#6aa958" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return { vb: [-66, -102, 132, 106], body: painted(body) };
+}
+
+function petals(cx, cy, n, dist, rx, ry, fill) {
+  let p = '';
+  for (let i = 0; i < n; i++) {
+    p += `<ellipse cx="${cx}" cy="${cy - dist}" rx="${rx}" ry="${ry}" transform="rotate(${f1(i * 360 / n)} ${cx} ${cy})" fill="${fill}" ${ink(2, 0.5)}/>`;
+  }
+  return p;
+}
+
+export function sunflower() {
+  const body = `
+  <path d="M0,0 C-4,-40 4,-80 0,-110" stroke="#5f9d4f" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M0,-44 C14,-60 32,-60 40,-52 C30,-40 14,-38 0,-44 Z" fill="#7dbd66" ${ink(2, 0.6)}/>
+  <path d="M0,-70 C-14,-84 -32,-84 -40,-76 C-30,-64 -14,-62 0,-70 Z" fill="#7dbd66" ${ink(2, 0.6)}/>
+  ${petals(0, -122, 13, 28, 9, 16, '#ffd23f')}
+  <circle cx="0" cy="-122" r="18" fill="#8a5a2b" ${ink(2.5)}/>
+  <circle cx="-5" cy="-127" r="3" fill="#5c3a1a"/><circle cx="6" cy="-124" r="3" fill="#5c3a1a"/><circle cx="-1" cy="-115" r="3" fill="#5c3a1a"/>`;
+  return { vb: [-50, -170, 100, 174], body: painted(body) };
+}
+
+export function tulip() {
+  const body = `
+  <path d="M0,0 C-2,-30 2,-60 0,-84" stroke="#5f9d4f" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M0,-4 C-26,-22 -32,-50 -24,-72 C-12,-52 -4,-30 0,-4 Z" fill="#7dbd66" ${ink(2, 0.6)}/>
+  <path d="M1,-10 C20,-24 26,-42 22,-58 C12,-44 4,-28 1,-10 Z" fill="#8ccc6e" ${ink(2, 0.6)}/>
+  <path d="M-22,-106 C-24,-88 -14,-78 0,-78 C14,-78 24,-88 22,-106 L12,-96 L6,-114 L0,-98 L-6,-114 L-12,-96 Z" fill="#f2607e" ${ink(3)}/>
+  <path d="M-12,-98 C-14,-90 -10,-84 -4,-82" stroke="#ff9db2" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  return { vb: [-36, -120, 72, 124], body: painted(body) };
+}
+
+// The spout points left; its tip is near (-118, -96).
+export function wateringCan() {
+  const body = `
+  <path d="M-30,-86 C-26,-130 36,-130 40,-82" fill="none" stroke="${INK}" stroke-opacity="0.7" stroke-width="18" stroke-linecap="round"/>
+  <path d="M-30,-86 C-26,-130 36,-130 40,-82" fill="none" stroke="#5aa7bf" stroke-width="11" stroke-linecap="round"/>
+  <path d="M47,-70 C80,-64 80,-22 47,-16" fill="none" stroke="${INK}" stroke-opacity="0.7" stroke-width="16" stroke-linecap="round"/>
+  <path d="M47,-70 C80,-64 80,-22 47,-16" fill="none" stroke="#5aa7bf" stroke-width="9" stroke-linecap="round"/>
+  <path d="M-44,-22 L-112,-86 L-100,-96 L-46,-48 Z" fill="#7cc3d9" ${ink(3)}/>
+  <ellipse cx="-112" cy="-94" rx="11" ry="17" transform="rotate(-45 -112 -94)" fill="#a9dcea" ${ink(2.5)}/>
+  <path d="M-46,0 L-52,-78 C-40,-88 40,-88 52,-78 L46,0 Z" fill="#7cc3d9" ${ink(3)}/>
+  <ellipse cx="0" cy="-80" rx="52" ry="10" fill="#a9dcea" ${ink(2.5)}/>
+  <path d="M-49,-40 L49,-40" stroke="#5aa7bf" stroke-width="6"/>
+  <path d="M-38,-70 L-34,-10" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
+  ${flowerHead(12, -22, 6, '#ffd6e0')}`;
+  return { vb: [-132, -134, 222, 138], body: painted(body) };
+}
+
+// The raised bed in two halves: the soil and plants are drawn between them.
+export function planterBack() {
+  const body = `
+  <rect x="-306" y="-114" width="612" height="32" rx="6" fill="${C.woodDark}" ${ink(3)}/>
+  <path d="M-300,-105 H300" stroke="${C.woodLight}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  <rect x="-322" y="-124" width="28" height="70" rx="6" fill="${C.woodDeep}" ${ink(2.5)}/>
+  <rect x="294" y="-124" width="28" height="70" rx="6" fill="${C.woodDeep}" ${ink(2.5)}/>`;
+  return { vb: [-330, -130, 660, 80], body: painted(body) };
+}
+
+export function planterFront() {
+  let grain = '';
+  for (const [x, y, w] of [[-250, -42, 80], [-120, -16, 110], [40, -40, 90], [170, -14, 100], [-40, -12, 50]]) {
+    grain += `<path d="M${x},${y} q${w / 2},-5 ${w},0" stroke="${C.woodDark}" stroke-width="2.5" fill="none" opacity="0.5"/>`;
+  }
+  const body = `
+  <rect x="-314" y="-54" width="628" height="54" rx="7" fill="${C.wood}" ${ink(3)}/>
+  <path d="M-310,-27 H310" stroke="${C.woodDark}" stroke-width="3" opacity="0.6"/>
+  <path d="M-306,-48 H306" stroke="${C.woodLight}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  ${grain}
+  <rect x="-328" y="-64" width="32" height="66" rx="7" fill="${C.woodDark}" ${ink(2.5)}/>
+  <rect x="296" y="-64" width="32" height="66" rx="7" fill="${C.woodDark}" ${ink(2.5)}/>
+  <circle cx="-312" cy="-50" r="4" fill="${C.woodDeep}"/><circle cx="312" cy="-50" r="4" fill="${C.woodDeep}"/>`;
+  return { vb: [-336, -70, 672, 74], body: painted(body) };
+}
+
+// The seed stand: two shelves of seed packets under a little roof.
+export function standBack() {
+  const body = `
+  <rect x="-108" y="-232" width="216" height="232" fill="#f4e2c6" ${ink(2, 0.4)}/>
+  <path d="M-108,-160 H108 M-108,-66 H108" stroke="#e3caa5" stroke-width="10"/>
+  <rect x="-130" y="-248" width="22" height="248" rx="6" fill="${C.woodDark}" ${ink(2.5)}/>
+  <rect x="108" y="-248" width="22" height="248" rx="6" fill="${C.woodDark}" ${ink(2.5)}/>
+  <path d="M-146,-238 L0,-292 L146,-238 Z" fill="${C.roof}" ${ink(3)}/>
+  <path d="M-120,-246 L0,-284 L120,-246" stroke="${C.roofLight}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M0,-244 V-262" stroke="#5f9d4f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M0,-258 C-6,-272 -20,-272 -24,-266 C-18,-256 -6,-254 0,-258 Z M0,-258 C6,-272 20,-272 24,-266 C18,-256 6,-254 0,-258 Z" fill="#7dbd66" ${ink(2, 0.6)}/>`;
+  return { vb: [-152, -298, 304, 302], body: painted(body) };
+}
+
+export function standFront() {
+  const body = `
+  <rect x="-120" y="-152" width="240" height="16" rx="5" fill="${C.wood}" ${ink(2.5)}/>
+  <rect x="-120" y="-56" width="240" height="16" rx="5" fill="${C.wood}" ${ink(2.5)}/>
+  <rect x="-116" y="-40" width="232" height="40" rx="5" fill="${C.woodLight}" ${ink(2.5)}/>
+  <path d="M-40,-20 h80" stroke="${C.woodDark}" stroke-width="4" stroke-linecap="round"/>`;
+  return { vb: [-126, -158, 252, 162], body: painted(body) };
+}
+
+// The harvest basket in two halves, so the produce heap sits inside it.
+export function basketBack() {
+  const body = `
+  <path d="M-86,-78 C-84,-176 84,-176 86,-78" fill="none" stroke="${INK}" stroke-opacity="0.65" stroke-width="18" stroke-linecap="round"/>
+  <path d="M-86,-78 C-84,-176 84,-176 86,-78" fill="none" stroke="#c48a45" stroke-width="11" stroke-linecap="round"/>
+  <ellipse cx="0" cy="-78" rx="100" ry="22" fill="#7d5234" ${ink(2.5)}/>`;
+  return { vb: [-110, -164, 220, 112], body: painted(body) };
+}
+
+export function basketFront() {
+  let weave = '';
+  for (let x = -80; x <= 80; x += 20) weave += `<path d="M${x},-64 L${f1(x * 0.8)},-4" stroke="#b07834" stroke-width="3" opacity="0.6"/>`;
+  const body = `
+  <path d="M-100,-78 C-98,-50 -86,-10 -74,0 L74,0 C86,-10 98,-50 100,-78 C60,-60 -60,-60 -100,-78 Z" fill="#dba862" ${ink(3)}/>
+  ${weave}
+  <path d="M-96,-50 C-50,-36 50,-36 96,-50 M-90,-26 C-50,-14 50,-14 90,-26" stroke="#b07834" stroke-width="4" fill="none" opacity="0.7"/>
+  <path d="M-100,-78 C-60,-58 60,-58 100,-78" stroke="#c48a45" stroke-width="11" fill="none" stroke-linecap="round"/>`;
+  return { vb: [-108, -92, 216, 96], body: painted(body) };
+}
+
 // Everything the game rasterizes, by name. Backdrops and hills are built
 // separately because their size depends on the screen.
 export const SPRITES = {
@@ -708,4 +879,6 @@ export const SPRITES = {
   strollerBack, strollerFront, treeTrunk, treeCanopy,
   cloud: () => cloud('clear'), cloudRain: () => cloud('rain'), cloudSnow: () => cloud('snow'),
   sun: sunFace, moon, bottle, apple, wand,
+  carrot, tomato, strawberry, pumpkin, sunflower, tulip,
+  wateringCan, planterBack, planterFront, standBack, standFront, basketBack, basketFront,
 };

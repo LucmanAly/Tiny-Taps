@@ -71,6 +71,20 @@ export function createFx() {
       }
       add({ kind: 'ring', x, y, life: 0.6, size: 60 * big, color: '#d7f0ff' });
     },
+    // One drop of water falling from (x, y) until it reaches `landY`.
+    drip(x, y, landY, vx = 0) {
+      const g = 1500, vy = 120;
+      const d = Math.max(10, landY - y);
+      const life = (-vy + Math.sqrt(vy * vy + 2 * g * d)) / g;
+      add({ kind: 'drop', x, y, vx, vy, g, life, size: 5 + Math.random() * 3, color: '#8fcdf2', alpha: 0.95 });
+    },
+    // A sprinkle of seeds tumbling into the soil.
+    seeds(x, y, n = 8) {
+      for (let i = 0; i < n; i++) {
+        add({ kind: 'drop', x: x + (Math.random() - 0.5) * 40, y, vx: (Math.random() - 0.5) * 120, vy: -60 - Math.random() * 80,
+          g: 900, life: 0.45 + Math.random() * 0.2, size: 4 + Math.random() * 2, color: pick(['#8a5a35', '#c9a36b', '#6b4a3a']) });
+      }
+    },
     leaves(x, y, n = 8, spread = 200) {
       for (let i = 0; i < n; i++) {
         add({ kind: 'leaf', x: x + (Math.random() - 0.5) * spread, y: y + (Math.random() - 0.5) * spread * 0.4,

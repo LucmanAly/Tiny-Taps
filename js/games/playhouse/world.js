@@ -21,7 +21,9 @@ import { createFx } from './fx.js';
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
-const HILLS = { far: { p: 0.35, width: 3100 }, near: { p: 0.6, width: 3300 } };
+// Parallax hills must still reach the right-hand edge of the widest view at
+// the far end of the world.
+const HILLS = { far: { p: 0.35, width: Math.ceil(WORLD.W * 0.35 + 1700) }, near: { p: 0.6, width: Math.ceil(WORLD.W * 0.6 + 1100) } };
 const DRAG_SLOP = 10;       // px before a press on a draggable becomes a drag
 const PAN_SLOP = 14;        // px before a press on empty space becomes a pan
 const EDGE_PX = 64;         // dragging this close to an edge pans the world

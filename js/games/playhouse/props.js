@@ -17,8 +17,16 @@ export const TOYS = {
   rattle: { img: 'rattle', h: 108, bounce: 0.3, word: 'Rattle' },
   blanket: { img: 'blanket', h: 76, bounce: 0.08, word: 'Blanket' },
   bottle: { sprite: 'bottle', h: 118, bounce: 0.25, word: 'Milk' },
-  apple: { sprite: 'apple', h: 70, bounce: 0.35, word: 'Apple' },
+  apple: { sprite: 'apple', h: 70, bounce: 0.35, word: 'Apple', produce: 'food' },
   wand: { sprite: 'wand', h: 150, bounce: 0.2, word: 'Bubbles' },
+  // Grown in the vegetable patch (patch.js). `produce` says what the baby
+  // does with it: eats food, waves a flower, pats the big pumpkin.
+  carrot: { sprite: 'carrot', h: 92, bounce: 0.3, word: 'Carrot', produce: 'food' },
+  tomato: { sprite: 'tomato', h: 64, bounce: 0.45, word: 'Tomato', produce: 'food' },
+  strawberry: { sprite: 'strawberry', h: 60, bounce: 0.35, word: 'Strawberry', produce: 'food' },
+  pumpkin: { sprite: 'pumpkin', h: 96, bounce: 0.12, word: 'Pumpkin', produce: 'big' },
+  sunflower: { sprite: 'sunflower', h: 150, bounce: 0.2, word: 'Sunflower', produce: 'flower' },
+  tulip: { sprite: 'tulip', h: 112, bounce: 0.2, word: 'Tulip', produce: 'flower' },
 };
 
 export function createProps(W) {
@@ -88,6 +96,28 @@ export function createProps(W) {
       g.restore();
     }
 
+    // Just the artwork, `h` tall with its base at (x, baseY): for a toy being
+    // carried or used by someone, while the toy itself is hidden.
+    drawArt(g, x, baseY, h, rot = 0) {
+      g.save();
+      g.translate(x, baseY - h / 2);
+      g.rotate(rot);
+      const img = this.image();
+      if (img) {
+        const bb = boundsOf(img);
+        const dh = h / (bb.y1 - bb.y0);
+        const dw = dh * img.naturalWidth / img.naturalHeight;
+        g.drawImage(img, -((bb.x0 + bb.x1) / 2) * dw, -h / 2 - bb.y0 * dh, dw, dh);
+      } else if (this.spec.sprite && W.sprites[this.spec.sprite]) {
+        const sp = W.sprites[this.spec.sprite];
+        const k = h / sp.vb[3];
+        g.scale(k, k);
+        g.translate(0, h / 2 / k);
+        W.blit(g, sp);
+      }
+      g.restore();
+    }
+
     hit(x, y) {
       if (this.hidden || !this.box) return false;
       const pad = 26;
@@ -131,9 +161,19 @@ export function createProps(W) {
           this.shake = 0.6;
           audio.glug();
           break;
-        case 'apple':
+        case 'apple': case 'carrot': case 'tomato': case 'strawberry':
           this.vAir = 380;
           audio.pop();
+          break;
+        case 'pumpkin':
+          this.vAir = 200;
+          this.wob = 1;
+          audio.thud();
+          break;
+        case 'sunflower': case 'tulip':
+          this.shake = 0.5;
+          audio.shimmer(this.kind === 'tulip' ? 1174.66 : 880);
+          fx.sparkle(this.x, this.y - this.height(), 6, 90, ['#ffe066', '#ffffff', '#ffb3c6']);
           break;
         default:
           audio.whoosh();
@@ -232,5 +272,11 @@ export function createProps(W) {
     return t;
   };
   W.findToy = kind => toys.find(t => t.kind === kind);
+  // Gone for good: eaten, or put away in the harvest basket.
+  W.removeToy = t => {
+    const i = toys.indexOf(t);
+    if (i >= 0) toys.splice(i, 1);
+    W.remove(t);
+  };
   return { toys, Toy };
 }

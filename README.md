@@ -24,7 +24,7 @@ nothing to buy, works offline once loaded:
 17. **Sort It** — drag each animal to its home, the farm or the water
 18. **Wash the Animal** — rub the mud off with a finger until it shines
 19. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes, and bounce higher with every tap on the trampoline
+20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes, bounce higher with every tap on the trampoline, and grow carrots, tomatoes, strawberries, pumpkins and flowers in the vegetable patch, then pick them with the brother for his sister
 21. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
@@ -87,6 +87,17 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v5.21** — Play House grows a vegetable patch past the apple tree. Drag a
+  seed packet (carrot, tomato, strawberry, sunflower, tulip, pumpkin) onto one
+  of four plots, or tap a packet and then the soil. Plants need water — rain
+  from the weather cloud wherever it is, or the watering can, carried over a
+  plot or tapped to fly to the thirstiest one — and daylight: nothing grows at
+  night, but watered plants shoot up at sunrise. A ripe plant is picked with a
+  tap; the brother kneels to pull it up and carries it to his sister, who eats
+  it, waves the flower or claps at the pumpkin, and she now wishes for ripe
+  produce too. Otherwise it goes in the harvest basket. Each child keeps their
+  own garden.
 
 - **v5.16** — Puzzle Fit's Shapes mode reinvented as a Shape Builder. The old
   mode was a single three-choice drag per round (the same task as the Shapes

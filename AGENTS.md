@@ -11,8 +11,8 @@ usable without reading.
 - `js/app.js` — boot, menus, game shell, settings, navigation, and shared context.
 - `js/games/` — one module per mini-game plus the registry in `js/games/index.js`.
 - `js/games/playhouse/` — Play House's world modules (camera/input, scenery art,
-  sky and weather, house, garden, toys, characters, photo wall); the entry and
-  its single voice trigger stay in `js/games/playhouse.js`.
+  sky and weather, house, garden, vegetable patch, toys, characters, photo
+  wall); the entry and its single voice trigger stay in `js/games/playhouse.js`.
 - `js/engine/` — audio, speech, dragging (with tap-to-place), rounds, progress,
   celebrations, stickers, calm & bedtime (`calm.js`), child profiles
   (`children.js`), and UI helpers.
@@ -51,7 +51,7 @@ The current registry contains 24 games:
 17. Sort It — drag (or tap, then tap a home) animals to their habitat; `js/games/sort.js` `start`.
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, animal-specific paths, and the playing child's own name (from Settings → Children); a glowing dot demonstrates each stroke first and again after a quiet spell; parents choose the path width; `js/games/trace.js` `start`.
-20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, weather cloud, sun/moon day-night, bushes with animals, trampoline, pram, and a persistent ten-photo sibling wall; `js/games/playhouse.js` `start`, world in `js/games/playhouse/`.
+20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, weather cloud, sun/moon day-night, bushes with animals, trampoline, pram, a persistent ten-photo sibling wall, and a per-child vegetable patch (plant seed packets, water with the rain cloud or the watering can, plants grow in daylight and shoot up at sunrise, the brother picks the harvest and carries it to his sister, a harvest basket); `js/games/playhouse.js` `start`, world in `js/games/playhouse/`, patch in `patch.js`.
 21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three photos to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
 22. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
 23. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
@@ -63,7 +63,7 @@ The current registry contains 24 games:
 - Use pointer events and large targets. Prevent duplicate completion and stale timers.
 - Record outcomes through `ctx.recordOutcome`; do not add scores or cloud tracking.
 - Anything that belongs to one child (progress, stickers, pictures, tunes, faces,
-  photos, learning stage, menu layout, game mode choices) is read and written
+  photos, the Play House garden, learning stage, menu layout, game mode choices) is read and written
   through `childKey(KEY)` from `js/engine/children.js`. Parent and device
   settings (volume, voice, recordings, tap-to-place, calm, bedtime) stay on
   plain keys. Child one keeps the original un-suffixed keys.
@@ -110,7 +110,7 @@ Avoid transformed ancestors around fixed controls because they change containing
 | Shared round behavior | `docs/ARCHITECTURE.md` Game architecture | `js/engine/roundgame.js` `makeRoundGame` |
 | Trace detection or catalogs | `docs/ARCHITECTURE.md` Trace It | `js/games/trace.js` `advanceSample`, `advanceTo`; `js/data/trace-items.js` |
 | Puzzle Fit modes | `docs/ARCHITECTURE.md` Puzzle Fit | `js/games/puzzle.js` `buildAnimals`, `buildShapes`, `layout`; `js/data/builds.js` |
-| Play House world | `docs/ARCHITECTURE.md` Play House | `js/games/playhouse/world.js` `createWorld`; `kids.js`, `sky.js`, `home.js`, `garden.js` |
+| Play House world | `docs/ARCHITECTURE.md` Play House | `js/games/playhouse/world.js` `createWorld`; `kids.js`, `sky.js`, `home.js`, `garden.js`, `patch.js` `createPatch` |
 | Settings or local data | `docs/ARCHITECTURE.md` Settings | `js/app.js` `showSettings`, `showProgress`; `js/engine/progress.js` |
 | Children (profiles) | `docs/ARCHITECTURE.md` Children | `js/engine/children.js` `childKey`, `children`, `setActive`; `js/app.js` `showWhoIsPlaying`, `setupChildren` |
 | Calm mode, bedtime timer, keep mute | `docs/ARCHITECTURE.md` Calm and bedtime | `js/engine/calm.js`; `js/app.js` `showGoodnight`, `mixPool` |

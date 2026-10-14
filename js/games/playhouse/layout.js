@@ -6,18 +6,19 @@
 // house on the left, the garden on the right — that the child pans across.
 
 export const WORLD = {
-  W: 3480,
+  W: 4720,
   H: 800,
-  // Interior of the house (inside both side walls) and the garden beyond.
+  // Interior of the house (inside both side walls) and the garden beyond,
+  // which ends in the vegetable patch past the apple tree.
   home: { x0: 44, x1: 1600 },
-  garden: { x0: 1660, x1: 3480 },
+  garden: { x0: 1660, x1: 4720 },
   doorX: 1630,              // centre of the doorway in the right-hand wall
   // Where feet, toys and furniture bases may rest. Furniture sits at the back
   // of the floor and everything that moves stays in front of it, so the
   // painted furniture never has to be sorted around a character.
   floor: {
     home: { y0: 662, y1: 786, x0: 80, x1: 1585 },
-    garden: { y0: 650, y1: 786, x0: 1690, x1: 3420 },
+    garden: { y0: 650, y1: 786, x0: 1690, x1: 4660 },
   },
   horizonY: 470,            // where the lawn meets the fence
 };
@@ -97,6 +98,12 @@ export const PLACES = {
   cloud: { x: 2290, y: 150 },
   sun: { x: 2760, y: 120 },
   porchLight: { x: 1684, y: 300 },
+  // The vegetable patch: a seed stand, a raised bed of four plots (offsets
+  // from its centre), the watering can's resting spot and the harvest basket.
+  seeds: { x: 3540, y: 676 },
+  veg: { x: 3990, y: 680, plots: [-210, -70, 70, 210], soilY: 612 },
+  can: { x: 4400, y: 704 },
+  basket: { x: 4590, y: 770 },
 };
 
 export const TIMING = {

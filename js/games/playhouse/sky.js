@@ -105,7 +105,7 @@ export function createSky(W) {
     tap() { setDay(true); fx.sparkle(this.pos().x, this.pos().y, 12, 160); },
     grab(x, y) { this.held = true; this.hold = { x, y }; },
     drag(x, y) {
-      this.hold = { x: clamp(x, 1750, 3400), y: clamp(y, 60, SET_Y + 40) };
+      this.hold = { x: clamp(x, 1750, WORLD.W - 80), y: clamp(y, 60, SET_Y + 40) };
       W.dayT = clamp((this.hold.y - sunHome.y) / (SET_Y - sunHome.y), 0, 1) * 0.9;
     },
     drop() {
@@ -147,7 +147,7 @@ export function createSky(W) {
     tap() { setDay(false); fx.sparkle(this.pos().x, this.pos().y, 12, 160, ['#fff6c9', '#ffffff', '#d8e4ff']); },
     grab(x, y) { this.held = true; this.hold = { x, y }; },
     drag(x, y) {
-      this.hold = { x: clamp(x, 1750, 3400), y: clamp(y, 60, SET_Y + 40) };
+      this.hold = { x: clamp(x, 1750, WORLD.W - 80), y: clamp(y, 60, SET_Y + 40) };
       W.dayT = 1 - clamp((this.hold.y - moonHome.y) / (SET_Y - moonHome.y), 0, 1) * 0.9;
     },
     drop() {
@@ -159,7 +159,7 @@ export function createSky(W) {
   /* ---------------- stars, rainbow, drifting clouds ---------------- */
 
   const stars = Array.from({ length: 70 }, () => ({
-    x: -100 + Math.random() * 3600, y: -820 + Math.random() * 1150,
+    x: -100 + Math.random() * (WORLD.W + 200), y: -820 + Math.random() * 1150,
     r: 2 + Math.random() * 4, tw: Math.random() * 6,
   }));
   const puffs = Array.from({ length: 5 }, (_, i) => ({
@@ -247,13 +247,21 @@ export function createSky(W) {
     update(dt) {
       this.wob = Math.max(0, this.wob - dt * 1.5);
       this.lean *= Math.exp(-5 * dt);
+      // Asked over to somewhere thirsty (the vegetable patch), it drifts there.
+      if (this.glideTo != null && !this.held) {
+        const dx = clamp(this.glideTo, 1840, WORLD.W - 120) - this.x;
+        this.x += dx * Math.min(1, dt * 1.8);
+        this.lean = clamp(dx * 0.0015, -0.2, 0.2);
+        if (Math.abs(dx) < 4) this.glideTo = null;
+      }
     },
     draggable: true,
     press() { this.wob = 1; audio.pop(); },
     tap() { cycleWeather(); },
-    grab() { this.held = true; },
+    grab() { this.held = true; this.glideTo = null; },
     drag(x, y) {
-      const nx = clamp(x, 1840, 3360);
+      // Anywhere over the garden, the vegetable patch included.
+      const nx = clamp(x, 1840, WORLD.W - 120);
       this.lean = clamp((nx - this.x) * 0.01, -0.25, 0.25);
       this.x = nx;
       this.y = clamp(y, 40, 300);
@@ -569,8 +577,8 @@ export function createSky(W) {
 
   /* ---------------- glow, rain and snow over the world ---------------- */
 
-  const fireflies = Array.from({ length: 16 }, () => ({
-    x: 1750 + Math.random() * 1650, y: 430 + Math.random() * 260, ph: Math.random() * 6, sp: 0.4 + Math.random() * 0.6,
+  const fireflies = Array.from({ length: 20 }, () => ({
+    x: 1750 + Math.random() * (WORLD.W - 1850), y: 430 + Math.random() * 260, ph: Math.random() * 6, sp: 0.4 + Math.random() * 0.6,
   }));
 
   W.on('glow', ({ g, n }) => {

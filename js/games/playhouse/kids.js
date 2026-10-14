@@ -83,6 +83,7 @@ export function createKids(W) {
     reactIx: 0, idleAt: 6, splashAt: 0,
     tramp: null, boost: 0, quietBounces: 0,
     want: null, wantT: 0,
+    carrying: null,           // a toy in his arms (a harvest for his sister)
     get z() {
       if (this.held) return 3000;
       if (this.state === 'bounce' && this.tramp) return this.tramp.y + 0.6;
@@ -95,14 +96,14 @@ export function createKids(W) {
 
     poseKey() {
       switch (this.state) {
-        case 'walk': return 'walk';
+        case 'walk': return this.carrying && this.imgs.carry ? 'carry' : 'walk';
         case 'held': case 'fall': case 'hop': case 'bounce': case 'splash': return 'jump';
         case 'magic': return this.imgs.magic ? 'magic' : 'jump';
         case 'kneel': return 'kneel';
         case 'push': return Math.floor(this.stateT * 3.2) % 2 ? 'pushA' : 'pushB';
         case 'rock': return 'pushA';
         case 'carry': return 'carry';
-        default: return 'stand';
+        default: return this.carrying && this.imgs.carry ? 'carry' : 'stand';
       }
     },
     image(key) {
@@ -154,6 +155,13 @@ export function createKids(W) {
       }
       g.scale(sx, sy);
       const w = drawPose(g, img, h, this.facing < 0);
+      if (this.carrying && (key === 'carry' || key === 'kneel')) {
+        // Held out in both hands.
+        const t = this.carrying;
+        const ih = t.spec.h * depth * 0.8;
+        const kneel = key === 'kneel';
+        t.drawArt(g, this.facing * w * (kneel ? 0.4 : 0.36), -h * (kneel ? 0.46 : 0.5) + ih * 0.4, ih);
+      }
       g.restore();
       this.box = { x: x - w / 2, y: foot - h, w, h };
       this.headY = foot - h * 0.82;
@@ -173,6 +181,7 @@ export function createKids(W) {
     },
 
     tap() {
+      if (this.carrying) return;      // busy taking something somewhere
       if (this.state === 'bounce') { boostBounce(); return; }
       if (baby.want === 'brother' && !baby.busy()) { visitBaby(true); return; }
       if (canLull()) { lullaby(); return; }
@@ -208,6 +217,7 @@ export function createKids(W) {
     },
 
     grab(x, y) {
+      if (this.carrying) this.putDown();
       if (this.state === 'sleep') wake(true);
       if (this.state === 'bounce') this.tramp = null;
       this.held = true;
@@ -235,6 +245,10 @@ export function createKids(W) {
       this.wob = Math.max(0, this.wob - dt * 1.8);
       this.squash = Math.max(0, this.squash - dt * 3);
       if (this.want && W.t > this.wantT + 9) this.want = null;
+      // Sent off to do something else (or left standing about), he puts
+      // down whatever he was carrying rather than holding it forever.
+      if (this.carrying && (this.held || !['walk', 'idle', 'kneel'].includes(this.state)
+        || (this.state === 'idle' && this.stateT > 2.5))) this.putDown();
 
       switch (this.state) {
         case 'walk': stepWalk(dt); break;
@@ -257,6 +271,25 @@ export function createKids(W) {
     },
 
     hint() { this.wob = 0.9; },
+
+    carry(t) {
+      if (this.carrying) this.putDown();
+      t.hidden = true;
+      t.held = false;
+      t.air = 0; t.vAir = 0; t.vx = 0;
+      this.carrying = t;
+      audio.pop();
+    },
+    // Sets the carried toy down just in front of him.
+    putDown() {
+      const t = this.carrying;
+      if (!t) return;
+      this.carrying = null;
+      t.hidden = false;
+      const p = clampToFloor(this.x + this.facing * 70, this.y + 6);
+      t.x = p.x; t.y = p.y;
+      t.air = 110; t.vAir = 120; t.vx = this.facing * 40;
+    },
 
     // Thinking of the clothes this weather needs.
     drawUI(g) {
@@ -509,7 +542,8 @@ export function createKids(W) {
 
   /* ================= the baby sister ================= */
 
-  const WANTS = ['teddy', 'bottle', 'duck', 'brother', 'rattle', 'ball', 'blanket', 'wand'];
+  const WANTS = ['teddy', 'bottle', 'duck', 'brother', 'rattle', 'ball', 'blanket', 'wand',
+    'strawberry', 'tomato', 'carrot', 'sunflower', 'tulip', 'pumpkin'];
   // She is carried around her middle, so she sits under the finger rather
   // than dangling below it: this much of her height is above the finger.
   const GRIP = 0.45;
@@ -538,7 +572,7 @@ export function createKids(W) {
     poseKey() {
       switch (this.state) {
         case 'crawl': return 'crawl';
-        case 'held': case 'fall': case 'happy': case 'clap': case 'shake': case 'bubbles': return 'happy';
+        case 'held': case 'fall': case 'happy': case 'clap': case 'shake': case 'bubbles': case 'flower': return 'happy';
         case 'reach': return 'reach';
         case 'sleepy': return 'sleepy';
         case 'hug': return 'hug';
@@ -549,7 +583,7 @@ export function createKids(W) {
           if (this.nap) return 'sleep';
           if (boy.state === 'rock') return 'sleepy';
           return this.stateT % 3 < 1.2 ? 'happy' : 'look';
-        case 'drink': return 'sit';
+        case 'drink': case 'eat': return 'sit';
         default: return this.look ? 'look' : 'sit';
       }
     },
@@ -602,6 +636,7 @@ export function createKids(W) {
         W.blit(g, W.sprites.bottle);
         g.restore();
       }
+      if (r && this.using && this.using.spec.produce) drawUsing(g, this.using, x, foot, depth, r);
       if (this.state === 'sleep' && this.blanket && W.img.toy_blanket) {
         const bi = W.img.toy_blanket;
         g.save();
@@ -823,15 +858,20 @@ export function createKids(W) {
     baby.nextWantAt = W.t + rand(11, 17);
     let options = WANTS.filter(w => w !== baby.lastWant);
     if (W.dayT > 0.5) options = ['blanket', 'bottle', 'teddy', 'brother'];
-    // Only ask for toys that exist somewhere in the house or garden.
-    options = options.filter(w => w === 'brother' || w === 'blanket' ? true : !!W.findToy(w));
+    // Only ask for toys that exist somewhere in the house or garden, or
+    // produce that is ripe in the vegetable patch.
+    const ripe = w => (W.patch ? W.patch.ripe(w) : null);
+    options = options.filter(w => w === 'brother' || w === 'blanket' ? true : !!W.findToy(w) || !!ripe(w));
     // Prefer things she can see from where she sits, so the wish is one a
     // toddler can actually find.
     const room = roomAt(baby.x);
     const near = options.filter(w => {
       if (w === 'brother') return roomAt(boy.x) === room;
       const toy = w === 'blanket' ? W.findToy('blanket') : W.findToy(w);
-      if (!toy) return w === 'blanket';
+      if (!toy) {
+        const plot = ripe(w);
+        return plot ? roomAt(plot.x) === room : w === 'blanket';
+      }
       return toy.hidden ? room === 'home' && W.toybox && W.toybox.has(toy) : roomAt(toy.x) === room;
     });
     if (near.length) options = near;
@@ -864,6 +904,8 @@ export function createKids(W) {
       const toy = W.findToy(want);
       if (toy && toy.hidden && W.toybox && W.toybox.has(toy)) target = W.toybox;
       else if (toy && !toy.hidden) target = toy;
+      else if (toy && boy.carrying === toy) target = boy;
+      else if (W.patch) target = W.patch.ripe(want);
     }
     if (!target) return;
     const from = baby.bubbleAt || { x: baby.x, y: baby.y - 200 };
@@ -901,6 +943,9 @@ export function createKids(W) {
       case 'blanket': icon(W.img.toy_blanket, 62); break;
       case 'bottle': sprite('bottle', 96); break;
       case 'wand': sprite('wand', 104); break;
+      case 'sunflower': sprite('sunflower', 112); break;
+      case 'tulip': sprite('tulip', 100); break;
+      case 'carrot': case 'tomato': case 'strawberry': case 'pumpkin': sprite(want, want === 'pumpkin' ? 84 : 78); break;
       case 'brother': {
         const img = boy.imgs.stand;
         if (!img) break;
@@ -937,6 +982,13 @@ export function createKids(W) {
   }
 
   function finishUsing() {
+    const toy = baby.using;
+    if (toy && REACTIONS[toy.kind] && REACTIONS[toy.kind].eat) {
+      // All gone.
+      baby.using = null;
+      W.removeToy(toy);
+      fx.sparkle(baby.x + 10, baby.y - 110, 5, 60, ['#ffffff', '#fff3c4']);
+    }
     releaseUsing();
     baby.setState('sit');
     baby.lookAt = rand(1, 2);
@@ -948,9 +1000,38 @@ export function createKids(W) {
     rattle: { state: 'shake', dur: 2.4, moment: 'rattle', sound: () => { audio.rattleShake(); setTimeout(() => audio.rattleShake(), 500); } },
     ball: { state: 'clap', dur: 2.4, moment: 'clap', sound: () => { audio.clapClap(); setTimeout(() => audio.clapClap(), 520); } },
     bottle: { state: 'drink', dur: 2.6, moment: null, sound: () => audio.glug() },
-    apple: { state: 'happy', dur: 1.8, moment: null, sound: () => audio.chomp() },
+    apple: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
+    carrot: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
+    tomato: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
+    strawberry: { state: 'eat', dur: 2.2, moment: null, eat: true, sound: munch },
+    pumpkin: { state: 'clap', dur: 2.4, moment: null, sound: () => { audio.clapClap(); setTimeout(() => audio.giggle(), 450); } },
+    sunflower: { state: 'flower', dur: 3, moment: null, sound: () => { audio.gentleGift(); setTimeout(() => audio.giggle(), 400); } },
+    tulip: { state: 'flower', dur: 3, moment: null, sound: () => { audio.gentleGift(); setTimeout(() => audio.giggle(), 400); } },
     wand: { state: 'bubbles', dur: 3.2, moment: 'bubbles', sound: () => audio.shimmer(987.77) },
   };
+
+  // Three happy bites.
+  function munch() {
+    audio.chomp();
+    setTimeout(() => { if (W.isAlive() && baby.state === 'eat') audio.chomp(); }, 650);
+    setTimeout(() => { if (W.isAlive() && baby.state === 'eat') audio.chomp(); }, 1300);
+  }
+
+  // Produce she is busy with: nibbled at her mouth, a flower waved in her
+  // raised hand, or the big pumpkin in front of her.
+  function drawUsing(g, toy, x, foot, depth, r) {
+    const kind = toy.spec.produce;
+    if (baby.state === 'eat') {
+      const left = 1 - Math.min(1, baby.stateT / (baby.dur || 2)) * 0.55;
+      const ih = toy.spec.h * depth * 0.62 * left;
+      toy.drawArt(g, x + 4 * depth, foot - r.h * 0.42 + ih / 2, ih, Math.sin(baby.stateT * 9) * 0.08);
+    } else if (baby.state === 'flower' && kind === 'flower') {
+      const ih = toy.spec.h * depth * 0.72;
+      toy.drawArt(g, x + r.w * 0.36, foot - r.h * 0.86 + ih * 0.2, ih, 0.15 + Math.sin(baby.stateT * 5) * 0.18);
+    } else if (kind === 'big') {
+      toy.drawArt(g, x, foot + 6, toy.spec.h * depth * 0.95);
+    }
+  }
 
   function receive(toy) {
     const matched = baby.want === toy.kind;
@@ -1225,7 +1306,7 @@ export function createKids(W) {
     g.restore();
   }
 
-  W.kids = { boy, baby, celebrate, visitBaby, startBounce, nearBaby, lullaby };
+  W.kids = { boy, baby, celebrate, visitBaby, startBounce, nearBaby, lullaby, receive };
   W.add(boy);
   W.add(baby);
   return { boy, baby, ready: loadSet(boy.outfit).then(set => { boy.imgs = set || {}; }) };

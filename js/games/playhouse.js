@@ -15,6 +15,7 @@
 //   sky.js     sun, moon, weather cloud, rain, puddles, snow, snowman
 //   home.js    lamp, bed, wardrobe, curtains, toy box, door
 //   garden.js  bushes and animals, apple tree, trampoline, pram, birds
+//   patch.js   the vegetable patch: seeds, watering, growing, harvest
 //   props.js   toys with simple physics
 //   kids.js    the brother and the baby sister
 //   moments.js the photo wall
@@ -25,6 +26,7 @@ import { createProps } from './playhouse/props.js';
 import { createKids } from './playhouse/kids.js';
 import { createHome } from './playhouse/home.js';
 import { createGarden } from './playhouse/garden.js';
+import { createPatch } from './playhouse/patch.js';
 import { createMoments } from './playhouse/moments.js';
 import { PLACES, TIMING } from './playhouse/layout.js';
 import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, loadImages } from './playhouse/assets.js';
@@ -80,6 +82,7 @@ function start(ctx) {
   const kids = createKids(W);
   createHome(W);
   createGarden(W);
+  createPatch(W);
 
   /* ---- artwork ---- */
   const art = {};

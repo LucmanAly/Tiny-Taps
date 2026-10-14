@@ -593,6 +593,31 @@ export function glug() {
   [0, 0.22, 0.44].forEach(t => tone(260, t, 0.12, { type: 'sine', vol: 0.16, glide: 420 }));
 }
 
+/* --- Play House vegetable patch --- */
+
+// Water pouring from the watering can: a soft hiss with a bright droplet
+// blip. Called repeatedly while it pours, so each call is very short.
+export function trickle() {
+  ensureCtx();
+  noiseBurst(0, 0.16, { type: 'bandpass', freq: 2800 + Math.random() * 900, q: 2.2, vol: 0.06 });
+  tone(1300 + Math.random() * 900, 0.02, 0.07, { type: 'sine', vol: 0.035, glide: 2100 });
+}
+
+// A plant growing a stage: a little rising "pip-pop".
+export function sprout() {
+  ensureCtx();
+  tone(392, 0, 0.12, { type: 'triangle', vol: 0.16, glide: 587.33 });
+  tone(783.99, 0.09, 0.22, { type: 'sine', vol: 0.12 });
+}
+
+// Pulling something up out of the soil: a round "thwop" and a sparkle.
+export function pluck() {
+  ensureCtx();
+  noiseBurst(0, 0.07, { type: 'lowpass', freq: 700, q: 0.7, vol: 0.18 });
+  tone(170, 0, 0.14, { type: 'triangle', vol: 0.3, glide: 540 });
+  sparkleAt(0.12);
+}
+
 /* --- Shape Builder toys coming alive --- */
 
 // A friendly two-beep toy-car horn.

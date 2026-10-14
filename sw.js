@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.20';
+const VERSION = 'tiny-taps-v5.21';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -63,7 +63,7 @@ const ASSETS = [
   'js/games/playhouse.js',
   'js/games/playhouse/layout.js', 'js/games/playhouse/world.js', 'js/games/playhouse/art.js', 'js/games/playhouse/assets.js',
   'js/games/playhouse/fx.js', 'js/games/playhouse/sky.js', 'js/games/playhouse/props.js', 'js/games/playhouse/kids.js',
-  'js/games/playhouse/home.js', 'js/games/playhouse/garden.js', 'js/games/playhouse/moments.js',
+  'js/games/playhouse/home.js', 'js/games/playhouse/garden.js', 'js/games/playhouse/patch.js', 'js/games/playhouse/moments.js',
   'js/games/animals.js',
   'js/games/vehicles.js',
   'js/games/paintpots.js',
