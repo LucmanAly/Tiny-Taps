@@ -131,20 +131,21 @@ export function createWorld({ stage, audio }) {
     day: ['#86cdfb', '#cdeefe', '#f1fbff'],
     dusk: ['#6f7fd0', '#f0a3a8', '#ffd7a8'],
     night: ['#141c4a', '#2b3a7a', '#4a5a9c'],
+    rain: ['#8d9cb0', '#b4c0cc', '#d3dae1'],
   };
-  function mix(a, b, t) {
-    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
-    const r = Math.round(lerp(pa >> 16, pb >> 16, t));
-    const gg = Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, t));
-    const bb = Math.round(lerp(pa & 255, pb & 255, t));
-    return `rgb(${r},${gg},${bb})`;
-  }
+  const rgb = h => { const p = parseInt(h.slice(1), 16); return [p >> 16, (p >> 8) & 255, p & 255]; };
+  const blend = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
   function skyStops(t) {
     // Through dusk on the way between day and night, so the change reads as
-    // a sunset rather than a dimmer switch.
+    // a sunset rather than a dimmer switch; greyer while it rains.
     const k = t < 0.5 ? t * 2 : (t - 0.5) * 2;
     const from = t < 0.5 ? SKY.day : SKY.dusk, to = t < 0.5 ? SKY.dusk : SKY.night;
-    return from.map((c, i) => mix(c, to[i], k));
+    const gloom = W.sky ? W.sky.gloom * 0.6 * (1 - t) : 0;
+    return from.map((c, i) => {
+      let v = blend(rgb(c), rgb(to[i]), k);
+      if (gloom > 0.001) v = blend(v, rgb(SKY.rain[i]), gloom);
+      return `rgb(${Math.round(v[0])},${Math.round(v[1])},${Math.round(v[2])})`;
+    });
   }
   W.skyStops = skyStops;
 

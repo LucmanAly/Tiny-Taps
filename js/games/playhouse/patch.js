@@ -3,17 +3,19 @@
 // A little stand of seed packets, a raised bed of four plots, a watering
 // can and a harvest basket. A packet dragged onto the soil (or tapped, then
 // the soil tapped, or tapped twice) plants its seeds; tapping bare soil
-// plants something too. Plants grow only with water and daylight: the
-// weather cloud's rain waters whatever it is over, the watering can pours
-// where it is held (or, tapped, flies to the thirstiest plant). Nothing
-// grows at night, but watered plants shoot up a stage at sunrise. A ripe
-// plant is picked with a tap: the brother comes to pull it up and carries
-// it to his sister, who eats it, waves the flower or pats the pumpkin; if
-// she is busy it goes into the basket. The plots and the basket belong to
-// the playing child.
+// plants something too. Plants grow only with water and daylight: rain
+// waters the whole bed, the watering can pours where it is held (or, tapped,
+// flies to the thirstiest plant). Nothing grows at night, but watered plants
+// shoot up a stage at sunrise. A ripe plant is picked with a tap: the
+// brother comes over (from anywhere) to pull it up or pick it up, and
+// carries it to his sister, who eats it, waves the flower or pats the
+// pumpkin; if she is busy it goes into the basket. Bees and butterflies
+// visit the flowers on sunny days. The plots and the basket belong to the
+// playing child.
 
 import { PLACES, depthAt, clampToFloor, floorFor, roomAt } from './layout.js';
 import { TOYS } from './props.js';
+import { BEE } from './assets.js';
 import { childKey } from '../../engine/children.js';
 import { quietMotion } from '../../engine/calm.js';
 
@@ -528,8 +530,10 @@ export function createPatch(W) {
       if (W.dayT > 0.5 || W.sky.snow > 0.3) return;
       for (const p of plots) {
         if (!p.kind || p.g >= RIPE || p.water >= THIRSTY || p.g < 1) continue;
-        const y = soilY - Math.max(40, plantHeight(p)) - 46 + Math.sin(W.t * 3 + p.i) * 6 - Math.sin(p.bob * Math.PI) * 30;
-        drawDrop(g, p.x, y, 1 + p.bob * 0.3);
+        // A big drop bouncing over the plant: "I'm thirsty".
+        const bounce = Math.abs(Math.sin(W.t * 3.2 + p.i));
+        const y = soilY - Math.max(40, plantHeight(p)) - 58 - bounce * 16 - Math.sin(p.bob * Math.PI) * 30;
+        drawDrop(g, p.x, y, 1.4 + p.bob * 0.4 + (1 - bounce) * 0.06);
       }
     },
     hit(x, y) {
@@ -537,7 +541,7 @@ export function createPatch(W) {
       return !!this.picked;
     },
     tap() { tapPlot(this.picked); },
-    update(dt) { stepPlots(dt); },
+    update(dt) { stepPlots(dt); tagAlong(); },
     hint() {
       const p = plots.find(q => q.kind && q.g >= RIPE)
         || plots.find(q => q.kind && q.water < THIRSTY)
@@ -571,14 +575,13 @@ export function createPatch(W) {
     const day = W.dayT < 0.5;
     const snowy = W.sky.snow > 0.3;
     const raining = W.sky.weather === 'rain';
-    const cloud = W.sky.cloud;
     for (const p of plots) {
       p.wob = Math.max(0, p.wob - dt * 1.6);
       p.pop = Math.max(0, p.pop - dt * 2.4);
       p.bob = Math.max(0, p.bob - dt * 1.8);
       if (p.tug > 0) p.tug = Math.max(0, p.tug - dt);
-      // Rain falls only under the cloud (see sky.js), and waters what is there.
-      if (raining && Math.abs(p.x - cloud.x) < 230) {
+      // Rain falls over the whole garden (see sky.js) and waters every plot.
+      if (raining) {
         if (p.water < THIRSTY && p.kind) p.wob = Math.max(p.wob, 0.4);
         p.water = Math.min(1, p.water + dt / 2.2);
         dirty = true;
@@ -677,15 +680,11 @@ export function createPatch(W) {
     p.wob = 1;
     audio.rustle();
     fx.leaves(p.x, soilY - plantHeight(p) * 0.6, 3, 60);
-    if (p.water < THIRSTY && p.g >= 1) {
-      // Thirsty: if it is raining, the cloud drifts over; otherwise a trail
-      // of sparkles leads to the watering can.
+    if (p.water < THIRSTY && p.g >= 1 && W.sky.weather !== 'rain') {
+      // Thirsty: a trail of sparkles leads to the watering can.
       p.bob = 1;
-      if (W.sky.weather === 'rain') W.sky.cloud.glideTo = p.x;
-      else {
-        trail(p.x, soilY - plantHeight(p) - 40, can.x - 30, can.y - can.air - 80);
-        setTimeout(() => { if (W.isAlive()) can.hint(); }, 420);
-      }
+      trail(p.x, soilY - plantHeight(p) - 40, can.x - 30, can.y - can.air - 80);
+      setTimeout(() => { if (W.isAlive()) can.hint(); }, 420);
     }
   }
 
@@ -718,10 +717,40 @@ export function createPatch(W) {
     });
   }
 
+  // Wherever he is, he comes over to help with the planting.
   function helpPlant(p) {
-    const b = W.boy;
-    if (!boyFree() || roomAt(b.x) !== 'garden' || Math.abs(b.x - p.x) > 900) return;
+    if (!boyFree()) return;
     kneelAt(p, 1.1, () => fx.dust(p.x, soilY + 4, 0));
+  }
+
+  // Picked without him: he comes over (from anywhere, even the house), picks
+  // it up and takes it on to his sister or the basket.
+  function fetch(toy) {
+    const b = W.boy;
+    if (!boyFree()) return;
+    const side = b.x < toy.x ? -1 : 1;
+    b.walkTo(toy.x + side * 80, toy.y + 6, () => {
+      if (toy.held || toy.hidden || !W.toys.includes(toy) || b.carrying || Math.abs(toy.x - b.x) > 220) return;
+      b.facing = -side;
+      b.setState('kneel', 0.9);
+      setTimeout(() => pickUp(toy, b), 350);
+    });
+  }
+
+  // He tags along: once the view has rested on the patch for a moment, a
+  // brother standing about somewhere else walks over to join in.
+  let patchSince = -1;
+  let joined = false;
+  function tagAlong() {
+    const centre = W.cam.x + W.cam.viewW / 2;
+    if (centre < S.x - 120) { patchSince = -1; joined = false; return; }
+    if (patchSince < 0) patchSince = W.t;
+    const b = W.boy;
+    if (joined || W.t - patchSince < 3 || b.state !== 'idle' || b.held || b.carrying) return;
+    if (Math.abs(b.x - B.x) < 1000) return;
+    joined = true;
+    // Beside the seed stand on the tree side, out of the way of the plots.
+    b.walkTo(S.x - 190, B.y + 70);
   }
 
   /* ---------------- harvesting ---------------- */
@@ -785,6 +814,7 @@ export function createPatch(W) {
       fx.hearts(baby.x, baby.y - 200, 2);
     }
     if (helper) setTimeout(() => pickUp(toy, helper), 750);
+    else setTimeout(() => { if (W.isAlive()) fetch(toy); }, 900);
     save();
   }
 
@@ -1328,14 +1358,158 @@ export function createPatch(W) {
     },
   };
 
-  // Ripe produce the baby can wish for (see kids.js).
+  /* ---------------- bees and butterflies ----------------
+     On sunny days they come to the open flowers in the bed (a ripe
+     sunflower or tulip, the strawberry's white blossoms), settle a while,
+     visit another flower or flutter off. Tapped, they fly away: the bee
+     with its real buzz. */
+
+  const MAX_VISITORS = 2;
+  const visitors = [];
+  let visitAt = 3;
+
+  // The open flowers on a plant, as points to land on.
+  function bloomsOf(p) {
+    if (!p.kind || p.pulling) return [];
+    const k = grownK(p.g);
+    const y0 = soilY + 2;
+    if (p.kind === 'sunflower' && p.g >= RIPE) return [{ x: p.x + 2, y: y0 - 240 * k }];
+    if (p.kind === 'tulip' && p.g >= RIPE) return [{ x: p.x, y: y0 - 132 * k }];
+    if (p.kind === 'strawberry' && Math.floor(p.g) === 4) return [[-40, -26], [40, -28], [8, -22]].map(([dx, dy]) => ({ x: p.x + dx * k, y: y0 + dy * k }));
+    return [];
+  }
+
+  const sunny = () => W.dayT < 0.3 && W.sky.weather === 'clear' && W.sky.snow < 0.1;
+  const taken = (p, i) => visitors.some(v => v.state !== 'leave' && v.p === p && v.i === i);
+
+  function freeBlooms() {
+    const out = [];
+    for (const p of plots) {
+      bloomsOf(p).forEach((b, i) => { if (!taken(p, i) && W.onScreen(b.x, -40)) out.push({ p, i, ...b }); });
+    }
+    return out;
+  }
+
+  function makeVisitor(spot) {
+    const cam = W.cam;
+    const fromLeft = Math.random() < 0.5;
+    const kind = spot.p.kind === 'sunflower' ? (Math.random() < 0.7 ? 'bee' : 'butterfly')
+      : spot.p.kind === 'tulip' ? (Math.random() < 0.7 ? 'butterfly' : 'bee')
+        : (Math.random() < 0.5 ? 'bee' : 'butterfly');
+    const v = {
+      kind, p: spot.p, i: spot.i, state: 'arrive', t: 0, flap: rand(0, 6),
+      from: { x: fromLeft ? cam.x - 60 : cam.x + cam.viewW + 60, y: soilY - rand(380, 520) },
+      x: 0, y: 0, face: fromLeft ? 1 : -1, stay: rand(4, 8), vx: 0, vy: 0,
+      get z() { return B.y + 1; },
+      draw(g) { drawVisitor(g, this); },
+      hit(x, y) { return this.state !== 'leave' && Math.hypot(x - this.x, y - this.y) < 60; },
+      tap() { shoo(this, true); },
+      update(dt) { stepVisitor(this, dt); },
+      hint() { this.flap += 2; },
+    };
+    v.x = v.from.x;
+    v.y = v.from.y;
+    visitors.push(v);
+    W.add(v);
+  }
+
+  function shoo(v, tapped) {
+    if (v.state === 'leave') return;
+    v.state = 'leave';
+    v.t = 0;
+    v.vx = v.face * rand(240, 320);
+    v.vy = -rand(220, 300);
+    if (!tapped) return;
+    fx.sparkle(v.x, v.y, 6, 90, ['#ffffff', '#fff3c4', '#ffd6f0']);
+    if (v.kind === 'bee') {
+      if (BEE) W.sky.playAnimal(BEE);
+      W.say('Bee');
+    } else {
+      audio.shimmer(1318.5);
+      setTimeout(() => { if (W.isAlive()) audio.shimmer(1568); }, 110);
+      W.say('Butterfly');
+    }
+  }
+
+  function stepVisitor(v, dt) {
+    v.t += dt;
+    const spot = bloomsOf(v.p)[v.i];
+    if (v.state !== 'leave' && (!spot || !sunny())) shoo(v, false);
+    if (v.state === 'arrive') {
+      const k = Math.min(1, v.t / 1.9);
+      const e = ease(k);
+      v.x = lerp(v.from.x, spot.x, e) + Math.sin(v.t * 5) * 26 * (1 - k);
+      v.y = lerp(v.from.y, spot.y - 14, e) + Math.sin(v.t * 7) * 22 * (1 - k);
+      v.face = spot.x >= v.x ? 1 : -1;
+      if (k >= 1) { v.state = 'sit'; v.t = 0; }
+    } else if (v.state === 'sit') {
+      v.x = spot.x;
+      v.y = spot.y - 14 + Math.sin(v.t * 2.4) * 2;
+      if (v.t > v.stay) {
+        // On to another flower, or away.
+        const next = freeBlooms().filter(b => b.p !== v.p || b.i !== v.i);
+        if (next.length && Math.random() < 0.6) {
+          const n = next[(Math.random() * next.length) | 0];
+          v.from = { x: v.x, y: v.y };
+          v.p = n.p;
+          v.i = n.i;
+          v.state = 'arrive';
+          v.t = 0;
+          v.stay = rand(4, 8);
+        } else shoo(v, false);
+      }
+    } else {
+      v.x += (v.vx + Math.sin(v.t * 6) * 60) * dt;
+      v.y += v.vy * dt;
+      if (!W.onScreen(v.x, 120) || v.y < W.cam.top - 120) {
+        visitors.splice(visitors.indexOf(v), 1);
+        W.remove(v);
+      }
+    }
+  }
+
+  function drawVisitor(g, v) {
+    const img = W.img[v.kind === 'bee' ? 'animal_bee' : 'animal_butterfly'];
+    if (!img) return;
+    const h = v.kind === 'bee' ? 54 : 62;
+    const w = h * img.naturalWidth / img.naturalHeight;
+    const sitting = v.state === 'sit';
+    g.save();
+    g.translate(v.x, v.y);
+    if (v.kind === 'butterfly') {
+      // Wings open and close: quickly in flight, slowly at rest.
+      const f = Math.abs(Math.sin(v.t * (sitting ? 2.2 : 16) + v.flap));
+      g.scale(0.3 + 0.7 * f, 1);
+    } else {
+      g.translate(0, sitting ? 0 : Math.sin(v.t * 22) * 3);
+      g.rotate(Math.sin(v.t * (sitting ? 6 : 30)) * 0.06);
+      g.scale(v.face, 1);
+    }
+    g.drawImage(img, -w / 2, -h / 2, w, h);
+    g.restore();
+  }
+
+  const garden = {
+    layer: 'none',
+    update() {
+      if (W.t < visitAt) return;
+      visitAt = W.t + rand(4, 8);
+      if (visitors.length >= MAX_VISITORS || !sunny()) return;
+      const spots = freeBlooms();
+      if (spots.length) makeVisitor(spots[(Math.random() * spots.length) | 0]);
+    },
+  };
+
+  // Ripe produce the baby can wish for (see kids.js); `stash` quietly tidies
+  // a stray (an old apple lying about) into the basket.
   W.patch = {
     ripe(kind) {
       const p = plots.find(q => q.kind === kind && q.g >= RIPE && !q.pulling);
       return p ? { x: p.x, y: soilY + 60, hint: () => { p.wob = 1; } } : null;
     },
+    stash(toy) { basket.add(toy, { quiet: true }); },
   };
 
-  for (const e of [stand, bed, can, basket, overlay]) W.add(e);
+  for (const e of [stand, bed, can, basket, overlay, garden]) W.add(e);
   return W.patch;
 }

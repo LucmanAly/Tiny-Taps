@@ -13,9 +13,11 @@
 //   art.js     the painted scenery, as SVG rasterized per screen size
 //   assets.js  painted character/toy artwork and pose tables
 //   sky.js     sun, moon, weather cloud, rain, puddles, snow, snowman
-//   home.js    lamp, bed, wardrobe, curtains, toy box, door
-//   garden.js  bushes and animals, apple tree, trampoline, pram, birds
-//   patch.js   the vegetable patch: seeds, watering, growing, harvest
+//   home.js    lamp, bed, the baby's cot, wardrobe, curtains, toy box, door
+//   garden.js  bushes and animals (fed from the patch), apple tree,
+//              trampoline, pram, birds
+//   patch.js   the vegetable patch: seeds, watering, growing, harvest,
+//              bees and butterflies
 //   props.js   toys with simple physics
 //   kids.js    the brother and the baby sister
 //   moments.js the photo wall
@@ -29,7 +31,7 @@ import { createGarden } from './playhouse/garden.js';
 import { createPatch } from './playhouse/patch.js';
 import { createMoments } from './playhouse/moments.js';
 import { PLACES, TIMING } from './playhouse/layout.js';
-import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, loadImages } from './playhouse/assets.js';
+import { OUTFITS, BABY_POSES, TOY_ART, SCENE_ART, BUSH_ANIMALS, CAT, OWL, BEE, BUTTERFLY, loadImages } from './playhouse/assets.js';
 import { isWindingDown, quietMotion } from '../engine/calm.js';
 
 const ICON = `
@@ -90,7 +92,7 @@ function start(ctx) {
   for (const [k, v] of Object.entries(TOY_ART)) art['toy_' + k] = v.src;
   for (const [k, v] of Object.entries(SCENE_ART)) art['scene_' + k] = v;
   for (const o of OUTFITS) art['card_' + o.id] = o.card;
-  for (const a of [...BUSH_ANIMALS.day, ...BUSH_ANIMALS.night, CAT, OWL]) if (a) art['animal_' + a.id] = a.art;
+  for (const a of [...BUSH_ANIMALS.day, ...BUSH_ANIMALS.night, CAT, OWL, BEE, BUTTERFLY]) if (a) art['animal_' + a.id] = a.art;
   loadImages(art).then(imgs => { if (W.isAlive()) Object.assign(W.img, imgs); });
   kids.ready.then(() => { if (W.isAlive()) W.boy.wob = 0.6; });
 

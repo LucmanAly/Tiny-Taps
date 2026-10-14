@@ -618,6 +618,24 @@ export function pluck() {
   sparkleAt(0.12);
 }
 
+/* --- Play House garden and house --- */
+
+// A little bird's tweet: two quick upward whistles, pitched a touch
+// differently each time so a flock does not sound like one bird.
+export function chirp() {
+  ensureCtx();
+  const f = 2300 + Math.random() * 700;
+  tone(f, 0, 0.07, { type: 'sine', vol: 0.09, glide: f * 1.35 });
+  tone(f * 1.08, 0.1, 0.09, { type: 'sine', vol: 0.08, glide: f * 1.5 });
+}
+
+// A lamp's pull-cord switch.
+export function click() {
+  ensureCtx();
+  noiseBurst(0, 0.025, { type: 'highpass', freq: 3000, q: 0.8, vol: 0.22 });
+  tone(1900, 0, 0.03, { type: 'square', vol: 0.04 });
+}
+
 /* --- Shape Builder toys coming alive --- */
 
 // A friendly two-beep toy-car horn.

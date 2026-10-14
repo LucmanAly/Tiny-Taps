@@ -39,7 +39,8 @@ There are exactly four gameplay modules:
    whole name (one name value).
 4. `js/games/playhouse.js` routes every Play House cue through one `W.say(word)`
    helper wrapping a single `speakWord(word)` call. Each cue is one name: a
-   weather word, an outfit, a toy, an animal, a photo's name, a crop from the
+   weather word, an outfit, a toy, an animal (including a fed bush animal, a
+   "Bee" or a "Butterfly"), a photo's name, a crop from the
    vegetable patch (its toy's word), or "Water" from the watering can. Repeated words
    are suppressed for 1.6 s. The modules in `js/games/playhouse/` call `W.say`
    and never `speakWord`.
@@ -78,7 +79,9 @@ per-game mute state. Things That Go adds one effect per vehicle (`siren`,
 `beepBeep`, `puttPutt`, `chopChop`, `foghorn`, `jet`, `ringRing`, plus the
 existing `honk` and `toot`); Things That Go, Paint Pots and Silly Faces use
 effects only. The Play House vegetable patch adds `trickle` (pouring water),
-`sprout` (a plant growing a stage) and `pluck` (pulling up a harvest). Authentic animal sounds and the bundled My First Words
+`sprout` (a plant growing a stage) and `pluck` (pulling up a harvest); its
+garden and house add `chirp` (a bird's tweet) and `click` (the lamp's pull
+cord). Authentic animal sounds and the bundled My First Words
 Piper MP3s are data/media sounds, not browser narration. `js/data/animals.js`
 records which animals have authentic sound files.
 
@@ -346,7 +349,8 @@ lives in `js/games/playhouse/`:
   tall with y = 800 at the screen bottom; taller screens reveal sky and roof.
   The strip is 4720 wu wide: house interior 44–1600, doorway at 1630, garden
   1660–4720, with the vegetable patch (`PLACES.seeds`, `veg`, `can`, `basket`)
-  past the apple tree from about 3420. Feet, toys and pram rest in a floor band (y 650–786); furniture
+  past the apple tree from about 3420, and the baby's cot (`PLACES.cot`) against the
+  back wall under the photo frames. Feet, toys and pram rest in a floor band (y 650–786); furniture
   sits behind it, so moving things are always drawn in front of furniture.
   `depthAt(y)` scales things further back.
 - `world.js` — canvas, camera and frame loop. Landscape fits a 1600 wu view,
@@ -378,7 +382,13 @@ lives in `js/games/playhouse/`:
   brother while he is within 330 wu of his awake sister plays a lullaby: he
   kneels beside her (or rocks her pram) and she yawns and falls asleep;
   tapping her wakes her, so it repeats on demand. Waking or lifting her
-  always returns the blanket toy to the floor. Fulfilled wishes call
+  always returns the blanket toy to the floor. In her cot (state `'cot'`,
+  `baby.cot`, with the pram's `nap` flag meaning asleep) the cot draws her;
+  touching her wakes her, lifting her takes her out, the brother's lullaby
+  works there too (he kneels beside it), and she climbs out by herself after
+  about 10 s awake. At bedtime (`boySleep`), when sleepy, or late at night in
+  the house she crawls to the cot instead of sleeping on the floor (`toCot`).
+  `W.kids.hum` is the shared music-box tune. Fulfilled wishes call
   `celebrate`, which plays parent praise only (`speech.praise`) and records
   an outcome. The brother can carry a toy in his arms (`carry`/`putDown`,
   drawn in his carry and kneel poses); sent to do something else, picked up,
@@ -389,41 +399,66 @@ lives in `js/games/playhouse/`:
   tapping her bubble then points at it.
 - `props.js` — toys with simple gravity, bounce, roll and throw physics;
   dropped toys are offered to `W.dropTargets` (baby, toy box, trampoline, pram,
-  harvest basket) in order before falling to the floor. Produce toys carry a
+  harvest basket, a showing bush animal) in order before falling to the floor. Produce toys carry a
   `produce` type (food, flower, big). `drawArt` paints a hidden toy in
   someone's hands; `W.removeToy` takes an eaten or basketed toy out of the
   world.
-- `home.js` / `garden.js` — lamp, bed, wardrobe with in-world outfit cards,
-  curtains with window visitors, toy box spill/tidy, door; bushes with
-  peekaboo animals (authentic recordings), apple tree and night owl,
-  trampoline, pram rides, birds. The pram glows with a ground ring while the
+- `home.js` / `garden.js` — a pull-cord lamp (on, a golden shade, a cone of
+  light and a wall halo by day; it lights the room at night), bed, the baby's
+  cot (`W.cot`: glows while she is carried over it and seats her on release;
+  tapping it spins the mobile and plays the tune, or calls her over from
+  anywhere in the house), wardrobe with in-world outfit cards, curtains with
+  window visitors, toy box spill/tidy (toys only: produce is left out), door;
+  bushes with peekaboo animals (authentic recordings) who are fed from the
+  garden: produce carried within about 260 wu of a bush brings out an animal
+  that eats it (`EATS`, favourite first) and shows a "let go here" ring;
+  dropped on them it is munched away (chomps, its recording and name, parent
+  praise for a favourite, a `feed:<animal>` outcome), while the cat and frog
+  sniff it and hand it back. The apple tree holds eight apples dropped one per
+  tap; a picked one regrows after 20 s in view, or quickly once the tree has
+  been off screen for 2 s, and more than six loose apples are tidied into the
+  basket (`W.patch.stash`). Night owl, trampoline, pram rides. Birds come in
+  little colourful groups on clear days (`spawnFlock`, more at a rainbow);
+  some land on the fence rail (`decal` layer), the seed-stand roof or the
+  basket handle (sorted just in front of them), hop and peck, and leave after
+  a while, at night or rain, or when tapped (`audio.chirp`). The pram glows with a ground ring while the
   baby is carried over it (`takes`) and seats her on release; tapping the
   empty pram has her crawl in (within 600 wu), as does wheeling it up to
   her. In the pram, `seatHit` (her, the hood and basket top) lifts her out,
   while the handle and wheels drag the pram from where it was grabbed.
 - `sky.js` — day/night (`W.dayT`), sun/moon tap or drag, weather cloud
-  (rain under the cloud with puddles → snow cover and snowman → rainbow),
-  rain weather bed, fireflies and porch light. The cloud can be dragged over
-  the whole garden; setting `cloud.glideTo` drifts it somewhere (the patch
-  uses this for a thirsty plant tapped while it rains).
+  (rain → snow cover and snowman → rainbow), rain weather bed, fireflies and
+  porch light. The sun and moon are screen-anchored (`anchor(f)`, sun 0.72 and
+  moon 0.3 of the view, never left of x 1900 so they are never behind the
+  house), glide to another spot when the apple tree's canopy would hide them
+  (`placeBodies`), and ride higher on tall screens (`sunTop`). Rain falls over
+  the whole visible garden (about 170 drops per 1600 wu, none indoors), fills
+  every puddle, greys the sky (`sky.gloom`, mixed in by `skyStops` in
+  world.js) and shows through the bedroom window (`windowWeather`, as does
+  snow). The rainbow is centred on the view (`sky.rainbowX`) and emits
+  `rainbow`. The cloud can be dragged over the whole garden; once the view has
+  rested for 2 s with the cloud off screen, behind the tree or in front of the
+  sun or moon, it floats (`cloud.glideTo`, at most 900 wu/s) to the best clear
+  spot in view (`followView`).
 - `patch.js` — the vegetable patch. A seed stand holds six packets (carrot,
   tomato, strawberry, sunflower, tulip, pumpkin); a raised bed has four plots.
   A packet dragged onto a plot plants it; a tapped packet is chosen (it lifts,
   says its name, and empty plots glow for 6 s) and a tapped empty plot then
   gets it; a packet tapped twice tosses its seeds into the next empty plot; an
   empty plot tapped with nothing chosen plants the next crop from a shuffled
-  bag. Each plot has `water` (0–1) and growth `g` from 1 (seed) to 5 (ripe):
+  bag. The brother, if free, comes over from anywhere to kneel and help plant.
+  Each plot has `water` (0–1) and growth `g` from 1 (seed) to 5 (ripe):
   stage 2 sprout, 3 leafy, 4 buds or green fruit, 5 ripe. Plants grow only in
   daylight with water and no snow (4.5 sunny s per stage, slower in rain),
   drinking a full plot in 10 s; at sunrise each watered plant grows one stage.
-  Rain waters plots within 230 wu of the cloud. The watering can pours while
+  Rain waters every plot. The watering can pours while
   carried over a plot (tipping toward it) and, tapped, flies to the
-  thirstiest plant and pours. Dry plants droop under a water-drop icon;
-  tapping one points a sparkle trail at the can, or brings the cloud over if
-  it is raining. Plants are drawn on canvas; produce, packets' pictures, the
+  thirstiest plant and pours. Dry plants droop under a big bouncing water
+  drop; tapping one points a sparkle trail at the can. Plants are drawn on canvas; produce, packets' pictures, the
   can, bed, stand and basket are painted sprites in `art.js`. Tapping a ripe
   plant tugs it; if the brother is free in the garden within 1300 wu he walks
-  over, kneels and pulls it, otherwise it pops after 0.4 s. The produce
+  over, kneels and pulls it, otherwise it pops after 0.4 s and he comes over
+  from wherever he is (`fetch`) to pick it up. The produce
   becomes a toy that arcs onto the path (stars, `pluck`, its name, fanfare,
   parent praise, `garden:<crop>` outcome, confetti the first time a crop is
   ever grown); the baby claps if she is within 750 wu. A brother who pulled it
@@ -435,7 +470,14 @@ lives in `js/games/playhouse/`:
   persist per child in `tinytaps-playhouse-garden` (saved on change, every
   6 s while growing, and on leaving); on return, watered plants have grown at
   half pace for the time away until their water ran out. A first visit starts
-  with a nearly ripe strawberry and a carrot seedling.
+  with a nearly ripe strawberry and a carrot seedling. Once the view has
+  rested on the patch for 3 s, an idle brother far away walks over to the
+  seed stand (`tagAlong`, once per visit to the patch). Bees and butterflies
+  (`BEE` / `BUTTERFLY` art, at most two) visit open flowers on sunny days: a
+  ripe sunflower or tulip, or the strawberry's stage-4 blossoms (`bloomsOf`);
+  they settle 4–8 s, move on or leave, and leave at once if the flower is
+  picked or it turns to night, rain or snow. Tapped, a bee leaves with its
+  recording and `Bee`, a butterfly with two shimmers and `Butterfly`.
 - `moments.js` — the ten sibling photos. `snap(id)` is rationed to one per
   7 s; the polaroid flies to its fixed frame. Collected ids persist in
   `localStorage` (`tinytaps-playhouse-photos`); the last outfit persists in

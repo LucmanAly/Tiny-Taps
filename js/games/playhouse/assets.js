@@ -115,6 +115,9 @@ export const BUSH_ANIMALS = {
 export const ROOSTER = byId.get('rooster');
 export const OWL = byId.get('owl');
 export const CAT = byId.get('cat');
+// Visitors to the flowers in the vegetable patch.
+export const BEE = byId.get('bee');
+export const BUTTERFLY = byId.get('butterfly');
 
 /* ---------------- loading ---------------- */
 

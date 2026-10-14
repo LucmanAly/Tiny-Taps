@@ -1,18 +1,50 @@
-// Play House: the garden. Bushes with animals hiding in them, an apple tree
-// (with an owl after dark), a trampoline that bounces higher with every tap,
-// and the baby's pram for a ride.
+// Play House: the garden. Bushes with animals hiding in them (who come out
+// to be fed), an apple tree (with an owl after dark), a trampoline that
+// bounces higher with every tap, the baby's pram for a ride, and little
+// flocks of birds.
 
 import { PLACES, WORLD, depthAt, clampToFloor, floorFor } from './layout.js';
 import { BUSH_ANIMALS, OWL } from './assets.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
 const ease = t => 1 - Math.pow(1 - t, 3);
+const backOut = t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// What the bush animals like to eat from the vegetable patch (and the apple
+// tree); the first is each one's favourite. Anyone else sniffs it and gives
+// it back.
+const EATS = {
+  bunny: ['carrot', 'strawberry', 'tulip', 'apple'],
+  pig: ['pumpkin', 'apple', 'tomato', 'carrot', 'strawberry'],
+  sheep: ['sunflower', 'tulip', 'carrot', 'apple'],
+  duck: ['tomato', 'strawberry'],
+  rooster: ['strawberry', 'tomato', 'sunflower'],
+  dog: ['apple', 'carrot'],
+};
+const eats = (a, kind) => !!a && (EATS[a.id] || []).includes(kind);
 
 export function createGarden(W) {
   const { audio, fx } = W;
 
-  /* ---------------- bushes and the animals in them ---------------- */
+  /* ---------------- bushes and the animals in them ----------------
+     Tapping a bush brings someone out to say hello. Carrying produce near a
+     bush brings out someone hungry for it, and letting go over them feeds
+     them. */
+
+  // Produce being carried right now, if any.
+  const heldProduce = () => W.toys.find(t => t.held && t.spec.produce);
+
+  // An animal in the bushes who would like to eat `kind`, favourites first.
+  function hungryFor(kind) {
+    const pool = (W.dayT > 0.5 ? BUSH_ANIMALS.night : BUSH_ANIMALS.day).filter(a => eats(a, kind));
+    const showing = new Set(bushes.map(b => b.animal && b.animal.id));
+    const free = pool.filter(a => !showing.has(a.id));
+    if (!free.length) return null;
+    return free.find(a => EATS[a.id][0] === kind) || free[(Math.random() * free.length) | 0];
+  }
 
   let bag = [];
   let bagNight = null;
@@ -31,11 +63,23 @@ export function createGarden(W) {
 
   const bushes = PLACES.bushes.map(p => ({
     x: p.x, y: p.y, z: p.y, w: p.w, art: p.art, wob: 0, animal: null, up: 0, upTarget: 0, hideAt: 0, hop: 0,
+    meal: null, ring: 0, calledAt: 0,
     draw(g) {
       const img = W.img['scene_' + this.art];
       if (!img) return;
       const h = this.w * img.naturalHeight / img.naturalWidth;
       this.h = h;
+      if (this.ring > 0) {
+        // "Let go here": someone hungry is waiting.
+        g.save();
+        g.globalAlpha = this.ring;
+        g.strokeStyle = '#ffc93c';
+        g.lineWidth = 9;
+        g.setLineDash([18, 12]);
+        g.lineDashOffset = -W.t * 40;
+        g.beginPath(); g.ellipse(this.x, this.y + 4, this.w * 0.56, 26, 0, 0, Math.PI * 2); g.stroke();
+        g.restore();
+      }
       // The animal peeks up from behind the leaves.
       if (this.animal && this.up > 0.01) {
         const a = W.img['animal_' + this.animal.id];
@@ -43,8 +87,16 @@ export function createGarden(W) {
           const ah = 180;
           const aw = ah * a.naturalWidth / a.naturalHeight;
           // Rises until most of the animal shows above the leaves.
-          const lift = ease(this.up) * (h * 0.62 + ah * 0.5) + Math.abs(Math.sin(this.hop * 12)) * 34 * this.hop;
-          g.drawImage(a, this.x - aw / 2 + 10, this.y - h * 0.3 - lift - ah * 0.5, aw, ah);
+          let lift = ease(this.up) * (h * 0.62 + ah * 0.5) + Math.abs(Math.sin(this.hop * 12)) * 34 * this.hop;
+          if (this.meal) lift += Math.abs(Math.sin((W.t - this.meal.t0) * 9)) * 7;
+          const top = this.y - h * 0.3 - lift - ah * 0.5;
+          g.drawImage(a, this.x - aw / 2 + 10, top, aw, ah);
+          if (this.meal) {
+            // Munched away at its mouth.
+            const k = 1 - clamp((W.t - this.meal.t0) / 1.8, 0, 1);
+            const ih = this.meal.toy.spec.h * 0.6 * (0.2 + 0.8 * k);
+            if (k > 0) this.meal.toy.drawArt(g, this.x + 14, top + ah * 0.66 + ih / 2, ih, Math.sin(W.t * 14) * 0.08);
+          }
         }
       }
       const sway = Math.sin(this.wob * 20) * 0.06 * this.wob + Math.sin(W.t * 0.9 + this.x) * 0.008;
@@ -72,6 +124,7 @@ export function createGarden(W) {
       this.wob = 1;
       audio.rustle();
       fx.leaves(this.x, this.y - (this.h || 200) * 0.7, 4, this.w * 0.8);
+      if (this.meal) return;       // busy eating
       if (this.animal && this.up > 0.6 && y < this.y - (this.h || 200) * 0.85) {
         // Touching the animal itself: it says hello again.
         this.hop = 1;
@@ -88,8 +141,7 @@ export function createGarden(W) {
         this.reveal();
       }
     },
-    reveal() {
-      const a = nextAnimal();
+    reveal(a = nextAnimal()) {
       if (!a) return;
       this.animal = a;
       this.upTarget = 1;
@@ -105,6 +157,23 @@ export function createGarden(W) {
     update(dt) {
       this.wob = Math.max(0, this.wob - dt * 1.6);
       this.hop = Math.max(0, this.hop - dt * 1.5);
+      if (this.meal && W.t - this.meal.t0 > 2) { this.meal = null; this.hideAt = W.t + 2.5; }
+      // Food carried close by: someone hungry pops up for it, or whoever is
+      // already up stays and bobs eagerly.
+      const food = this.meal ? null : heldProduce();
+      const near = !!food && Math.abs(food.hold.x - this.x) < this.w / 2 + 130
+        && food.hold.y > this.y - (this.h || 200) - 320 && food.hold.y < this.y + 60;
+      if (near) {
+        if (!this.animal && W.t > this.calledAt) {
+          this.calledAt = W.t + 1;
+          const a = hungryFor(food.kind);
+          if (a) this.reveal(a);
+        } else if (this.animal && this.upTarget) {
+          this.hideAt = Math.max(this.hideAt, W.t + 2.5);
+          if (eats(this.animal, food.kind) && this.hop < 0.1 && Math.random() < dt * 1.5) this.hop = 0.6;
+        }
+      }
+      this.ring = clamp(this.ring + (near && this.animal && this.up > 0.5 ? 6 : -4) * dt, 0, 1);
       if (this.animal && W.t > this.hideAt) this.upTarget = 0;
       this.up += clamp(this.upTarget - this.up, -dt * 3, dt * 4);
       if (this.up <= 0 && !this.upTarget) this.animal = null;
@@ -112,13 +181,61 @@ export function createGarden(W) {
     hint() { this.wob = 0.9; },
   }));
 
-  /* ---------------- the apple tree ---------------- */
+  // Produce let go over an animal: eaten up (or sniffed and handed back).
+  function feed(b, toy) {
+    const a = b.animal;
+    b.hideAt = W.t + 4.5;
+    b.hop = 1;
+    b.wob = 0.6;
+    if (!eats(a, toy.kind)) {
+      W.sky.playAnimal(a);
+      W.say(a.name);
+      const side = b.x > W.cam.x + W.cam.viewW / 2 ? -1 : 1;
+      toy.landFrom(b.x + side * (b.w / 2 + 40), b.y + 70, side * 150, -520);
+      fx.sparkle(b.x, b.y - (b.h || 200) - 60, 6, 90);
+      return;
+    }
+    const fav = EATS[a.id][0] === toy.kind;
+    W.removeToy(toy);
+    b.meal = { toy, t0: W.t };
+    const top = b.y - (b.h || 200) - 80;
+    for (let i = 0; i < 3; i++) setTimeout(() => { if (W.isAlive()) audio.chomp(); }, i * 550);
+    setTimeout(() => {
+      if (!W.isAlive()) return;
+      W.sky.playAnimal(a);
+      W.say(a.name);
+      fx.hearts(b.x, top, fav ? 5 : 3);
+      if (fav) {
+        fx.stars(b.x, top, 8, 240);
+        audio.softFanfare();
+        W.praise();
+      }
+    }, 1700);
+    W.recordOutcome(true, 'feed:' + a.id);
+  }
 
-  const APPLE_SPOTS = [[-150, -470], [70, -520], [170, -400], [-40, -390]];
+  W.dropTargets.push({
+    accept(item, x, y) {
+      if (!item.spec || !item.spec.produce) return false;
+      const b = bushes.find(q => q.animal && q.up > 0.5 && !q.meal
+        && Math.abs(x - q.x) < q.w / 2 + 90 && y > q.y - (q.h || 200) - 300 && y < q.y + 40);
+      if (!b) return false;
+      feed(b, item);
+      return true;
+    },
+  });
+
+  /* ---------------- the apple tree ----------------
+     Eight apples, dropped one per tap. A picked apple grows back after a
+     while; go away from the tree and they all come back quickly, so it is
+     full again when you return. */
+
+  const APPLE_SPOTS = [[-150, -470], [70, -520], [170, -400], [-40, -390], [-220, -380], [-90, -600], [110, -630], [230, -480]];
+  const MAX_LOOSE_APPLES = 6;
   const tree = {
     x: PLACES.tree.x, y: PLACES.tree.y, z: PLACES.tree.y, wob: 0,
-    apples: APPLE_SPOTS.map(() => ({ on: true, back: 0 })),
-    owl: 0, blink: 0,
+    apples: APPLE_SPOTS.map(() => ({ on: true, back: 0, grow: 1 })),
+    owl: 0, blink: 0, seenAt: 0, regrowAt: 0,
     draw(g) {
       W.blit(g, W.sprites.treeTrunk, this.x, this.y);
       // Owl peeks out of the knothole after dark.
@@ -142,7 +259,9 @@ export function createGarden(W) {
         this.apples.forEach((a, i) => {
           if (!a.on) return;
           const [ax, ay] = APPLE_SPOTS[i];
-          g.save(); g.translate(ax, ay + 30); g.scale(0.8, 0.8); W.blit(g, W.sprites.apple); g.restore();
+          // A regrown apple swells into place from its stalk.
+          const s = 0.8 * (a.grow < 1 ? Math.max(0.05, backOut(a.grow)) : 1);
+          g.save(); g.translate(ax, ay - 8); g.scale(s, s); g.translate(0, 38 / 0.8); W.blit(g, W.sprites.apple); g.restore();
         });
       }
       if (W.sky.snow > 0.05) {
@@ -167,11 +286,11 @@ export function createGarden(W) {
         if (OWL) { W.sky.playAnimal(OWL); W.say('Owl'); }
         return;
       }
-      const i = this.apples.findIndex(a => a.on);
+      const i = this.apples.findIndex(a => a.on && a.grow >= 1);
       if (i < 0) { audio.boing(); return; }
       const a = this.apples[i];
       a.on = false;
-      a.back = W.t + 25;
+      a.back = W.t + 20;
       const [ax, ay] = APPLE_SPOTS[i];
       const toy = W.spawnToy('apple', this.x + ax, WORLD.floor.garden.y0 + 40 + Math.random() * 60);
       toy.air = Math.max(0, toy.y - (this.y + ay + 30));
@@ -182,7 +301,25 @@ export function createGarden(W) {
       this.wob = Math.max(0, this.wob - dt * 1.4);
       this.blink = Math.max(0, this.blink - dt);
       this.owl += clamp((W.dayT > 0.6 ? 1 : 0) - this.owl, -dt * 2, dt * 1.2);
-      for (const a of this.apples) if (!a.on && W.t > a.back && W.toys.filter(t => t.kind === 'apple').length < 4) a.on = true;
+      const seen = W.onScreen(this.x, 360);
+      if (seen) this.seenAt = W.t;
+      const away = W.t - this.seenAt > 2;
+      for (const a of this.apples) {
+        if (a.on) { a.grow = Math.min(1, a.grow + dt * 1.6); continue; }
+        if ((away || W.t > a.back) && W.t > this.regrowAt) {
+          a.on = true;
+          a.grow = 0;
+          this.regrowAt = W.t + 1.2;
+          if (seen) audio.sprout();
+        }
+      }
+      // Not too many apples lying about: the oldest one out of sight goes
+      // into the harvest basket.
+      const loose = W.toys.filter(t => t.kind === 'apple' && !t.hidden && !t.held);
+      if (loose.length > MAX_LOOSE_APPLES && W.patch) {
+        const old = loose.find(t => !W.onScreen(t.x, 100));
+        if (old) W.patch.stash(old);
+      }
     },
     hint() { this.wob = 0.8; },
   };
@@ -491,52 +628,198 @@ export function createGarden(W) {
     },
   });
 
-  /* ---------------- birds ---------------- */
+  /* ---------------- birds ----------------
+     On fine days little groups of birds in different colours fly over the
+     garden. Some come down to perch on the fence, the seed stand's roof or
+     the basket handle, hop and peck about, and fly off again after a while
+     (straight away if tapped, with a chirp). Night and rain send them off. */
 
-  const bird = {
-    layer: 'sky', x: -200, y: 120, v: 0, nextAt: 6, flap: 0, scared: 0,
-    draw(g) {
-      if (this.v === 0) return;
-      const w = Math.sin(W.t * 14 + this.flap) * 0.9;
-      g.save();
-      g.translate(this.x, this.y + Math.sin(W.t * 3) * 10);
-      g.scale(Math.sign(this.v), 1);
-      g.fillStyle = W.dayT > 0.5 ? '#6a6aa8' : '#7ab8e8';
-      g.strokeStyle = 'rgba(107,74,58,0.6)';
-      g.lineWidth = 3;
-      g.beginPath(); g.ellipse(0, 0, 26, 17, 0, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.beginPath(); g.arc(20, -10, 12, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.fillStyle = '#ffb347';
-      g.beginPath(); g.moveTo(30, -12); g.lineTo(42, -8); g.lineTo(30, -5); g.fill();
-      g.fillStyle = '#3a3357';
-      g.beginPath(); g.arc(23, -13, 2.6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#a8d4f2';
-      g.beginPath(); g.ellipse(-4, -6 - w * 6, 22, 2 + 8 * Math.abs(w), -0.5, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.restore();
-    },
-    hit(x, y) { return this.v !== 0 && Math.hypot(x - this.x, y - this.y) < 70; },
-    tap() {
-      this.v *= 2.2;
-      this.y -= 30;
-      audio.shimmer(1568);
-      setTimeout(() => audio.shimmer(1760), 120);
-      fx.sparkle(this.x, this.y, 8, 120);
-    },
-    update(dt) {
-      if (this.v === 0) {
-        if (W.t > this.nextAt && W.dayT < 0.5 && W.sky.weather === 'clear') {
-          const left = Math.random() < 0.5;
-          this.x = left ? 1650 : WORLD.W + 60;
-          this.y = 60 + Math.random() * 220;
-          this.v = (left ? 1 : -1) * (170 + Math.random() * 80);
+  const BIRD_COLORS = [
+    { body: '#7ab8e8', wing: '#a8d4f2', belly: '#d8ecfb' },   // blue
+    { body: '#e8705e', wing: '#f5a594', belly: '#ffc98f' },   // robin
+    { body: '#ffd34d', wing: '#ffe68a', belly: '#fff3c4' },   // canary
+    { body: '#86c96a', wing: '#b6e39c', belly: '#e1f5cf' },   // green
+    { body: '#b99af0', wing: '#d8c6ff', belly: '#efe6ff' },   // lilac
+    { body: '#f59ac0', wing: '#ffc9de', belly: '#ffe6f0' },   // pink
+  ];
+  const MAX_BIRDS = 5;
+  const birds = [];
+  let flockAt = 5;
+
+  // Free places to land within view: a spot on the fence's top rail, the
+  // seed stand's roof, the basket handle.
+  function perchSpots() {
+    const cam = W.cam;
+    const spots = [];
+    const lo = Math.max(1720, cam.x + 90), hi = Math.min(WORLD.W - 40, cam.x + cam.viewW - 90);
+    if (hi > lo) {
+      const x = rand(lo, hi);
+      if (!birds.some(b => b.perch && Math.abs(b.perch.x - x) < 90)) spots.push({ id: 'fence', x, y: 420, layer: 'decal', z: 0 });
+    }
+    const S = PLACES.seeds, BK = PLACES.basket;
+    for (const p of [
+      { id: 'stand', x: S.x, y: S.y - 290, layer: 'sorted', z: S.y + 0.5 },
+      { id: 'basket', x: BK.x, y: BK.y - 147, layer: 'sorted', z: BK.y + 0.5 },
+    ]) {
+      if (W.onScreen(p.x, -80) && !birds.some(b => b.perch && b.perch.id === p.id)) spots.push(p);
+    }
+    return spots;
+  }
+
+  function makeBird(x, y, dir, speed, color, wantsPerch) {
+    const b = {
+      x, y, baseY: y, vx: dir * speed, vy: 0, face: dir, color, flap: rand(0, 6),
+      state: 'fly', t: 0, from: null, perch: null, wantsPerch, stay: rand(5, 9), next: rand(0.6, 1.4), hop: 0, peck: 0,
+      // Perched (or on the way down to a perch), a bird belongs to the
+      // perch's layer; flying, to the sky.
+      get low() { return !!this.perch && (this.state !== 'leave' || this.y > 300); },
+      get layer() { return this.low ? this.perch.layer : 'sky'; },
+      get z() { return this.perch ? this.perch.z : 0; },
+      draw(g) { drawBird(g, this); },
+      hit(px, py) { return Math.hypot(px - this.x, py - (this.y - (this.state === 'perch' ? 20 : 0))) < 60; },
+      tap() {
+        audio.chirp();
+        fx.sparkle(this.x, this.y - 20, 6, 100);
+        if (this.state === 'perch' || this.state === 'land') takeOff(this);
+        else { this.vx *= 1.8; this.baseY -= 40; }
+      },
+      update(dt) { stepBird(this, dt); },
+    };
+    birds.push(b);
+    W.add(b);
+    return b;
+  }
+
+  function removeBird(b) {
+    const i = birds.indexOf(b);
+    if (i >= 0) birds.splice(i, 1);
+    W.remove(b);
+  }
+
+  function takeOff(b) {
+    if (b.state === 'perch') b.y -= 18;
+    b.state = 'leave';
+    b.t = 0;
+    b.vx = (b.face || 1) * rand(200, 260);
+    b.vy = -280;
+  }
+
+  function stepBird(b, dt) {
+    b.t += dt;
+    const sendOff = W.dayT > 0.4 || W.sky.weather !== 'clear';
+    switch (b.state) {
+      case 'fly':
+        b.x += b.vx * dt;
+        b.y = b.baseY + Math.sin(W.t * 3 + b.flap) * 10;
+        b.face = Math.sign(b.vx) || 1;
+        if (b.wantsPerch && !sendOff && W.onScreen(b.x, -120)) {
+          b.wantsPerch = false;      // one look for somewhere to land
+          const ahead = perchSpots().filter(p => Math.sign(p.x - b.x) === b.face && Math.abs(p.x - b.x) < 760);
+          if (ahead.length) {
+            b.perch = ahead[(Math.random() * ahead.length) | 0];
+            b.state = 'land';
+            b.t = 0;
+            b.from = { x: b.x, y: b.y };
+          }
         }
-        return;
+        if (b.x < 1500 || b.x > WORLD.W + 200) removeBird(b);
+        break;
+      case 'land': {
+        const k = Math.min(1, b.t / 1.2);
+        // Gliding down until its feet touch the perch (its body is drawn 18
+        // above its feet once perched).
+        b.x = lerp(b.from.x, b.perch.x, k);
+        b.y = lerp(b.from.y, b.perch.y - 18, ease(k)) - Math.sin(k * Math.PI) * 40;
+        if (k >= 1) { b.state = 'perch'; b.t = 0; b.y = b.perch.y; }
+        break;
       }
-      this.x += this.v * dt;
-      if (this.x > WORLD.W + 120 || this.x < 1600) { this.v = 0; this.nextAt = W.t + 14 + Math.random() * 14; }
+      case 'perch':
+        // Hops, pecks and looks about until it is time to go.
+        b.hop = Math.max(0, b.hop - dt * 3);
+        b.peck = Math.max(0, b.peck - dt * 2.5);
+        if (b.t > b.next) {
+          b.next = b.t + rand(0.7, 1.6);
+          const r = Math.random();
+          if (r < 0.4) {
+            b.hop = 1;
+            if (b.perch.id === 'fence') b.x = clamp(b.x + rand(-14, 14), 1720, WORLD.W - 40);
+          } else if (r < 0.75) b.peck = 1;
+          else b.face = -b.face;
+          if (Math.random() < 0.2 && W.onScreen(b.x)) audio.chirp();
+        }
+        if (b.t > b.stay || sendOff) takeOff(b);
+        break;
+      case 'leave':
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (b.y < 160) { b.state = 'fly'; b.baseY = b.y; b.perch = null; }
+        break;
+      default: break;
+    }
+  }
+
+  function drawBird(g, b) {
+    const c = b.color;
+    const perched = b.state === 'perch';
+    const ink = 'rgba(107,74,58,0.6)';
+    g.save();
+    g.translate(b.x, b.y - (perched ? 18 + Math.sin(b.hop * Math.PI) * 14 : 0));
+    g.scale(b.face < 0 ? -1 : 1, 1);
+    if (perched) g.rotate(Math.sin(b.peck * Math.PI) * 0.55);
+    g.strokeStyle = ink;
+    g.lineWidth = 3;
+    g.lineCap = 'round';
+    if (perched) {
+      g.beginPath(); g.moveTo(-2, 14); g.lineTo(-4, 20); g.moveTo(7, 14); g.lineTo(7, 20); g.stroke();
+    }
+    g.fillStyle = c.body;
+    g.beginPath(); g.moveTo(-22, -4); g.lineTo(-40, -12); g.lineTo(-38, 6); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(0, 0, 26, 17, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = c.belly;
+    g.beginPath(); g.ellipse(8, 6, 14, 8, 0.2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = c.body;
+    g.beginPath(); g.arc(20, -10, 12, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = '#ffb347';
+    g.beginPath(); g.moveTo(30, -12); g.lineTo(42, -8); g.lineTo(30, -5); g.fill();
+    g.fillStyle = '#3a3357';
+    g.beginPath(); g.arc(23, -13, 2.6, 0, Math.PI * 2); g.fill();
+    g.fillStyle = c.wing;
+    g.beginPath();
+    if (perched || (b.state === 'land' && b.t > 0.9)) g.ellipse(-6, -2, 18, 8, -0.25, 0, Math.PI * 2);
+    else {
+      const w = Math.sin(W.t * 14 + b.flap) * 0.9;
+      g.ellipse(-4, -6 - w * 6, 22, 2 + 8 * Math.abs(w), -0.5, 0, Math.PI * 2);
+    }
+    g.fill(); g.stroke();
+    g.restore();
+  }
+
+  function spawnFlock(n, perchy) {
+    const cam = W.cam;
+    if (cam.x + cam.viewW < 1800) return;       // looking at the house
+    n = Math.min(n, MAX_BIRDS - birds.length);
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const x0 = dir > 0 ? Math.max(1680, cam.x - 80) : cam.x + cam.viewW + 80;
+    const y0 = rand(70, 230);
+    const speed = rand(170, 240);
+    const colors = shuffle([...BIRD_COLORS]);
+    for (let i = 0; i < n; i++) {
+      makeBird(x0 - dir * i * rand(70, 110), y0 + rand(-40, 40), dir, speed * rand(0.92, 1.08), colors[i], Math.random() < perchy);
+    }
+  }
+
+  const flock = {
+    layer: 'none',
+    update() {
+      if (W.t < flockAt) return;
+      flockAt = W.t + rand(7, 15);
+      if (W.dayT > 0.4 || W.sky.weather !== 'clear') return;
+      spawnFlock(1 + ((Math.random() * 3) | 0), 0.4);
     },
   };
+  // A rainbow brings them all out.
+  W.on('rainbow', () => { spawnFlock(3, 0.6); flockAt = W.t + 8; });
 
-  for (const e of [...bushes, tree, tramp, pram, bird]) W.add(e);
+  for (const e of [...bushes, tree, tramp, pram, flock]) W.add(e);
   return { bushes, tree, tramp, pram };
 }

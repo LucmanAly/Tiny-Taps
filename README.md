@@ -24,7 +24,7 @@ nothing to buy, works offline once loaded:
 17. **Sort It** — drag each animal to its home, the farm or the water
 18. **Wash the Animal** — rub the mud off with a finger until it shines
 19. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
-20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes, bounce higher with every tap on the trampoline, and grow carrots, tomatoes, strawberries, pumpkins and flowers in the vegetable patch, then pick them with the brother for his sister
+20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes (and feed them from the garden), bounce higher with every tap on the trampoline, lay the baby in her cot for a lullaby, and grow carrots, tomatoes, strawberries, pumpkins and flowers in the vegetable patch, then pick them with the brother for his sister
 21. **My First Words** — a full-photo flashcard deck with Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
@@ -87,6 +87,21 @@ this app. UI sounds are synthesized in-app with WebAudio.
 ## Changelog
 
 The current version is shown in Parent Settings.
+
+- **v5.22** — Play House: the sun and moon now stay in the sky as you pan, so
+  day and night can be changed from anywhere in the garden, including the
+  vegetable patch; they glide out from behind the apple tree, and ride higher
+  on tall phone screens. Rain falls over the whole garden (greyer sky, every
+  puddle and plot filling, rain on the bedroom window), the rainbow appears
+  where you are looking, and the weather cloud floats over when left behind.
+  The brother runs over from anywhere to help plant and to pick up and deliver
+  the harvest, and joins you at the patch. Carry produce near a bush and a
+  hungry animal pops out to eat it (the bunny loves carrots). Bees and
+  butterflies visit the flowers; the apple tree holds eight apples that grow
+  back while you are away; little flocks of colourful birds perch on the
+  fence, the seed stand and the basket. The lamp now clearly switches on and
+  off, and the baby has her own cot with a music-box mobile: lay her in it (or
+  tap it to call her) and she drifts off; at bedtime she goes to it herself.
 
 - **v5.21** — Play House grows a vegetable patch past the apple tree. Drag a
   seed packet (carrot, tomato, strawberry, sunflower, tulip, pumpkin) onto one
