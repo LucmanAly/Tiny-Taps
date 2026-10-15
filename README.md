@@ -93,6 +93,11 @@ UI sounds are synthesized in-app with WebAudio.
 
 The current version is shown in Parent Settings.
 
+- **v5.27** — Coloring returns to its original 14 animal sketches, including
+  the supplied parrot and Daddy Shark pages. The new colored animal artwork
+  stays in the other games. Original shark files are available separately;
+  saved pictures, draft fills, Undo, and offline access are preserved.
+
 - **v5.25** — a complete animal-art refresh: 60 painted cutouts and 14 new
   editable coloring pictures. The shared games, animal and Shark Family
   flashcards, child avatars, stickers, Play House birds and animal toys, and

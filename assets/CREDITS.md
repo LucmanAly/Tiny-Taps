@@ -68,10 +68,22 @@ All 60 animal cutouts and the 14 animal coloring designs were newly generated
 with the built-in OpenAI image-generation tool for Tiny Taps. The developer
 approved the chicken, fish and shark previews as the style direction. Full
 prompts and source-image provenance are in `docs/animal-art-prompts.json`.
-Transparent cutouts are framed and compressed as WebP; coloring line art is
-converted to editable SVG regions. No previous animal SVG or illustrated
-animal photo is used by the runtime. Everyday object flashcards and the
-sibling photo scenes keep their original supplied artwork.
+Transparent cutouts are framed and compressed as WebP; generated coloring line
+art was converted to editable SVG regions. The generated coloring alternatives
+are now archival only: Coloring uses its original twelve inline animal sketches
+and the original parrot and Daddy Shark SVGs. The original colored shark is
+preserved separately in `assets/art/shark.svg`; its former card picture, an
+AI-generated illustration supplied by the developer, is recovered unchanged
+as `assets/art/shark-original.jpg`. Everyday object flashcards and
+the sibling photo scenes keep their original supplied artwork.
 
 The old unsliced animal sheets in `assets/new-assets/` remain archival source
 material only and are not loaded or cached by the game.
+
+# Parrot Coloring Artwork
+
+`assets/art/parrot-coloring.svg` is the user-supplied Indian ringneck parrot
+vector created with Recraft. Original path geometry is retained; runtime
+metadata, the page-sized white background, and nonuniform scaling were removed.
+White paths are grouped into six tap-to-fill regions, while ink and eye details
+remain fixed.

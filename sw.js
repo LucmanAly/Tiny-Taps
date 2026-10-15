@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.26';
+const VERSION = 'tiny-taps-v5.27';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -84,20 +84,6 @@ const ASSETS = [
   'assets/animal-art/grandma-shark.webp',
   'assets/animal-art/toy-teddy.webp',
   'assets/animal-art/toy-duck.webp',
-  'assets/animal-art/coloring/parrot.svg',
-  'assets/animal-art/coloring/daddy-shark.svg',
-  'assets/animal-art/coloring/frog.svg',
-  'assets/animal-art/coloring/fish.svg',
-  'assets/animal-art/coloring/duck.svg',
-  'assets/animal-art/coloring/cat.svg',
-  'assets/animal-art/coloring/dog.svg',
-  'assets/animal-art/coloring/bunny.svg',
-  'assets/animal-art/coloring/bear.svg',
-  'assets/animal-art/coloring/butterfly.svg',
-  'assets/animal-art/coloring/dinosaur.svg',
-  'assets/animal-art/coloring/turtle.svg',
-  'assets/animal-art/coloring/elephant.svg',
-  'assets/animal-art/coloring/monkey.svg',
   'js/data/builds.js',
   'js/data/strings.js',
   'js/data/trace-items.js',
@@ -146,7 +132,8 @@ const ASSETS = [
   'js/games/paintpots.js',
   'js/games/faces.js',
 
-   'assets/art/motu-coloring.svg',
+  'assets/art/parrot-coloring.svg', 'assets/art/daddy-shark-coloring.svg',
+  'assets/art/motu-coloring.svg',
   'assets/art/john-the-don-coloring.svg', 'assets/art/patlu-coloring.svg',
   'assets/art/family-man-coloring.svg', 'assets/art/family-woman-coloring.svg',
   'assets/art/family-baby-camera-coloring.svg', 'assets/art/family-boy-coloring.svg',

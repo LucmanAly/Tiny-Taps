@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="sk-body" cx="38%" cy="26%" r="90%">
+      <stop offset="0%" stop-color="#b8d4e8"/>
+      <stop offset="50%" stop-color="#7ba6c4"/>
+      <stop offset="100%" stop-color="#4a7494"/>
+    </radialGradient>
+    <radialGradient id="sk-belly" cx="45%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dcedf8"/>
+    </radialGradient>
+    <filter id="sk-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- bubbles -->
+  <circle cx="30" cy="52" r="6" fill="none" stroke="#a8d8f0" stroke-width="3.6"/>
+  <circle cx="42" cy="34" r="3.6" fill="none" stroke="#a8d8f0" stroke-width="3"/>
+
+  <!-- tail -->
+  <path d="M150 104 L186 74 C182 88 182 96 188 106 C180 116 180 124 184 136 L148 116 Z" fill="url(#sk-body)"/>
+
+  <!-- dorsal fin -->
+  <path d="M84 62 C86 40 100 28 116 26 C108 40 108 54 112 66 Z" fill="url(#sk-body)"/>
+
+  <!-- body -->
+  <ellipse cx="94" cy="106" rx="64" ry="42" fill="url(#sk-body)"/>
+  <path d="M34 116 C48 138 76 148 104 144 C130 140 150 126 156 112 C140 140 108 152 78 146 C56 142 40 130 34 116 Z" fill="#3a5e7a" opacity="0.25" filter="url(#sk-soft)"/>
+  <!-- belly -->
+  <path d="M36 118 C56 138 92 144 124 134 C142 128 154 118 157 108 C150 134 118 150 84 146 C62 143 44 132 36 118 Z" fill="url(#sk-belly)"/>
+  <ellipse cx="72" cy="82" rx="20" ry="9" fill="#ffffff" opacity="0.35" filter="url(#sk-soft)" transform="rotate(-12 72 82)"/>
+
+  <!-- side fin -->
+  <path d="M92 118 C102 112 116 114 122 126 C112 136 96 134 88 126 Z" fill="url(#sk-body)"/>
+
+  <!-- gills -->
+  <path d="M120 88 q4 10 0 20 M130 90 q3.4 8 0 16" fill="none" stroke="#3a5e7a" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- face -->
+  <circle cx="56" cy="94" r="8" fill="#ffffff"/>
+  <circle cx="57.5" cy="95" r="4.8" fill="#38251a"/>
+  <circle cx="55.7" cy="93.2" r="1.8" fill="#ffffff"/>
+  <ellipse cx="52" cy="112" rx="7" ry="5" fill="#ff9d8a" opacity="0.5" filter="url(#sk-soft)"/>
+  <!-- friendly smile with one tooth -->
+  <path d="M38 112 Q52 126 70 122" fill="none" stroke="#2e4a60" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M52 120 L55 126 L59 119 Z" fill="#ffffff"/>
+</svg>

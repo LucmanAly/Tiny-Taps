@@ -17,16 +17,20 @@ object photographs retained. Paint Pots colors the new frog and pig with an SVG
 filter that retains their shading. Play House uses matching perched/flight bird
 art, preserves its movement and feeding logic, and tints garden birds at draw time.
 
-Fourteen new animal coloring designs are generated as line art and traced into
-standalone closed SVG paths: 4–8 large white fill regions plus fixed ink that
-passes taps through. The old inline animal sketches and external parrot/shark
-geometry are retired. Saved child pictures remain their own snapshots.
+Coloring retains its original twelve inline animal sketches in
+`js/games/coloring.js`, plus the supplied parrot and Daddy Shark SVG pages in
+`assets/art/`. The generated alternatives in `assets/animal-art/coloring/`
+are archival files only and are neither loaded nor precached. Saved child
+pictures remain their own snapshots. The original shark SVG and card picture
+are preserved in `assets/art/shark.svg` and `assets/art/shark-original.jpg`;
+the new storybook shark stays available.
 `docs/animal-art-prompts.json` records the prompts and generation provenance;
 `scripts/prepare-animal-art.mjs` frames and compresses cutouts, and
-`scripts/trace-animal-coloring.mjs` makes the editable coloring SVGs. These tools
+`scripts/trace-animal-coloring.mjs` produced the archived coloring alternatives. These tools
 require Sharp only during asset preparation. The application still has no build
-step or runtime dependency. Every new asset is precached, and the release gate
-rejects runtime references to the retired animal libraries.
+step or runtime dependency. All active cutouts and external coloring pages are
+precached. The release gate permits the restored Coloring pages while rejecting
+runtime references to the other retired animal libraries.
 
 ## Application shell and module boundaries
 
@@ -261,8 +265,9 @@ opened from Pictures, and closes immediately on every sketch tap (including
 the selected sketch), before loading any external SVG. Viewport changes never
 reopen the picker or shrink the drawing area. The compact palette has six colors
 per row (two rows), or one row on wide landscape screens. Selecting a page restores its unfinished colors for the current
-session; stale asynchronous loads cannot replace the latest selection. The animal pages use the new storybook designs, each with 4–8 large closed
-regions, an unpaintable background, and fixed ink/eye details that pass taps through.
+session; stale asynchronous loads cannot replace the latest selection. The animal
+pages use the original chunky sketches. The supplied parrot has six logical fill
+groups, and Daddy Shark has seven, with fixed ink and eye details that pass taps through.
 Palette taps fill regions. Each page's fills are an ordered list of
 `[region, color]` pairs in `tinytaps-coloring-drafts`: the picture is rebuilt
 by resetting every region to its original fill and replaying the list, Undo

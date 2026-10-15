@@ -26,7 +26,9 @@ usable without reading.
 - `assets/` — generated storybook animal art, editable coloring SVGs, licensed animal audio, and credits.
   `assets/animal-art/` is the single animal-image library; `js/data/animal-art.js`
   resolves shared and flashcard aliases. All animal displays use its transparent WebP cutouts.
-  `assets/animal-art/coloring/` holds 14 new standalone SVG coloring pages.
+  Coloring keeps its original inline sketches in `js/games/coloring.js` and
+  its original parrot and Daddy Shark SVGs in `assets/art/`. The generated
+  alternatives in `assets/animal-art/coloring/` are archived and never loaded.
   `assets/playhouse/` holds sprites sliced from the uploaded Play House sheets
   by `scripts/slice-playhouse-art.py`; `assets/audio/playhouse/` holds the
   children's giggles, coos, babble, yawns and sneezes (and a real rattle) cut
@@ -143,7 +145,11 @@ At the end of any session that changes folder structure, adds/removes a mini-gam
 All 60 illustrated animal assets use the approved storybook style in `assets/animal-art/`.
 Use `animalArt(id)` from `js/data/animal-art.js`; never fall back to the retired
 animal SVGs or animal-photo libraries. Everyday object photos stay separate.
-Silhouettes use the same alpha as the visible cutouts. Coloring uses new vector
-paths with 4–8 large `data-region` shapes and fixed ink that passes taps through.
+Silhouettes use the same alpha as the visible cutouts. Coloring is the deliberate
+exception: retain the original animal sketches and their `data-region` groups,
+including the supplied parrot and Daddy Shark pages. Do not replace them with
+the archived generated coloring designs. `assets/art/shark.svg` and
+`assets/art/shark-original.jpg` preserve the original SVG and card shark
+separately; the new storybook shark remains available.
 Generation prompts are recorded in `docs/animal-art-prompts.json`; the preparation
 and vector tracing scripts are development tools, never runtime dependencies.

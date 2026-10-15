@@ -24,12 +24,3 @@ export function animalArt(id) {
   if (!IDS.has(key)) throw new Error(`Unknown illustrated animal: ${id}`);
   return `assets/animal-art/${key}.webp`;
 }
-
-export const COLORING_ANIMAL_IDS = [
-  'parrot', 'daddy-shark', 'frog', 'fish', 'duck', 'cat', 'dog', 'bunny',
-  'bear', 'butterfly', 'dinosaur', 'turtle', 'elephant', 'monkey',
-];
-export function coloringArt(id) {
-  if (!COLORING_ANIMAL_IDS.includes(id)) throw new Error(`Unknown animal coloring page: ${id}`);
-  return `assets/animal-art/coloring/${id}.svg`;
-}
