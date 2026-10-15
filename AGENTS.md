@@ -23,7 +23,10 @@ usable without reading.
   also draws the Sticker Book's toy stickers), and displayed version.
 - `css/main.css` — global screens, chrome, settings, safe areas, and shared controls.
 - `css/games.css` — mini-game layouts and interaction visuals.
-- `assets/` — original SVG art, licensed animal audio, and credits.
+- `assets/` — generated storybook animal art, editable coloring SVGs, licensed animal audio, and credits.
+  `assets/animal-art/` is the single animal-image library; `js/data/animal-art.js`
+  resolves shared and flashcard aliases. All animal displays use its transparent WebP cutouts.
+  `assets/animal-art/coloring/` holds 14 new standalone SVG coloring pages.
   `assets/playhouse/` holds sprites sliced from the uploaded Play House sheets
   by `scripts/slice-playhouse-art.py`; `assets/audio/playhouse/` holds the
   children's giggles, coos, babble, yawns and sneezes (and a real rattle) cut
@@ -57,7 +60,7 @@ The current registry contains 24 games:
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, animal-specific paths, and the playing child's own name (from Settings → Children); a glowing dot demonstrates each stroke first and again after a quiet spell; parents choose the path width; `js/games/trace.js` `start`.
 20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, the baby's cot with a music-box mobile (she goes to it at bedtime), a pull-cord lamp, a weather cloud (rain over the whole garden, snow, rainbow) that follows the view, a sun and moon that stay on screen for day-night anywhere outside, bushes with animals that come out to be fed produce, an eight-apple tree that regrows while away, colourful perching birds, trampoline, pram, a persistent ten-photo sibling wall, real children's giggles, coos, babble and yawns for both siblings, and a per-child vegetable patch (plant seed packets, water with rain or the watering can, plants grow in daylight and shoot up at sunrise, bees and butterflies visit the flowers, the brother comes from anywhere to help and carries the harvest to his sister, a harvest basket); `js/games/playhouse.js` `start`, world in `js/games/playhouse/`, patch in `patch.js`.
-21. My First Words — a full-photo flashcard deck with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three photos to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
+21. My First Words — a flashcard deck with storybook animal illustrations and everyday object photos with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three pictures to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
 22. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
 23. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
 24. Silly Faces — dress up a face (kid, monster, potato, robot) with eyes, noses, mouths, hats and extras; tap to pop a part in place or drag it anywhere, tap parts to make them react, dice for a surprise face; `js/games/faces.js` `start`.
@@ -134,3 +137,13 @@ Avoid transformed ancestors around fixed controls because they change containing
 | Safari, PWA, or safe areas | `docs/ARCHITECTURE.md` PWA and display modes | `css/main.css`; `sw.js` `install`, `activate`, `fetch` |
 
 At the end of any session that changes folder structure, adds/removes a mini-game, or changes a core system (voice, navigation, settings), update this file and docs/ARCHITECTURE.md accordingly before ending the session.
+
+## Animal artwork
+
+All 60 illustrated animal assets use the approved storybook style in `assets/animal-art/`.
+Use `animalArt(id)` from `js/data/animal-art.js`; never fall back to the retired
+animal SVGs or animal-photo libraries. Everyday object photos stay separate.
+Silhouettes use the same alpha as the visible cutouts. Coloring uses new vector
+paths with 4–8 large `data-region` shapes and fixed ink that passes taps through.
+Generation prompts are recorded in `docs/animal-art-prompts.json`; the preparation
+and vector tracing scripts are development tools, never runtime dependencies.

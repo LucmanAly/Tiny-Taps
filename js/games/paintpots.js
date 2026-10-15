@@ -1,3 +1,4 @@
+import { animalArt } from '../data/animal-art.js';
 // Paint Pots: color mixing. Drop two paints into the pot (drag them, or just
 // tap a jar), then stir — round and round with a finger, or tap the spoon —
 // and watch the swirl turn into a new color.
@@ -39,11 +40,17 @@ function mixOf(a, b) {
 }
 
 // Make it: a picture for each color to make, drawn with {C} as its paint.
+
+// Keep the new animal's shading and face while making its paint color exact.
+function paintedAnimal(id) {
+  return '<defs><filter id="{K}" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" result="gray"/><feFlood flood-color="{C}" result="paint"/><feBlend in="gray" in2="paint" mode="multiply" result="colored"/><feComposite in="colored" in2="SourceGraphic" operator="in"/></filter></defs><image href="' + animalArt(id) + '" width="100" height="100" filter="url(#{K})"/>';
+}
+
 const TARGETS = [
   { id: 'orange', level: 1, art: '<path d="M50 30 C66 30 70 44 64 60 L52 92 Q50 96 48 92 L36 60 C30 44 34 30 50 30 Z" fill="{C}" stroke="#3a3357" stroke-width="3" stroke-linejoin="round"/><path d="M44 42 H54 M42 54 H50 M46 66 H54" stroke="#3a3357" stroke-width="2.5" stroke-linecap="round" opacity=".5"/><path d="M50 30 C46 18 38 12 30 12 C34 20 40 26 48 30 M50 30 C52 16 58 8 66 6 C64 16 58 24 52 30" fill="#4db84d" stroke="#3a3357" stroke-width="3" stroke-linejoin="round"/>' },
-  { id: 'green', level: 1, art: '<ellipse cx="50" cy="62" rx="34" ry="26" fill="{C}" stroke="#3a3357" stroke-width="3"/><circle cx="34" cy="38" r="12" fill="{C}" stroke="#3a3357" stroke-width="3"/><circle cx="66" cy="38" r="12" fill="{C}" stroke="#3a3357" stroke-width="3"/><circle cx="34" cy="38" r="5" fill="#3a3357"/><circle cx="66" cy="38" r="5" fill="#3a3357"/><path d="M36 66 Q50 76 64 66" fill="none" stroke="#3a3357" stroke-width="3" stroke-linecap="round"/>' },
+  { id: 'green', level: 1, art: paintedAnimal('frog') },
   { id: 'purple', level: 1, art: '<path d="M50 20 V10 M50 14 Q60 6 70 12" fill="none" stroke="#4db84d" stroke-width="4" stroke-linecap="round"/>' + [[50, 28], [38, 40], [62, 40], [26, 52], [50, 52], [74, 52], [38, 64], [62, 64], [50, 76]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="{C}" stroke="#3a3357" stroke-width="3"/>`).join('') },
-  { id: 'pink', level: 2, art: '<circle cx="50" cy="54" r="32" fill="{C}" stroke="#3a3357" stroke-width="3"/><path d="M24 30 L22 14 L38 24 Z M76 30 L78 14 L62 24 Z" fill="{C}" stroke="#3a3357" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="62" rx="13" ry="10" fill="{C}" stroke="#3a3357" stroke-width="3"/><circle cx="45" cy="62" r="2.6" fill="#3a3357"/><circle cx="55" cy="62" r="2.6" fill="#3a3357"/><circle cx="38" cy="44" r="3.4" fill="#3a3357"/><circle cx="62" cy="44" r="3.4" fill="#3a3357"/>' },
+  { id: 'pink', level: 2, art: paintedAnimal('pig') },
   { id: 'light blue', level: 2, art: '<path d="M50 10 C62 32 78 46 78 64 A28 28 0 0 1 22 64 C22 46 38 32 50 10 Z" fill="{C}" stroke="#3a3357" stroke-width="3" stroke-linejoin="round"/><path d="M36 64 A14 14 0 0 0 46 80" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>' },
   { id: 'light yellow', level: 3, art: '<path d="M50 8 L61 36 L91 37 L67 55 L76 84 L50 67 L24 84 L33 55 L9 37 L39 36 Z" fill="{C}" stroke="#3a3357" stroke-width="3" stroke-linejoin="round"/><circle cx="42" cy="48" r="3" fill="#3a3357"/><circle cx="58" cy="48" r="3" fill="#3a3357"/><path d="M43 57 Q50 62 57 57" fill="none" stroke="#3a3357" stroke-width="2.5" stroke-linecap="round"/>' },
 ];
@@ -308,7 +315,7 @@ function start(ctx) {
     if (result.id === target.id) {
       if (recordOutcome) recordOutcome(true, `make:${target.id}`);
       if (pic) {
-        pic.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${target.art.replaceAll('{C}', targetColor())}</svg>`;
+        pic.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${target.art.replaceAll('{C}', targetColor()).replaceAll('{K}', 'pp-result')}</svg>`;
         pic.classList.add('pp-painted');
       }
       celebrate.big({ quick: true });
@@ -334,7 +341,7 @@ function start(ctx) {
       const box = document.createElement('div');
       box.className = 'pp-target-box';
       box.innerHTML = `
-        <div class="pp-target pop-in"><svg viewBox="0 0 100 100" aria-hidden="true">${target.art.replaceAll('{C}', '#ffffff')}</svg></div>
+        <div class="pp-target pop-in"><svg viewBox="0 0 100 100" aria-hidden="true">${target.art.replaceAll('{C}', '#ffffff').replaceAll('{K}', 'pp-request')}</svg></div>
         <div class="pp-swatch" style="background:${targetColor()}"></div>`;
       side.appendChild(box);
       // An idle child sees the color it needs pulse.

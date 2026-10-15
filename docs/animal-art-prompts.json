@@ -1,0 +1,452 @@
+{
+  "tool": "Built-in OpenAI image generation",
+  "style": "Approved chicken, fish and shark: expressive painted storybook animals with transparent backgrounds.",
+  "cutouts": [
+    {
+      "id": "dog",
+      "asset": "assets/animal-art/dog.webp",
+      "sourceImage": "exec-a67bff27-4dce-4fc1-b835-b82d3752d761.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A golden-and-cream puppy sitting happily in three-quarter view facing left, soft floppy ears, friendly muzzle, four anatomically sensible paws, gently curling tail, plush softly painted fur."
+    },
+    {
+      "id": "cat",
+      "asset": "assets/animal-art/cat.webp",
+      "sourceImage": "exec-84b82a3e-45ef-4db3-9792-b69a0ccbaa7e.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A playful ginger tabby kitten sitting in three-quarter view facing left, cream muzzle and chest, bright curious eyes, upright ears, a gracefully curled visible tail, tasteful few tabby markings."
+    },
+    {
+      "id": "cow",
+      "asset": "assets/animal-art/cow.webp",
+      "sourceImage": "exec-0826fcde-3488-43d8-ab1b-6566fe013287.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A friendly black-and-white dairy cow standing in three-quarter view facing left, round pink muzzle, small horns, ears, four sturdy short legs, delicate tufted tail, charming calm expression."
+    },
+    {
+      "id": "duck",
+      "asset": "assets/animal-art/duck.webp",
+      "sourceImage": "exec-a3b8c669-a934-49cc-a8c4-bde04534050e.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A delightful yellow duck standing in three-quarter view facing left, orange bill and two webbed feet, naturally shaped head flowing into rounded body, layered folded wing and short lifted tail."
+    },
+    {
+      "id": "sheep",
+      "asset": "assets/animal-art/sheep.webp",
+      "sourceImage": "exec-6aef46eb-fa4a-4fa4-95a9-41eb0d66abd3.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A fluffy ivory lamb standing in three-quarter view facing left, soft cream wool organized into lovely large curls, gray-beige face and hooves, two ears, four small sturdy legs, kind curious expression."
+    },
+    {
+      "id": "horse",
+      "asset": "assets/animal-art/horse.webp",
+      "sourceImage": "exec-4120f066-b92d-445d-8383-22e0ebeec7ab.png",
+      "prompt": "Create one isolated full-body painted storybook illustration. A chestnut pony standing in three-quarter view, complete body with four legs, hooves, flowing dark mane and tail, cream blaze and a friendly natural equine face. Smooth organic shapes, expressive eyes, fine matte gouache texture, softly sculpted shading and clean edges, matching the rendering of the attached STYLE REFERENCE ONLY. Do not draw the reference chicken. Transparent square background. No words, no clothes, no props, no scenery, no shadow outside the animal. Complete animal visible with wide empty margins. Natural species anatomy and appropriate fur or scale details."
+    },
+    {
+      "id": "pig",
+      "asset": "assets/animal-art/pig.webp",
+      "sourceImage": "exec-b7b4c4ed-c51c-445a-bec7-e61b92ab91bc.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A pink piglet standing in three-quarter view facing left, charming broad snout with two nostrils, floppy triangular ears, four tiny hooves, a clearly visible tightly curled tail, warm smile."
+    },
+    {
+      "id": "lion",
+      "asset": "assets/animal-art/lion.webp",
+      "sourceImage": "exec-70160442-35f1-411e-8557-1f74a07e5030.png",
+      "prompt": "Original high-quality painted animal illustration: A natural African lion standing on all four paws in three-quarter view, golden coat and beautifully layered caramel mane, cream muzzle, kind dark eyes, a curving tail with a brown tuft. Complete animal visible. Rounded welcoming picture-book character, correct feline anatomy. Soft matte gouache texture, rich warm natural colors, expressive subtle face, softly shaded organic shapes and tidy outlines. Isolated cutout on an actual transparent background in a square canvas, generous empty margins, no scenery or objects, no text, no clothes, no watermark."
+    },
+    {
+      "id": "elephant",
+      "asset": "assets/animal-art/elephant.webp",
+      "sourceImage": "exec-911b0dec-2e3b-4172-9657-532244fe8ede.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A lovable lavender-gray baby elephant standing in three-quarter view facing left, big fan-like ears, four short sturdy legs, charming curling trunk lifted at tip, small tail, subtle ivory nails, gentle expressive eyes."
+    },
+    {
+      "id": "frog",
+      "asset": "assets/animal-art/frog.webp",
+      "sourceImage": "exec-6a685f0f-170d-4167-aa3d-610174ef56f6.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A cheerful grass-green frog in an alert seated three-quarter pose facing left, large natural frog eyes, cream throat and belly, bent powerful back legs and four recognizably frog feet with round toe pads, broad smile."
+    },
+    {
+      "id": "owl",
+      "asset": "assets/animal-art/owl.webp",
+      "sourceImage": "exec-0acfd2fe-a78d-4437-be25-0f24ce45bb77.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A beautiful caramel and cream little owl perching without a branch, front/three-quarter view slightly facing left, scalloped folded wings, distinctive facial discs, tiny yellow hooked beak, two sturdy taloned feet, curious lively eyes."
+    },
+    {
+      "id": "bear",
+      "asset": "assets/animal-art/bear.webp",
+      "sourceImage": "exec-2ffdc048-f807-49f3-a806-833311066fc3.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A friendly cinnamon-brown bear cub sitting in three-quarter view facing left, cream muzzle and chest patch, soft round ears, large plush paws with simplified pads, tender curious smile, subtle fur tufts."
+    },
+    {
+      "id": "bee",
+      "asset": "assets/animal-art/bee.webp",
+      "sourceImage": "exec-bbedd94c-72be-4a0e-af7d-b63f4cb0a3f1.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: An adorable honeybee hovering in three-quarter view facing left, golden-yellow and charcoal striped abdomen, softly fuzzy chest, six simplified short legs, two curled antennae, four delicate pale blue illustrated wings, expressive cheerful face. No human limbs."
+    },
+    {
+      "id": "bunny",
+      "asset": "assets/animal-art/bunny.webp",
+      "sourceImage": "exec-bf993fd8-0596-4711-a8da-cc7837720488.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A beautiful soft ivory and warm-gray rabbit sitting in three-quarter view facing left, two long upright pink-lined ears, small pink nose, cream tummy, large bent hind feet and small front paws, round cotton tail, subtle whiskers."
+    },
+    {
+      "id": "butterfly",
+      "asset": "assets/animal-art/butterfly.webp",
+      "sourceImage": "exec-665f9fba-95a8-4796-897e-839fad628ae0.png",
+      "prompt": "Create one isolated full-body painted storybook illustration. A beautiful butterfly with exactly four colorful open wings, two antennae, one slender segmented dark insect body, and a small rounded INSECT HEAD with two tiny dark eyes. Coral, apricot, ivory, turquoise and navy symmetrical wing patterns. The head has no bird beak, no feathers, no human face or mouth. Correct simplified insect anatomy. Smooth organic shapes, expressive eyes, fine matte gouache texture, softly sculpted shading and clean edges, matching the rendering of the attached STYLE REFERENCE ONLY. Do not draw the reference chicken. Transparent square background. No words, no clothes, no props, no scenery, no shadow outside the animal. Complete animal visible with wide empty margins. Natural species anatomy and appropriate fur or scale details."
+    },
+    {
+      "id": "dinosaur",
+      "asset": "assets/animal-art/dinosaur.webp",
+      "sourceImage": "exec-4cdb0bd5-4257-4b28-8ef7-fb6b76c4e23c.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A lovable young green Tyrannosaurus rex in three-quarter standing view facing left, broad short snout, two small forearms with two fingers each, powerful two hind legs with broad toes and a long tapering curving tail, warm ivory underside. Happy subtle smile, few tiny teeth, recognizable T. rex anatomy, no back plates or horns."
+    },
+    {
+      "id": "giraffe",
+      "asset": "assets/animal-art/giraffe.webp",
+      "sourceImage": "exec-3e3e3f09-afcb-4bae-ad50-465da5c5de7b.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A charming young giraffe standing in three-quarter view facing left, graceful long neck, golden tan coat with large warm brown patches, two small ossicones, long ears, four legs with hooves, lovely curled tufted tail, gentle eyes. All neck and feet in frame."
+    },
+    {
+      "id": "monkey",
+      "asset": "assets/animal-art/monkey.webp",
+      "sourceImage": "exec-1e7c9927-60d5-4a77-a9de-a97fd10d6551.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A cheerful warm chestnut little monkey sitting in three-quarter view facing left, cream facial mask, expressive round ears, hands and feet with simple plausible digits, long curled visible tail. Curious playful expression. No banana or other prop."
+    },
+    {
+      "id": "turtle",
+      "asset": "assets/animal-art/turtle.webp",
+      "sourceImage": "exec-8f3e5a3c-b61b-45d9-9114-d40615e35076.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A charming green sea turtle swimming in three-quarter view facing left, beautifully organized teal and olive shell scutes, golden cream plastron, four broad gently sweeping flippers and little pointed tail, expressive gentle face. Recognizable sea turtle."
+    },
+    {
+      "id": "zebra",
+      "asset": "assets/animal-art/zebra.webp",
+      "sourceImage": "exec-6e9f9c63-ef48-4187-8273-f3783b3b7f54.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A delightful young zebra standing in three-quarter view facing left, clean warm ivory coat with beautifully designed charcoal zebra stripes, small upright dark mane, four coherent legs and hooves, tufted tail, round kind muzzle."
+    },
+    {
+      "id": "parrot",
+      "asset": "assets/animal-art/parrot.webp",
+      "sourceImage": "exec-65c2b730-6cf3-4cb6-84e0-dfe2d69cb9f6.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A beautiful Indian ringneck parrot standing in three-quarter view facing left without a perch, fresh leaf-green plumage, teal-green folded wing with softly layered feathers, long elegant tapering tail, coral curved beak, subtle dark neck ring, two gray feet and clever friendly eyes."
+    },
+    {
+      "id": "budgie",
+      "asset": "assets/animal-art/budgie.webp",
+      "sourceImage": "exec-fa882cc7-91e1-45ee-a9fe-c5f9e748adf6.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A lovely pet budgerigar standing in side/three-quarter view FACING RIGHT, lemon-yellow face and teal-green body, dark scalloped wing markings, tiny blue cheek marks, short curved beak, long tapered tail and two dainty gray feet. Friendly curious eye. No perch or cage."
+    },
+    {
+      "id": "budgie-flight",
+      "asset": "assets/animal-art/budgie-flight.webp",
+      "sourceImage": "exec-0cfceb3d-f7b0-4e18-ab41-ef5bb72ed552.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: The same lemon-yellow-faced teal-green pet budgerigar FACING RIGHT in a clear full-body flying pose, wings open upward and outward, dark scalloped feather markings, blue cheek marks, long tapered tail. No cage or perch. Keep complete wings inside margins."
+    },
+    {
+      "id": "sparrow",
+      "asset": "assets/animal-art/sparrow.webp",
+      "sourceImage": "exec-c5fc028a-dd77-4dec-b0eb-d9df557f6547.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A charming little garden songbird FACING RIGHT standing without a perch, soft cinnamon and warm blue-teal feathers, cream belly, beautifully folded wing, short pointed beak and tapering tail, two tiny orange feet. Bright kind eye, naturally bird-shaped."
+    },
+    {
+      "id": "sparrow-flight",
+      "asset": "assets/animal-art/sparrow-flight.webp",
+      "sourceImage": "exec-f98aaf5e-c846-4b01-a1da-5f2b747621bf.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: The same cinnamon and blue-teal garden songbird FACING RIGHT in full-body flight, wings extended upward and outward with softly separated flight feathers, cream belly, short beak, tapering tail, tiny tucked feet. Entire wings visible."
+    },
+    {
+      "id": "baby-shark",
+      "asset": "assets/animal-art/baby-shark.webp",
+      "sourceImage": "exec-d23016f7-ecbc-4a18-bca7-e8c7f96a5d1b.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A very young adorable lemon-yellow shark pup swimming left, warm ivory belly, expressive face, rounder baby proportions but proper shark dorsal fin, paired pectoral fins, three gills, tapered peduncle and asymmetric tail. Gentle smile with two tiny teeth. Match the approved blue shark's character design and painting, but no clothes or accessories."
+    },
+    {
+      "id": "daddy-shark",
+      "asset": "assets/animal-art/daddy-shark.webp",
+      "sourceImage": "exec-120c65c2-ad6c-4191-adf1-c642afd9595c.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A cheerful adult blue shark swimming left, warm ivory belly, stronger broader but streamlined adult proportions, kindly protective expression, proper dorsal and pectoral fins, three gills and asymmetric tail. Gentle open smile with a few small teeth. Match approved shark's painting, no clothes or accessories."
+    },
+    {
+      "id": "mommy-shark",
+      "asset": "assets/animal-art/mommy-shark.webp",
+      "sourceImage": "exec-8bf4bde8-3ac3-42d1-9417-31a23b61dba0.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A kind adult coral-pink shark swimming left, warm ivory belly, graceful adult proportions, gentle expression, proper dorsal and pectoral fins, three gills and asymmetric tail. Small smile with a few tiny teeth. Match approved shark's style. No human hair, makeup or accessories."
+    },
+    {
+      "id": "grandpa-shark",
+      "asset": "assets/animal-art/grandpa-shark.webp",
+      "sourceImage": "exec-11f9bcf5-56a1-43c2-9699-b8a7fcfecd0f.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A kind older slate-teal shark swimming left, warm ivory belly, broad adult proportions, gentle wise eyes with subtle crow's-foot lines, proper shark dorsal and pectoral fins, three gills, asymmetric tail. Warm smile with tiny teeth. Match approved shark's style. No beard, glasses or clothes."
+    },
+    {
+      "id": "grandma-shark",
+      "asset": "assets/animal-art/grandma-shark.webp",
+      "sourceImage": "exec-5d2e6007-fd99-4828-9f15-e0b53beb6e16.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A kind older lavender-purple shark swimming left, warm ivory belly, graceful mature proportions, gentle wise eyes with subtly aged expression, proper shark dorsal and pectoral fins, three gills, asymmetric tail. Warm smile with tiny teeth. Match approved shark's style. No hair, glasses or clothes."
+    },
+    {
+      "id": "toy-teddy",
+      "asset": "assets/animal-art/toy-teddy.webp",
+      "sourceImage": "exec-96a87639-edb4-45a6-b953-5abf3ba8083f.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A delightful cinnamon-brown stuffed teddy bear toy sitting with two plush round ears, embroidered friendly smile, dark button-like eyes, cream muzzle and paw pads, softly rounded arms and legs, gentle plush fabric texture. No bow or props. Full-body front/three-quarter view."
+    },
+    {
+      "id": "toy-duck",
+      "asset": "assets/animal-art/toy-duck.webp",
+      "sourceImage": "exec-750e5918-afe0-4771-b78a-8d22d6188ef4.png",
+      "prompt": "Use case: illustration-story.\nCreate one beautifully art-directed animal character for Tiny Taps, ages 3-5, matching the APPROVED chicken reference's premium children's picture-book illustration style: expressive dark eyes with small catchlights, confidently sculpted organic shapes, warm restrained edge lines, soft matte painted shading, fine paper-like texture within the animal, lively charming personality. Mostly 2D painted illustration, not plastic 3D. Clear species identity, accurate simplified anatomy, forgiving rounded shapes, full-body clean silhouette for puzzle and shadow games. Same visual polish and rendering as the reference, with the subject's natural colors.\nOne animal only, no scenery, no lettering, no watermark, no pedestal, no props, no ground shadow, no decorations. Actual transparent background. Entire subject visible with generous transparent margins on all sides in a square frame, filling about 80% of frame. No cut-off tails, feet, ears or wings. Eyes expressive, not oversized anime eyes.\nSubject: A charming golden-yellow toy duck with an orange beak, curved sculptural folded wings, round friendly eye and stable flat base, warm matte rubber surface illustrated in the same painted storybook style. Full-body side/three-quarter view facing left, no bath or water."
+    },
+    {
+      "id": "whale",
+      "asset": "assets/animal-art/whale.webp",
+      "sourceImage": "exec-86b7a25d-8cdd-40ed-a0b5-00816be6f234.png",
+      "prompt": "undefined\nSubject: A lovable young blue humpback whale swimming left, broad rounded head, cream pleated throat, tiny kind eye, long gently sweeping pectoral flippers, small dorsal hump and proper horizontal tail flukes. Full graceful body, no water or spout."
+    },
+    {
+      "id": "jellyfish",
+      "asset": "assets/animal-art/jellyfish.webp",
+      "sourceImage": "exec-cb37365b-426a-4b28-aa4a-f6bfca52d08d.png",
+      "prompt": "undefined\nSubject: A beautiful friendly apricot jellyfish floating upright, soft scalloped translucent-looking bell rendered opaque for a usable cutout, flowing cream and coral oral arms and a few long graceful tentacles, simple kind eyes on the bell. Anatomically recognizable jellyfish, no environment."
+    },
+    {
+      "id": "eagle",
+      "asset": "assets/animal-art/eagle.webp",
+      "sourceImage": "exec-0c60fedb-53f6-47f7-a58a-70321ada0ad0.png",
+      "prompt": "undefined\nSubject: A magnificent friendly bald eagle standing in three-quarter view facing left without a perch, white feathered head, deep chocolate body and folded layered wings, curved golden beak and two sturdy golden taloned feet, curious confident eyes. Complete tail and feet."
+    },
+    {
+      "id": "penguin",
+      "asset": "assets/animal-art/penguin.webp",
+      "sourceImage": "exec-9bea8cf1-044b-4e0d-9b11-052f675fbc22.png",
+      "prompt": "undefined\nSubject: An adorable little penguin standing in three-quarter view facing left, navy-charcoal back, ivory belly and face accents, yellow-orange beak and two webbed feet, flippers lifted slightly in a welcoming natural pose."
+    },
+    {
+      "id": "octopus",
+      "asset": "assets/animal-art/octopus.webp",
+      "sourceImage": "exec-2e7ac35f-d09f-428e-8a36-10dbf351a1b0.png",
+      "prompt": "undefined\nSubject: A beautiful coral-orange octopus with round mantle, expressive gentle eyes and exactly eight gracefully curved arms arranged so all eight are readable, cream suction cups simplified in a few rows. No human features or additional limbs, no water."
+    },
+    {
+      "id": "crocodile",
+      "asset": "assets/animal-art/crocodile.webp",
+      "sourceImage": "exec-9877d19e-4dab-48a7-9ff5-0a03416b3b93.png",
+      "prompt": "undefined\nSubject: A lovable moss-green young crocodile in three-quarter side view facing left, broad crocodile snout, kind eyes, four short splayed legs, long gently curved tail, subtle back scutes, ivory underside, friendly tiny smile with small teeth. Not a dinosaur."
+    },
+    {
+      "id": "panda",
+      "asset": "assets/animal-art/panda.webp",
+      "sourceImage": "exec-d405933b-1149-4694-bd0c-505adf1fce69.png",
+      "prompt": "undefined\nSubject: A gorgeous young giant panda sitting in three-quarter view facing left, warm ivory body, soft charcoal round ears, dark eye patches and limbs, broad plush paws and tiny tail, beautifully painted fur and curious gentle expression."
+    },
+    {
+      "id": "fox",
+      "asset": "assets/animal-art/fox.webp",
+      "sourceImage": "exec-36b53846-578e-4f1c-8c5d-3f2ff3465380.png",
+      "prompt": "undefined\nSubject: A lovely red fox sitting in three-quarter view facing left, rusty orange coat, white chin and chest, black ear tips and stockings, a large curling bushy tail with white tip, triangular snout and bright kind eyes."
+    },
+    {
+      "id": "koala",
+      "asset": "assets/animal-art/koala.webp",
+      "sourceImage": "exec-ad9d809b-bfe3-4c6b-b01d-51def76d37b3.png",
+      "prompt": "undefined\nSubject: A lovable soft silver-gray koala sitting in three-quarter view facing left, broad fluffy rounded ears, large velvety charcoal oval nose, cream belly, rounded paws with simplified dark claws, lovely alert eyes. No branch."
+    },
+    {
+      "id": "deer",
+      "asset": "assets/animal-art/deer.webp",
+      "sourceImage": "exec-ee5cfcae-eda0-494e-b415-c3fff6fb2aec.png",
+      "prompt": "Original high-quality painted animal illustration: A natural spotted deer standing on all four hooves in three-quarter view, warm brown fur, large pointed ears, gentle dark eyes, cream underside, short tail and delicately placed white spots. Complete animal visible. Rounded welcoming picture-book character, correct deer anatomy. Soft matte gouache texture, rich warm natural colors, expressive subtle face, softly shaded organic shapes and tidy outlines. Isolated cutout on an actual transparent background in a square canvas, generous empty margins, no scenery or objects, no text, no clothes, no watermark."
+    },
+    {
+      "id": "squirrel",
+      "asset": "assets/animal-art/squirrel.webp",
+      "sourceImage": "exec-74cf7fb8-a3db-4e96-a5c3-4153a8ac8457.png",
+      "prompt": "undefined\nSubject: A lively warm auburn squirrel sitting in three-quarter view facing left, cream chest, tiny forepaws held naturally near its body, strong rear feet, round ears and a magnificent fluffy tail curling up behind its back. No nut or prop."
+    },
+    {
+      "id": "brachiosaurus",
+      "asset": "assets/animal-art/brachiosaurus.webp",
+      "sourceImage": "exec-3e695fc5-835a-45a9-93a1-343ee74a928c.png",
+      "prompt": "undefined\nSubject: A friendly sky-blue young Brachiosaurus standing in three-quarter side view facing left, very long upright curved neck, small gentle head, high shoulders with front legs longer than hind legs, four columnar feet and long tapering tail. Cream underside, all neck and feet inside frame."
+    },
+    {
+      "id": "pterodactyl",
+      "asset": "assets/animal-art/pterodactyl.webp",
+      "sourceImage": "exec-61d4d476-28ee-4d99-b7f5-1eee0f101441.png",
+      "prompt": "undefined\nSubject: A friendly warm orange pterosaur flying in three-quarter view facing left, long pointed beak and small backwards head crest, two broad membrane wings supported by elongated wing fingers, two tiny hind feet and short tail. Recognizable pterosaur, no feathers, complete wing span inside frame."
+    },
+    {
+      "id": "triceratops",
+      "asset": "assets/animal-art/triceratops.webp",
+      "sourceImage": "exec-a802a3d1-0cfc-4a8e-87bb-c5c714975e5c.png",
+      "prompt": "undefined\nSubject: A friendly lavender Triceratops standing in three-quarter view facing left, a beautiful broad scalloped neck frill, exactly three small ivory horns (two above eyes, one on nose), parrot-like snout, four sturdy legs and tapering tail, pale underside."
+    },
+    {
+      "id": "stegosaurus",
+      "asset": "assets/animal-art/stegosaurus.webp",
+      "sourceImage": "exec-c70e6c69-3039-4787-a880-89a46b7cb637.png",
+      "prompt": "undefined\nSubject: A friendly turquoise-green Stegosaurus standing in three-quarter side view facing left, small low head, rounded arched back with two staggered rows of distinctive broad orange plates, four short sturdy legs, long tapering tail with four small blunt spikes. Cream underside."
+    },
+    {
+      "id": "velociraptor",
+      "asset": "assets/animal-art/velociraptor.webp",
+      "sourceImage": "exec-1f4fc644-ffab-44a6-a208-9a335231a092.png",
+      "prompt": "undefined\nSubject: A friendly amber-and-cream young Velociraptor standing in three-quarter side view facing left, long low snout, lightly feathered forearms and tail, two graceful hind legs with small curved raised second-toe claws, two forelimbs with three fingers, long balancing tail. Not a T. rex, no aggression."
+    },
+    {
+      "id": "snake",
+      "asset": "assets/animal-art/snake.webp",
+      "sourceImage": "exec-3730af0d-ce9b-464c-91e8-89b8bf19b75d.png",
+      "prompt": "undefined\nSubject: A charming jade-green snake coiled naturally with its head raised facing left, creamy underside, expressive friendly eye, tiny forked tongue and subtly organized scale texture, one coherent body ending in one visible tail. No arms or legs."
+    },
+    {
+      "id": "ant",
+      "asset": "assets/animal-art/ant.webp",
+      "sourceImage": "exec-e7848cc4-660a-47df-9fba-1ab284bcc803.png",
+      "prompt": "undefined\nSubject: An adorable chestnut-red ant in a clear three-quarter side view facing left, three distinct body segments, exactly six simple jointed legs attached to thorax, two antennae, gently expressive face. No human limbs or props."
+    },
+    {
+      "id": "grasshopper",
+      "asset": "assets/animal-art/grasshopper.webp",
+      "sourceImage": "exec-42b3fd1e-66d0-48fb-8254-2349f1a94fa2.png",
+      "prompt": "undefined\nSubject: A friendly leaf-green grasshopper in three-quarter side view facing left, expressive eyes, two long antennae, folded wings along its abdomen, exactly six legs including two prominent long bent jumping hind legs, natural insect anatomy."
+    },
+    {
+      "id": "tiger",
+      "asset": "assets/animal-art/tiger.webp",
+      "sourceImage": "exec-2f53cdd6-efc0-4b84-954e-b9a50bea48d7.png",
+      "prompt": "undefined\nSubject: A lovable orange tiger cub sitting in three-quarter view facing left, carefully designed dark tiger stripes, creamy muzzle, cheeks, chest and paws, small round ears and visible long curled tail. Beautiful soft fur, friendly confident eyes."
+    },
+    {
+      "id": "hippo",
+      "asset": "assets/animal-art/hippo.webp",
+      "sourceImage": "exec-4c8d06b5-1cdf-4417-bb50-5443c36dbbf5.png",
+      "prompt": "undefined\nSubject: A lovable lavender-gray young hippopotamus standing in three-quarter view facing left, broad rounded snout, nostrils, tiny ears and high-set gentle eyes, four chunky short legs, tiny tail, softly sculpted matte skin."
+    },
+    {
+      "id": "camel",
+      "asset": "assets/animal-art/camel.webp",
+      "sourceImage": "exec-e83cf53c-4a63-45a2-88ee-8023af496b30.png",
+      "prompt": "undefined\nSubject: A charming golden-tan dromedary camel standing in three-quarter side view facing left, exactly one soft rounded hump, long elegantly curved neck, large gentle muzzle, four long coherent legs with broad two-toed feet, short tufted tail. Complete neck and feet in frame."
+    },
+    {
+      "id": "kangaroo",
+      "asset": "assets/animal-art/kangaroo.webp",
+      "sourceImage": "exec-da700252-8c00-4e8d-882b-4b2b0a81a34c.png",
+      "prompt": "undefined\nSubject: A friendly tawny kangaroo in three-quarter view facing left, two upright ears, long gentle muzzle, small bent forearms, powerful two hind legs with long feet, long supportive tapering tail and subtle belly pouch. Anatomically sensible upright pose."
+    },
+    {
+      "id": "rhino",
+      "asset": "assets/animal-art/rhino.webp",
+      "sourceImage": "exec-07417460-1fe4-4cdb-8e55-7008d0c0b3cf.png",
+      "prompt": "undefined\nSubject: A lovable gray young rhinoceros standing in three-quarter view facing left, two small ivory horns, broad rounded ears, kind eyes, four sturdy short legs and tiny tail, beautifully sculpted matte skin with simplified natural folds."
+    },
+    {
+      "id": "duckling",
+      "asset": "assets/animal-art/duckling.webp",
+      "sourceImage": "exec-5296ba31-efb0-4678-b603-961fbaa2e346.png",
+      "prompt": "undefined\nSubject: A delightful fluffy golden-yellow baby duckling standing in three-quarter view facing left, soft down, small orange bill, two webbed orange feet, tiny folded wings and tail, bright curious expression. Clearly younger and softer than the adult duck."
+    },
+    {
+      "id": "rooster",
+      "asset": "assets/animal-art/rooster.webp",
+      "sourceImage": "exec-d15d8ac2-4eae-42e5-9b08-72a2d4325d10.png",
+      "prompt": "Approved chat preview: rooster, premium painted storybook character, natural anatomy, expressive friendly face, complete animal on transparent square background."
+    },
+    {
+      "id": "fish",
+      "asset": "assets/animal-art/fish.webp",
+      "sourceImage": "exec-afa9c651-dc43-421e-9ca5-0cb12848d5ca.png",
+      "prompt": "Approved chat preview: fish, premium painted storybook character, natural anatomy, expressive friendly face, complete animal on transparent square background."
+    },
+    {
+      "id": "shark",
+      "asset": "assets/animal-art/shark.webp",
+      "sourceImage": "exec-3bba0a1b-1af7-437f-9e5f-96f92399e1dc.png",
+      "prompt": "Approved chat preview: shark, premium painted storybook character, natural anatomy, expressive friendly face, complete animal on transparent square background."
+    }
+  ],
+  "coloring": [
+    {
+      "id": "parrot",
+      "asset": "assets/animal-art/coloring/parrot.svg",
+      "sourceImage": "exec-38bb9b4e-ee1b-421c-a387-7ea1517fd57b.png",
+      "prompt": "NEW black-and-white coloring-book illustration of An Indian ringneck PARROT BIRD with a curved beak, long feathered tail, two gripping feet and one broad folded wing. Perched stance without a branch. Clearly a parrot.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "daddy-shark",
+      "asset": "assets/animal-art/coloring/daddy-shark.svg",
+      "sourceImage": "exec-c94db1c1-05b7-4124-8e0d-e76cc983dc04.png",
+      "prompt": "Use case: illustration-story. Asset: NEW toddler coloring-book page of daddy-shark.\nStyle reference image: use its appealing storybook character design and expressive eyes, but convert the visual language to clean BLACK INK AND WHITE coloring-book line art. Draw the requested animal only, not the reference chicken.\nSubject: Friendly blue adult shark swimming left, streamlined body, white belly, distinct fins, asymmetric tail and happy smile.\nFull body centered on a pure white square background, 12% empty margins on all sides. Confident smooth thick rounded black outlines. No colors, no gray, no shading, no texture, no gradients, no scenery, no props, no letters. A beautiful cheerful new character with correct anatomy, not basic geometric clip art. White interiors. Exactly 5-8 LARGE clearly enclosed coloring zones corresponding to major anatomical parts: head/body, tummy or muzzle, wing/ears, tail, feet/flippers. Every major zone must be completely ENCLOSED by black lines so a flood fill cannot leak into another. Broad clear shapes for toddlers. Combine fur, scales, feathers and shell panels into large simple regions; do not add tiny patterns or detailed crosshatching. Big expressive eyes with solid black pupils and white highlights, simple happy smile, minimal fixed facial details. No black-filled large body areas: keep the large regions white for coloring. The creature should occupy 75% of canvas and look delightful."
+    },
+    {
+      "id": "frog",
+      "asset": "assets/animal-art/coloring/frog.svg",
+      "sourceImage": "exec-32cdd4e1-f362-44d4-bffa-af5aa7970ec0.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A FROG sitting with two powerful bent back legs, two smaller front legs and large rounded frog toe pads, bulging eyes, wide smiling mouth and broad belly. Clearly an amphibian.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "fish",
+      "asset": "assets/animal-art/coloring/fish.svg",
+      "sourceImage": "exec-6409e9f3-ee69-47fc-a42e-3a1bb37e52e0.png",
+      "prompt": "Use case: illustration-story. Asset: NEW toddler coloring-book page of fish.\nStyle reference image: use its appealing storybook character design and expressive eyes, but convert the visual language to clean BLACK INK AND WHITE coloring-book line art. Draw the requested animal only, not the reference chicken.\nSubject: Friendly goldfish facing left, expressive face and lovely broad fan fins.\nFull body centered on a pure white square background, 12% empty margins on all sides. Confident smooth thick rounded black outlines. No colors, no gray, no shading, no texture, no gradients, no scenery, no props, no letters. A beautiful cheerful new character with correct anatomy, not basic geometric clip art. White interiors. Exactly 5-8 LARGE clearly enclosed coloring zones corresponding to major anatomical parts: head/body, tummy or muzzle, wing/ears, tail, feet/flippers. Every major zone must be completely ENCLOSED by black lines so a flood fill cannot leak into another. Broad clear shapes for toddlers. Combine fur, scales, feathers and shell panels into large simple regions; do not add tiny patterns or detailed crosshatching. Big expressive eyes with solid black pupils and white highlights, simple happy smile, minimal fixed facial details. No black-filled large body areas: keep the large regions white for coloring. The creature should occupy 75% of canvas and look delightful."
+    },
+    {
+      "id": "duck",
+      "asset": "assets/animal-art/coloring/duck.svg",
+      "sourceImage": "exec-e73ff284-6fae-4fd7-836e-590f434a1f6e.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A DUCK standing with a broad flat duck bill, two webbed feet, one large folded feathered wing and short upturned tail.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "cat",
+      "asset": "assets/animal-art/coloring/cat.svg",
+      "sourceImage": "exec-3ac2dfe0-6540-44b0-a1a8-56f3dcbcac99.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A CAT kitten sitting with two pointed ears, round feline muzzle, tiny triangular nose, whiskers, four paws and long curling tail.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "dog",
+      "asset": "assets/animal-art/coloring/dog.svg",
+      "sourceImage": "exec-ddf3f057-d996-461c-b56e-05a48e30c04d.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A DOG puppy sitting with two floppy ears, round canine nose and muzzle, four paws and fluffy curling tail.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "bunny",
+      "asset": "assets/animal-art/coloring/bunny.svg",
+      "sourceImage": "exec-77044084-7faf-483a-9cbc-598945c4cc99.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A RABBIT sitting with two long upright ears, two small front paws, two big back feet, tiny triangular nose and round fluffy tail.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "bear",
+      "asset": "assets/animal-art/coloring/bear.svg",
+      "sourceImage": "exec-6661f280-cf64-45a4-a8bf-d31548b2b0af.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A BEAR sitting with two round ears, rounded muzzle, four big soft paws and large oval belly patch.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "butterfly",
+      "asset": "assets/animal-art/coloring/butterfly.svg",
+      "sourceImage": "exec-fc995231-56e1-402d-be98-bdba60ea2a67.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A BUTTERFLY seen frontally with exactly FOUR broad open wings, slim insect body, two long curled antennae, and small rounded insect head with tiny eyes. No bird beak or humanoid face.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "dinosaur",
+      "asset": "assets/animal-art/coloring/dinosaur.svg",
+      "sourceImage": "exec-eb0b9e8a-ca4f-4fc5-a680-d595dbb361cd.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A TYRANNOSAURUS DINOSAUR standing on two strong hind legs, with two small forearms, long tapering balancing tail, broad snout and friendly eyes. No wings or fins.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "turtle",
+      "asset": "assets/animal-art/coloring/turtle.svg",
+      "sourceImage": "exec-e2928c98-20c6-436c-b84d-88d638641725.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A SEA TURTLE swimming with four broad rounded flippers, a clearly segmented oval shell, short turtle head and tiny tail. No shark dorsal fin.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "elephant",
+      "asset": "assets/animal-art/coloring/elephant.svg",
+      "sourceImage": "exec-7d2bfb25-22d7-4e72-b1d5-d0fc26b45cef.png",
+      "prompt": "NEW black-and-white coloring-book illustration of An ELEPHANT standing on FOUR sturdy legs, with a long curling TRUNK, two large round ears, short tail and friendly eyes.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    },
+    {
+      "id": "monkey",
+      "asset": "assets/animal-art/coloring/monkey.svg",
+      "sourceImage": "exec-b12a3333-f3cd-4e8f-a98f-aad3c11678d7.png",
+      "prompt": "NEW black-and-white coloring-book illustration of A MONKEY sitting with two round ears, distinct muzzle and facial mask, two arms, two legs with hands and feet, and a long curled tail.\nDraw ONLY this species. One full-body character centered on plain white square background, entire animal inside 12% empty margins. Charming modern picture-book drawing, natural recognizable anatomy, lively expressive eyes, smoothly curved thick black outlines. White interiors. Five to eight large completely CLOSED regions for head, body, ears or wing, tail and legs or fins. No color, no gray, no shading, no textures, no scenery, no letters, no props, no other animals. No small decorative patterns. Solid black pupils and a few fixed facial lines. All major body parts must remain white inside for coloring."
+    }
+  ]
+}

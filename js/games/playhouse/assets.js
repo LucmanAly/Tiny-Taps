@@ -72,9 +72,9 @@ export const BABY_POSES = {
 
 // Painted toys from the objects sheet. `h` is drawn height in world units.
 export const TOY_ART = {
-  teddy: { src: P + 'toy-teddy.png', h: 118 },
+  teddy: { src: 'assets/animal-art/toy-teddy.webp', h: 118 },
   ball: { src: P + 'toy-ball.png', h: 96 },
-  duck: { src: P + 'toy-duck.png', h: 100 },
+  duck: { src: 'assets/animal-art/toy-duck.webp', h: 100 },
   rattle: { src: P + 'toy-rattle.png', h: 108 },
   blanket: { src: P + 'toy-blanket.png', h: 78 },
 };
@@ -183,4 +183,30 @@ export function drawFitted(g, img, x, y, h, { flip = false, alpha = 1 } = {}) {
   g.restore();
   const w = (bb.x1 - bb.x0) * drawW;
   return { x: x - w / 2, y: y - h, w, h };
+}
+
+// Crop transparent framing while keeping the feet on their existing perch.
+const BIRD_TINTS = new WeakMap();
+export function drawPaintedBird(g, img, height, bottom, tint = null) {
+  if (!img?.naturalWidth) return;
+  const b = boundsOf(img);
+  let source = img;
+  if (tint) {
+    let variants = BIRD_TINTS.get(img);
+    if (!variants) { variants = new Map(); BIRD_TINTS.set(img, variants); }
+    if (!variants.has(tint)) {
+      const c = document.createElement('canvas'); c.width = 128; c.height = Math.round(128 * img.naturalHeight / img.naturalWidth);
+      const ink = c.getContext('2d'); ink.drawImage(img, 0, 0, c.width, c.height);
+      ink.globalCompositeOperation = 'source-atop'; ink.globalAlpha = 0.42;
+      ink.fillStyle = tint; ink.fillRect(0, 0, c.width, c.height);
+      variants.set(tint, c);
+    }
+    source = variants.get(tint);
+  }
+  const sourceWidth = source === img ? img.naturalWidth : source.width;
+  const sourceHeight = source === img ? img.naturalHeight : source.height;
+  const sx = b.x0 * sourceWidth, sy = b.y0 * sourceHeight;
+  const sw = (b.x1 - b.x0) * sourceWidth, sh = (b.y1 - b.y0) * sourceHeight;
+  const width = height * sw / sh;
+  g.drawImage(source, sx, sy, sw, sh, -width / 2, bottom - height, width, height);
 }

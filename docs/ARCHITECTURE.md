@@ -4,6 +4,30 @@ Tiny Taps is a static, offline-first toddler learning PWA. It runs directly as
 ES modules with no framework, bundler, account, server API, or analytics service.
 State that persists is stored locally with `localStorage` or IndexedDB.
 
+## Animal artwork
+
+The 60 storybook assets in `assets/animal-art/` replace the original shared SVGs,
+animal flashcard images, Shark Family illustrations, Play House bird drawings
+and animal-shaped toys. `js/data/animal-art.js` owns canonical IDs and aliases
+(such as puppy → dog and goldfish → fish). Shared games and child avatars use
+transparent WebP cutouts; Shadow Match applies its black filter to the same
+alpha. My First Words keeps its existing card IDs, bundled recordings, filters
+and practice history, with animal cards resolved to this library and everyday
+object photographs retained. Paint Pots colors the new frog and pig with an SVG
+filter that retains their shading. Play House uses matching perched/flight bird
+art, preserves its movement and feeding logic, and tints garden birds at draw time.
+
+Fourteen new animal coloring designs are generated as line art and traced into
+standalone closed SVG paths: 4–8 large white fill regions plus fixed ink that
+passes taps through. The old inline animal sketches and external parrot/shark
+geometry are retired. Saved child pictures remain their own snapshots.
+`docs/animal-art-prompts.json` records the prompts and generation provenance;
+`scripts/prepare-animal-art.mjs` frames and compresses cutouts, and
+`scripts/trace-animal-coloring.mjs` makes the editable coloring SVGs. These tools
+require Sharp only during asset preparation. The application still has no build
+step or runtime dependency. Every new asset is precached, and the release gate
+rejects runtime references to the retired animal libraries.
+
 ## Application shell and module boundaries
 
 `index.html` provides `#app`, `#screen`, and the celebration Canvas, loads the
@@ -237,10 +261,8 @@ opened from Pictures, and closes immediately on every sketch tap (including
 the selected sketch), before loading any external SVG. Viewport changes never
 reopen the picker or shrink the drawing area. The compact palette has six colors
 per row (two rows), or one row on wide landscape screens. Selecting a page restores its unfinished colors for the current
-session; stale asynchronous loads cannot replace the latest selection. The
-user-supplied Indian ringneck parrot preserves its original vector geometry,
-with six closed logical regions (head, body, beak, wing, tail, feet), an
-unpaintable background, and fixed ink/eye details that pass taps through.
+session; stale asynchronous loads cannot replace the latest selection. The animal pages use the new storybook designs, each with 4–8 large closed
+regions, an unpaintable background, and fixed ink/eye details that pass taps through.
 Palette taps fill regions. Each page's fills are an ordered list of
 `[region, color]` pairs in `tinytaps-coloring-drafts`: the picture is rebuilt
 by resetting every region to its original fill and replaying the list, Undo
@@ -546,8 +568,8 @@ House never sets a reprompt.
 ### My First Words
 
 `js/games/animals.js` partitions all 73 cards into three exclusive decks:
-Animals includes the regular animal-photo library plus the additional animal
-word photos, Shark Family includes only the five colored family PNGs, and
+Animals includes the shared storybook animal library plus the additional illustrated animal
+word cards, Shark Family includes only the five new colored family illustrations, and
 Objects contains the remaining everyday items. The generic shark belongs only
 to Animals.
 
@@ -557,7 +579,7 @@ selection is stored locally, immediately reshuffles that deck, and is restored
 on the next visit. Object taps play bundled Piper names; full-screen horizontal
 swipes move only within the selected category.
 
-Find it plays the target's Piper clip and shows two photos (three from level
+Find it plays the target's Piper clip and shows two pictures (three from level
 2) from the selected deck; the speaker button and the idle reprompt replay
 only that word. A right tap records a win, bursts, plays parent praise and
 counts toward stickers (the sticker engine is imported lazily because the

@@ -1,3 +1,4 @@
+import { animalArt } from '../data/animal-art.js';
 // Play House: a little world to live in rather than a game to win.
 //
 // A dollhouse on the left, a garden on the right, swiped between like a
@@ -96,7 +97,10 @@ function start(ctx) {
   createVisitors(W);
 
   /* ---- artwork ---- */
-  const art = {};
+  const art = {
+    budgie: animalArt('budgie'), budgieFlight: animalArt('budgie-flight'),
+    gardenBird: animalArt('sparrow'), gardenBirdFlight: animalArt('sparrow-flight'),
+  };
   for (const [k, v] of Object.entries(BABY_POSES)) art['baby_' + k] = v.src;
   for (const [k, v] of Object.entries(TOY_ART)) art['toy_' + k] = v.src;
   for (const [k, v] of Object.entries(SCENE_ART)) art['scene_' + k] = v;

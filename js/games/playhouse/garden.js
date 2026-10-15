@@ -1,3 +1,4 @@
+import { drawPaintedBird } from './assets.js';
 // Play House: the garden. Bushes with animals hiding in them (who come out
 // to be fed), an apple tree (with an owl after dark), a trampoline that
 // bounces higher with every tap, the baby's pram for a ride, and little
@@ -764,38 +765,13 @@ export function createGarden(W) {
   }
 
   function drawBird(g, b) {
-    const c = b.color;
-    const perched = b.state === 'perch';
-    const ink = 'rgba(107,74,58,0.6)';
+    const perched = b.state === 'perch' || (b.state === 'land' && b.t > 0.9);
     g.save();
     g.translate(b.x, b.y - (perched ? 18 + Math.sin(b.hop * Math.PI) * 14 : 0));
     g.scale(b.face < 0 ? -1 : 1, 1);
     if (perched) g.rotate(Math.sin(b.peck * Math.PI) * 0.55);
-    g.strokeStyle = ink;
-    g.lineWidth = 3;
-    g.lineCap = 'round';
-    if (perched) {
-      g.beginPath(); g.moveTo(-2, 14); g.lineTo(-4, 20); g.moveTo(7, 14); g.lineTo(7, 20); g.stroke();
-    }
-    g.fillStyle = c.body;
-    g.beginPath(); g.moveTo(-22, -4); g.lineTo(-40, -12); g.lineTo(-38, 6); g.closePath(); g.fill(); g.stroke();
-    g.beginPath(); g.ellipse(0, 0, 26, 17, 0, 0, Math.PI * 2); g.fill(); g.stroke();
-    g.fillStyle = c.belly;
-    g.beginPath(); g.ellipse(8, 6, 14, 8, 0.2, 0, Math.PI * 2); g.fill();
-    g.fillStyle = c.body;
-    g.beginPath(); g.arc(20, -10, 12, 0, Math.PI * 2); g.fill(); g.stroke();
-    g.fillStyle = '#ffb347';
-    g.beginPath(); g.moveTo(30, -12); g.lineTo(42, -8); g.lineTo(30, -5); g.fill();
-    g.fillStyle = '#3a3357';
-    g.beginPath(); g.arc(23, -13, 2.6, 0, Math.PI * 2); g.fill();
-    g.fillStyle = c.wing;
-    g.beginPath();
-    if (perched || (b.state === 'land' && b.t > 0.9)) g.ellipse(-6, -2, 18, 8, -0.25, 0, Math.PI * 2);
-    else {
-      const w = Math.sin(W.t * 14 + b.flap) * 0.9;
-      g.ellipse(-4, -6 - w * 6, 22, 2 + 8 * Math.abs(w), -0.5, 0, Math.PI * 2);
-    }
-    g.fill(); g.stroke();
+    else if (!quietMotion()) g.scale(1, 1 + Math.sin(W.t * 14 + b.flap) * 0.07);
+    drawPaintedBird(g, perched ? W.img.gardenBird : W.img.gardenBirdFlight, perched ? 50 : 65, perched ? 18 : 32, b.color.body);
     g.restore();
   }
 

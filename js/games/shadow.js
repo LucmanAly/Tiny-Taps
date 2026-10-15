@@ -11,16 +11,8 @@ const nextAnimal = cycler(ANIMALS);
 
 const ICON = `
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="sd-i" x1="0" y1="0" x2="0.6" y2="1">
-      <stop offset="0%" stop-color="#c9a2f5"/><stop offset="100%" stop-color="#6f35b0"/>
-    </linearGradient>
-  </defs>
-  <rect x="10" y="10" width="80" height="80" rx="18" fill="url(#sd-i)"/>
-  <ellipse cx="50" cy="58" rx="26" ry="18" fill="#2e2140"/>
-  <circle cx="34" cy="38" rx="10" fill="#2e2140"/>
-  <circle cx="34" cy="38" r="10" fill="#2e2140"/>
-  <circle cx="60" cy="34" r="7" fill="#2e2140"/>
+  <rect x="8" y="8" width="84" height="84" rx="20" fill="#b98aef"/>
+  <image href="${ANIMALS.find(a => a.id === 'frog').art}" x="10" y="10" width="80" height="80" style="filter:brightness(0)"/>
 </svg>`;
 
 export default makeRoundGame({

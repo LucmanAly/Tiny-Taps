@@ -52,34 +52,26 @@ vocalisations, not narration.
 | boy-laugh-1 to 5 | [File:Four Years Old child laughing.ogg](https://commons.wikimedia.org/wiki/File:Four_Years_Old_child_laughing.ogg) | morgantj | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 
 UI sounds (pops, chimes, fanfares) are synthesized in-app via WebAudio.
-Spoken prompts use the device's text-to-speech.
-Most artwork is original for this app (hand-built SVG); the Play House
-mascot/baby art and the Animals photos below are the exceptions.
+Selected one-word cues use device speech; Number Book and My First Words
+use bundled Piper recordings. Runtime artwork combines the new storybook
+animal library, original SVG scenery, and supplied character illustrations.
 
 The Play House scenery (house, garden, furniture, pram, tree, sky) is
-original SVG drawn in `js/games/playhouse/art.js`. The poses, toys, toy box
+original SVG drawn in `js/games/playhouse/art.js`. The poses, remaining toys, toy box
 and bushes in `assets/playhouse/` were sliced from the developer-supplied
 sheets in `assets/` (`playhouse_*_sheet.png`) by
 `scripts/slice-playhouse-art.py`; the sheets are kept for provenance.
 
-# Photo Credits
+# Storybook Animal Artwork (v5.25)
 
-The 33 animal photos used by the Animals game (`assets/animals-photos/`) are
-AI-generated illustrations, supplied by the app's developer as four grid
-sheets and sliced into individual files. The unsliced originals are archived
-verbatim in `assets/new-assets/` for provenance. They are not sourced from a
-third-party stock or photography service and carry no external license terms.
+All 60 animal cutouts and the 14 animal coloring designs were newly generated
+with the built-in OpenAI image-generation tool for Tiny Taps. The developer
+approved the chicken, fish and shark previews as the style direction. Full
+prompts and source-image provenance are in `docs/animal-art-prompts.json`.
+Transparent cutouts are framed and compressed as WebP; coloring line art is
+converted to editable SVG regions. No previous animal SVG or illustrated
+animal photo is used by the runtime. Everyday object flashcards and the
+sibling photo scenes keep their original supplied artwork.
 
-`js/data/animals.js` also references a matching photo (the `photo` field) for
-every roster animal that has one, and simple card/tile games display it via
-`displayArt()` in place of the hand-built SVG. Shadow Match and Puzzle Fit
-still use `art` directly — they render the image as a flat silhouette or
-dimmed outline, which only the SVGs are shaped for.
-
-# Parrot Coloring Artwork
-
-`assets/art/parrot-coloring.svg` is the user-supplied Indian ringneck parrot
-vector created with Recraft. Original path geometry is retained; runtime
-metadata, the page-sized white background, and nonuniform scaling were removed.
-White paths are grouped into six tap-to-fill regions, while ink and eye details
-remain fixed.
+The old unsliced animal sheets in `assets/new-assets/` remain archival source
+material only and are not loaded or cached by the game.

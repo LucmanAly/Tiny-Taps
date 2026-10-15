@@ -1,4 +1,4 @@
-// My First Words: a photo flashcard deck, not a round-based game. One card
+// My First Words: illustrated animals and everyday-photo flashcards. One card
 // fills the screen at a time; tapping it speaks its name. Swipe left or right
 // to move through the deck, wrapping in both directions.
 //
@@ -7,6 +7,7 @@
 // tap the one that was named. Only the word itself is ever played, never an
 // instruction, and words the child is still learning come back more often.
 
+import { animalArt } from '../data/animal-art.js';
 import { preloadImages } from '../engine/intro.js';
 import { shuffle, pickN } from '../engine/rand.js';
 import { fadeSwap } from '../engine/ui.js';
@@ -29,13 +30,13 @@ function voiceSlug(name) {
 function wordCard(word) {
   return {
     ...word,
-    photo: `assets/words-photos/${word.id}.${word.extension ?? 'jpg'}`,
+    photo: word.illustrated ? animalArt(word.id) : `assets/words-photos/${word.id}.${word.extension ?? 'jpg'}`,
     voiceKey: `animal-name:${voiceSlug(word.name)}`,
     voice: `assets/audio/animals/${voiceSlug(word.name)}.mp3`,
   };
 }
 
-// Ids match the sliced photo filenames in assets/animals-photos/. Names are
+// Stable card ids resolve to the shared illustrated animal catalog. Names are
 // what gets printed under the card and spoken by the bundled Piper clips.
 const ANIMALS = [
   { id: 'whale', name: 'Whale' },
@@ -73,7 +74,7 @@ const ANIMALS = [
   { id: 'velociraptor', name: 'Velociraptor' },
 ].map(a => ({
   ...a,
-  photo: `assets/animals-photos/${a.id}.jpg`,
+  photo: animalArt(a.id),
   voiceKey: `animal-name:${voiceSlug(a.name)}`,
   voice: `assets/audio/animals/${voiceSlug(a.name)}.mp3`,
 }));
@@ -96,7 +97,7 @@ const EXTRA_ANIMALS = [
   { id: 'frog', name: 'Frog' },
   { id: 'owl', name: 'Owl' },
   { id: 'duckling', name: 'Duckling' },
-].map(wordCard);
+].map(word => wordCard({ ...word, illustrated: true }));
 
 const SHARK_FAMILY = [
   { id: 'baby-shark', name: 'Baby Shark', extension: 'png' },
@@ -104,7 +105,7 @@ const SHARK_FAMILY = [
   { id: 'mommy-shark', name: 'Mommy Shark', extension: 'png' },
   { id: 'grandpa-shark', name: 'Grandpa Shark', extension: 'png' },
   { id: 'grandma-shark', name: 'Grandma Shark', extension: 'png' },
-].map(wordCard);
+].map(word => wordCard({ ...word, illustrated: true }));
 
 const OBJECTS = [
   { id: 'bed', name: 'Bed' },

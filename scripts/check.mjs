@@ -53,7 +53,7 @@ else {
   }
 }
 
-const daddySharkAsset = 'assets/art/daddy-shark-coloring.svg';
+const daddySharkAsset = 'assets/animal-art/coloring/daddy-shark.svg';
 const motuColoringAsset = 'assets/art/motu-coloring.svg';
 const johnColoringAsset = 'assets/art/john-the-don-coloring.svg';
 const patluColoringAsset = 'assets/art/patlu-coloring.svg';
@@ -70,7 +70,7 @@ const externalColoringAssets = [
   johnColoringAsset,
   patluColoringAsset,
   ...uploadedColoringAssets,
-  'assets/art/parrot-coloring.svg',
+  'assets/animal-art/coloring/parrot.svg',
 ];
 for (const required of externalColoringAssets) {
   if (!sw.includes(`'${required}'`)) errors.push(`Service worker does not cache ${required}`);
@@ -81,21 +81,6 @@ for (const required of externalColoringAssets) {
   if (!coloringSource.includes(`src: '${required}'`)) {
     errors.push(`Coloring game does not include ${required} as a page`);
   }
-}
-
-const daddySharkSvg = fs.readFileSync(path.join(root, daddySharkAsset), 'utf8');
-const daddySharkRegions = [...daddySharkSvg.matchAll(/data-region="([^"]+)"/g)].map(match => match[1]);
-const expectedDaddySharkRegions = [
-  'head', 'muzzle', 'belly', 'right-fin-tail', 'mouth', 'left-fin', 'dorsal-fin',
-];
-if (daddySharkRegions.join(',') !== expectedDaddySharkRegions.join(',')) {
-  errors.push('Daddy Shark SVG must expose exactly the seven expected coloring regions');
-}
-if (daddySharkSvg.includes('<image') || daddySharkSvg.includes('preserveAspectRatio="none"')) {
-  errors.push('Daddy Shark SVG must remain editable vector art without distortion');
-}
-if (!daddySharkSvg.includes('data-fixed="true" pointer-events="none"')) {
-  errors.push('Daddy Shark fixed face, tooth, and outline details must pass taps through');
 }
 
 const motuColoringSvg = fs.readFileSync(path.join(root, motuColoringAsset), 'utf8');
@@ -152,27 +137,6 @@ for (const [asset, requiredGroups] of uploadedColoringGroups) {
     errors.push(`${asset} fixed outlines and facial details must pass taps through`);
   }
 }
-// Uploaded parrot must remain paintable vector art with closed, separate parts.
-const parrotSvg = fs.readFileSync(path.join(root, 'assets/art/parrot-coloring.svg'), 'utf8');
-const parrotPaths = [...parrotSvg.matchAll(/<path\b[^>]*>/g)].map(match => match[0]);
-const parrotGroups = new Set();
-for (const element of parrotPaths) {
-  const region = element.match(/data-region="([^"]+)"/);
-  if (region) {
-    parrotGroups.add(region[1]);
-    const data = (element.match(/\bd="([^"]+)"/) || [])[1];
-    if (!data || !/[zZ]\s*$/.test(data)) errors.push('Parrot coloring paths must be closed');
-  } else if (!element.includes('data-fixed="true" pointer-events="none"')) {
-    errors.push('Parrot fixed ink and eye details must pass taps through');
-  }
-}
-if ([...parrotGroups].sort().join(',') !== 'beak,body,feet,head,tail,wing') {
-  errors.push('Parrot must expose its six separate coloring regions');
-}
-if (parrotSvg.includes('<image') || parrotSvg.includes('preserveAspectRatio="none"')) {
-  errors.push('Parrot must remain editable vector art without distortion');
-}
-
 for (const color of ['#8B5CF6', '#17B7D6', '#8B5A2B', '#D8A17D']) {
   if (!coloringSource.includes(color)) errors.push(`Coloring palette is missing ${color}`);
 }
@@ -427,6 +391,34 @@ for (const file of VOICE_FILES) {
   if (!fs.existsSync(path.join(root, file))) errors.push(`Play House voice clip missing: ${file}`);
   if (!sw.includes(`'${file}'`)) errors.push(`Service worker does not precache ${file}`);
 }
+
+// Every new cutout and coloring page must ship offline; legacy animal art
+// cannot reappear through the shared roster, the flashcard deck or precache.
+const { ANIMAL_ART_IDS, COLORING_ANIMAL_IDS } = await import('../js/data/animal-art.js');
+for (const deck of ['animals', 'shark-family']) {
+  for (const card of FIRST_WORD_CATEGORIES[deck]) {
+    if (!card.photo.startsWith('assets/animal-art/')) errors.push(`Animal card ${card.id} bypasses the new illustration library`);
+  }
+}
+for (const id of ANIMAL_ART_IDS) {
+  const asset = 'assets/animal-art/' + id + '.webp';
+  if (!fs.existsSync(path.join(root, asset))) errors.push('Missing new animal art: ' + id);
+  if (!sw.includes("'" + asset + "'")) errors.push('New animal art is not offline: ' + id);
+}
+for (const id of COLORING_ANIMAL_IDS) {
+  const asset = 'assets/animal-art/coloring/' + id + '.svg';
+  if (!fs.existsSync(path.join(root, asset))) { errors.push('Missing new coloring page: ' + id); continue; }
+  const svg = fs.readFileSync(path.join(root, asset), 'utf8');
+  const regions = [...svg.matchAll(/data-region="([^"]+)"/g)];
+  if (regions.length < 4 || regions.length > 8) errors.push('Animal coloring needs 4-8 large regions: ' + id);
+  if (svg.includes('<image') || !svg.includes('data-fixed="true" pointer-events="none"')) errors.push('Animal coloring must be editable standalone vector art: ' + id);
+  if (!sw.includes("'" + asset + "'")) errors.push('Coloring page is not offline: ' + id);
+}
+const legacyAnimalPath = /assets\/animals-photos\/|assets\/art\/(?:dog|cat|cow|duck|sheep|horse|rooster|pig|lion|elephant|frog|owl|bear|bee|bunny|butterfly|dinosaur|fish|giraffe|monkey|shark|turtle|zebra|food-fish|parrot-coloring|daddy-shark-coloring)\.svg/;
+for (const file of files.filter(f => f.endsWith('.js'))) {
+  if (legacyAnimalPath.test(fs.readFileSync(file, 'utf8'))) errors.push('Legacy animal art remains in ' + path.relative(root, file));
+}
+if (legacyAnimalPath.test(sw)) errors.push('Legacy animal artwork remains in the offline cache');
 
 if (errors.length) {
   console.error(errors.join('\n'));

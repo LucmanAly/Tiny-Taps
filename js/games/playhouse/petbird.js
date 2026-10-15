@@ -1,3 +1,4 @@
+import { drawPaintedBird } from './assets.js';
 // A pet budgie: open its cage, let it flutter down, or invite the baby to
 // share seeds. Everything runs on world time, so leaving stops every action.
 import { PLACES } from './layout.js';
@@ -92,31 +93,9 @@ export function createPetBird(W) {
       g.translate(this.x, this.y - 24);
       g.scale(this.face, 1);
       g.rotate(this.peck);
-      g.lineWidth = 3;
-      g.strokeStyle = INK;
-      g.lineJoin = 'round';
-      g.lineCap = 'round';
-      if (!this.flight) {
-        g.beginPath(); g.moveTo(-6, 19); g.lineTo(-8, 26); g.lineTo(-15, 26);
-        g.moveTo(9, 19); g.lineTo(9, 26); g.lineTo(16, 26); g.stroke();
-      }
-      g.fillStyle = '#6dc3ac';
-      g.beginPath(); g.moveTo(-22, 8); g.lineTo(-47, 21); g.lineTo(-39, -8); g.closePath(); g.fill(); g.stroke();
-      g.beginPath(); g.ellipse(0, 0, 31, 23, -0.15, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.fillStyle = '#d5eda4';
-      g.beginPath(); g.ellipse(8, 8, 18, 12, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#ffe175';
-      g.beginPath(); g.arc(23, -19, 19, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.fillStyle = '#efad55';
-      g.beginPath(); g.moveTo(39, -21); g.lineTo(53, -15); g.lineTo(39, -10); g.closePath(); g.fill(); g.stroke();
-      g.fillStyle = '#384354';
-      g.beginPath(); g.arc(28, -24, 4, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(29, -25, 1.3, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#f8b6a1'; g.beginPath(); g.arc(32, -12, 5, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#9cdec5';
-      const flap = this.flight && !quietMotion() ? Math.sin(W.t * 17) : 0;
-      g.beginPath(); g.ellipse(-9, -5 - flap * 12, 23, 10 + Math.abs(flap) * 5, -0.35 - flap * 0.45, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.beginPath(); g.moveTo(-18, -7); g.lineTo(-3, -4); g.moveTo(-21, 0); g.lineTo(-7, 3); g.stroke();
+      const flying = !!this.flight;
+      if (flying && !quietMotion()) g.scale(1, 1 + Math.sin(W.t * 17) * 0.06);
+      drawPaintedBird(g, flying ? W.img.budgieFlight : W.img.budgie, flying ? 82 : 70, flying ? 38 : 28);
       g.restore();
     },
   };
@@ -159,9 +138,8 @@ export function createPetBird(W) {
       g.beginPath(); g.moveTo(-48, -31); g.quadraticCurveTo(-38, 4, 0, 4); g.quadraticCurveTo(38, 4, 48, -31); g.closePath(); g.fill(); g.stroke();
       g.fillStyle = '#fbe2a3'; g.beginPath(); g.ellipse(0, -31, 48, 14, 0, 0, Math.PI * 2); g.fill(); g.stroke();
       seeds(g, 0, -31);
-      // A little painted bird on the bowl is the invitation to feed.
-      g.fillStyle = '#fff5d1'; g.beginPath(); g.ellipse(0, -12, 11, 7, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(9, -18, 5, 0, Math.PI * 2); g.fill();
+      // The new pet bird is also the visual cue on the seed bowl.
+      g.save(); g.translate(0, -6); drawPaintedBird(g, W.img.budgie, 23, 0); g.restore();
       g.restore();
     },
   };
