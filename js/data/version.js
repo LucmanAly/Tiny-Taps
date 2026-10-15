@@ -1,2 +1,2 @@
 // Bump on every release. Shown to parents in Settings.
-export const VERSION = '5.25';
+export const VERSION = '5.26';

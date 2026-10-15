@@ -420,6 +420,33 @@ for (const file of files.filter(f => f.endsWith('.js'))) {
 }
 if (legacyAnimalPath.test(sw)) errors.push('Legacy animal artwork remains in the offline cache');
 
+// Exercise an outdoor flock: its first flying bird used to throw while the
+// sky was drawing, leaving the house and garden invisible on every frame.
+const { createGarden } = await import('../js/games/playhouse/garden.js');
+const gardenEvents = new Map();
+const gardenWorld = {
+  t: 6, dayT: 0, cam: { x: 1800, viewW: 1600 },
+  sky: { weather: 'clear' }, img: {}, audio: {}, fx: {}, dropTargets: [], entities: [],
+  add(e) { this.entities.push(e); return e; },
+  on(name, fn) { gardenEvents.set(name, fn); },
+};
+createGarden(gardenWorld);
+gardenEvents.get('rainbow')();
+const gardenBirds = gardenWorld.entities.filter(e => e.state === 'fly');
+if (gardenBirds.length !== 3) errors.push('Play House garden flock did not spawn');
+for (const reduce of [false, true]) {
+  // quietMotion reads the device preference; these globals exist only here.
+  globalThis.window = { matchMedia: () => ({ matches: reduce }) };
+  const birdCanvas = { save() {}, restore() {}, translate() {}, scale() {}, rotate() {} };
+  try {
+    for (const bird of gardenBirds) bird.draw(birdCanvas);
+  } catch (err) {
+    errors.push(`Play House outdoor birds fail to draw (reduced motion ${reduce}): ${err.message}`);
+  } finally {
+    delete globalThis.window;
+  }
+}
+
 if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);
