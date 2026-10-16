@@ -69,10 +69,13 @@ The current registry contains 24 games:
 
 Play House also has a pet budgie beside the trampoline: tap its cage to open
 or recall it, tap the seed bowl to have the baby crawl over and feed it from
-her hand, and tap the bird to make short flights and play with her. Cartoon
-zombies and skeletons occasionally stroll on the path outside the fence;
-tap their heads to wave. They stay behind the fence, and pause their roaming
-under Calm or reduced motion. These are Play House features, not extra games.
+her hand, and tap the bird to make short flights and play with her. Outside
+the house stands an interactive Halloween festival banner (`visitors.js`):
+tapping it turns on Halloween mode with glowing jack-o'-lantern pumpkins,
+fence bunting, porch cobwebs, and storybook ghosts, zombies, skeletons, and
+vampires moving around the outside of the house; touching any creature makes
+it run away from the house towards the windmill side (and pause roaming under
+Calm or reduced motion). These are Play House features, not extra games.
 
 ## Core conventions
 

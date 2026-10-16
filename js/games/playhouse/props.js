@@ -4,6 +4,7 @@
 
 import { WORLD, clampToFloor, depthAt, floorFor } from './layout.js';
 import { boundsOf } from './assets.js';
+import { quietMotion } from '../../engine/calm.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const GRAVITY = 2600;
@@ -57,6 +58,11 @@ export function createProps(W) {
 
     height() { return this.spec.h * depthAt(this.y); }
 
+    puddle() {
+      return this.kind === 'duck' && !this.held && !this.hidden && this.air <= 0 && W.sky
+        ? W.sky.puddleAt(this.x, this.y) : null;
+    }
+
     image() {
       if (this.spec.img) return W.img['toy_' + this.spec.img] || null;
       return null;
@@ -65,18 +71,27 @@ export function createProps(W) {
     draw(g) {
       if (this.hidden) return;
       const h = this.held ? this.spec.h * 1.08 : this.height();
+      const pud = this.puddle();
       let x = this.x, y = this.y - this.air;
+      if (pud && !quietMotion()) y += Math.sin(W.t * 3.8) * 3.5 - 3;
       if (this.held) { x = this.hold.x; y = this.hold.y + h * 0.5; }
-      // Contact shadow, shrinking as the toy rises.
+      // Contact shadow (or water ring when floating in a puddle).
       if (!this.held) {
-        const k = 1 / (1 + this.air / 140);
-        g.fillStyle = `rgba(70,40,20,${0.2 * k})`;
-        g.beginPath(); g.ellipse(this.x, this.y + 2, h * 0.42 * k, h * 0.1 * k, 0, 0, Math.PI * 2); g.fill();
+        if (pud) {
+          g.strokeStyle = 'rgba(255,255,255,0.72)';
+          g.lineWidth = 3.5;
+          g.beginPath(); g.ellipse(this.x, this.y + 1, h * 0.48, h * 0.14, 0, 0, Math.PI * 2); g.stroke();
+        } else {
+          const k = 1 / (1 + this.air / 140);
+          g.fillStyle = `rgba(70,40,20,${0.2 * k})`;
+          g.beginPath(); g.ellipse(this.x, this.y + 2, h * 0.42 * k, h * 0.1 * k, 0, 0, Math.PI * 2); g.fill();
+        }
       }
       const squash = 1 + Math.sin(this.wob * 16) * 0.12 * this.wob;
+      const rock = pud && !quietMotion() ? Math.sin(W.t * 2.8) * 0.08 : 0;
       g.save();
       g.translate(x, y - h / 2);
-      g.rotate(this.rot + this.swing + Math.sin(this.shake * 40) * 0.35 * this.shake);
+      g.rotate(this.rot + this.swing + rock + Math.sin(this.shake * 40) * 0.35 * this.shake);
       g.scale(squash, 2 - squash);
       const img = this.image();
       if (img) {
@@ -139,11 +154,22 @@ export function createProps(W) {
           this.vx = (this.x < W.cam.x + W.cam.viewW / 2 ? 1 : -1) * (300 + Math.random() * 300);
           audio.boing();
           break;
-        case 'duck':
-          this.vAir = 520;
-          audio.quack();
-          fx.sparkle(this.x, this.y - this.height(), 6, 90, ['#ffe066', '#ffffff']);
+        case 'duck': {
+          const pud = this.puddle();
+          if (pud) {
+            this.vAir = 300;
+            this.wob = 1;
+            pud.ripple = 1;
+            audio.quack();
+            audio.splash();
+            fx.splash(this.x, this.y, 0.55);
+          } else {
+            this.vAir = 520;
+            audio.quack();
+            fx.sparkle(this.x, this.y - this.height(), 6, 90, ['#ffe066', '#ffffff']);
+          }
           break;
+        }
         case 'rattle':
           this.shake = 1;
           W.voice.rattle();
@@ -210,6 +236,23 @@ export function createProps(W) {
     // that point (or onto the floor's back edge if it was let go over a wall
     // or the sky), carrying the throw's speed with it.
     landFrom(x, baseY, vx = 0, vy = 0) {
+      const pud = this.kind === 'duck' && Math.hypot(vx, vy) < 600 && W.sky
+        && (W.sky.puddleAt(x, baseY) || W.sky.puddleAt(x, baseY - this.spec.h * 0.5));
+      if (pud) {
+        this.x = clamp(x, pud.x - pud.r * pud.wet * 0.45, pud.x + pud.r * pud.wet * 0.45);
+        this.y = pud.y + 2;
+        this.air = Math.max(0, this.y - baseY);
+        this.vAir = 0;
+        this.vx = 0;
+        if (this.air < 36) {
+          this.air = 0;
+          this.wob = 0.8;
+          pud.ripple = 1;
+          audio.splash();
+          fx.splash(this.x, this.y, 0.45);
+        }
+        return;
+      }
       const f = floorFor(clamp(x, WORLD.floor.home.x0, WORLD.floor.garden.x1));
       const restY = clamp(baseY, f.y0, f.y1);
       const p = clampToFloor(x, restY);
@@ -259,6 +302,14 @@ export function createProps(W) {
       } else {
         this.vx = 0;
         if (!this.spec.roll && this.air <= 0) this.rot *= Math.exp(-6 * dt);
+        const pud = this.puddle();
+        if (pud && !quietMotion()) {
+          const targetX = pud.x + Math.sin(W.t * 0.75) * pud.r * pud.wet * 0.34;
+          this.x += (targetX - this.x) * Math.min(1, dt * 2.5);
+          if (W.sky.weather === 'rain' && Math.random() < dt * 0.35 && W.onScreen(this.x)) {
+            this.wob = Math.max(this.wob, 0.45);
+          }
+        }
       }
     }
 

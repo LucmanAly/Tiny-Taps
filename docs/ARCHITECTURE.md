@@ -436,14 +436,18 @@ lives in `js/games/playhouse/`:
   she drinks, the bottle's teat is at her lips and the bottle tips up and
   away from her face (`drawBottle`). The brother can carry a toy in his arms (`carry`/`putDown`,
   drawn in his carry and kneel poses); sent to do something else, picked up,
-  or left standing for 2.5 s, he puts it down. The baby eats food (apple,
-  carrot, tomato, strawberry: it shrinks at her mouth and is gone), waves a
-  flower in her raised hand, and claps at the pumpkin. She can wish for any
-  produce that exists as a toy or is ripe in the patch (`W.patch.ripe`), and
-  tapping her bubble then points at it.
+  or left standing for 2.5 s, he puts it down.  The baby eats food (apple, carrot, tomato, strawberry: it shrinks at her
+  mouth and is gone), waves a flower in her raised hand, and claps at the
+  pumpkin; dropping edible produce onto the brother (`boyEat`) lets him munch
+  it too with chomps, his laugh, parent praise, and a `feed:boy` outcome. The
+  baby can wish for any produce that exists as a toy or is ripe in the patch
+  (`W.patch.ripe`), and tapping her bubble then points at it.
 - `props.js` — toys with simple gravity, bounce, roll and throw physics;
-  dropped toys are offered to `W.dropTargets` (baby, toy box, trampoline, pram,
-  harvest basket, a showing bush animal) in order before falling to the floor. Produce toys carry a
+  dropped toys are offered to `W.dropTargets` (baby/brother, toy box,
+  trampoline, pram, harvest basket, a showing bush animal) in order before
+  falling to the floor. When the rubber duck (`duck`) lands in a filled
+  puddle (`W.sky.puddleAt`), it floats, bobs and drifts on the water with a
+  ripple ring, and splashes + quacks in place when tapped. Produce toys carry a
   `produce` type (food, flower, big). `drawArt` paints a hidden toy in
   someone's hands; `W.removeToy` takes an eaten or basketed toy out of the
   world.
@@ -483,15 +487,21 @@ lives in `js/games/playhouse/`:
   belong to their own crawl and cannot cancel a later one. All timing uses
   world updates. The bird stays near its cage, shelters at night or in bad
   weather, and has lower, slower flights with Calm/reduced motion.
-- `visitors.js` — two cartoon zombies and two skeletons pause and occasionally
-  walk along the path outside the garden. The `outside` layer draws before
-  the garden backdrop, so the fence always covers their lower bodies; hit
-  targets cover only the visible heads above the pickets. Tapping makes them
-  wave with a bell note. They never enter the garden or chase the children.
-  Ambient roaming and animated waving stop with Calm/reduced motion.
+- `visitors.js` — exterior cobblestone country lane, hillside trail to the
+  windmill, and an interactive arched Halloween festival banner (`W.halloween`)
+  outside the house. When tapped on, glowing jack-o'-lantern pumpkins, fence
+  bunting, and porch cobwebs appear, and twelve storybook creatures (ghosts,
+  zombies, skeletons, and vampires) move around the outside of the house.
+  Touching any creature startles it and sends it running away from the house
+  up the hillside trail towards the windmill side (`fleeToWindmill`),
+  returning after a short pause while the banner stays on. Ambient roaming
+  pauses with Calm/reduced motion.
 - `sky.js` — day/night (`W.dayT`), sun/moon tap or drag, weather cloud
-  (rain → snow cover and snowman → rainbow), rain weather bed, fireflies and
-  porch light. The sun and moon are screen-anchored (`anchor(f)`, sun 0.72 and
+  (rain → snow cover and snowman → rainbow), rain weather bed, fireflies,
+  tappable porch lantern (`sky.porchOn`), and the turning/tappable windmill on
+  the far hills (`W.windmillAngle`, `W.sprites.windmillSails`). Tapping a
+  firefly at night makes it twinkle brightly, chime and dart playfully (paused
+  under `quietMotion()`). The sun and moon are screen-anchored (`anchor(f)`, sun 0.72 and
   moon 0.3 of the view, never left of x 1900 so they are never behind the
   house), glide to another spot when the apple tree's canopy would hide them
   (`placeBodies`), and ride higher on tall screens (`sunTop`). In rain or snow

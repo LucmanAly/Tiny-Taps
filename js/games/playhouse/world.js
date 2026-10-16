@@ -167,12 +167,25 @@ export function createWorld({ stage, audio }) {
     for (const e of W.entities) if (e.layer === 'sky' && e.draw) e.draw(g);
   }
 
+  W.windmillPos = () => ({
+    x: W.cam.x * (1 - HILLS.far.p) - 40 + Math.round(HILLS.far.width * 0.36),
+    y: 274,
+  });
+
   function drawHills(ctx) {
     for (const key of ['hillsFar', 'hillsNear']) {
       const sprite = backdrops[key];
       if (!sprite) continue;
       const p = key === 'hillsFar' ? HILLS.far.p : HILLS.near.p;
       blit(ctx, sprite, W.cam.x * (1 - p) - 40, 0);
+      if (key === 'hillsFar' && W.sprites.windmillSails) {
+        const wm = W.windmillPos();
+        ctx.save();
+        ctx.translate(wm.x, wm.y);
+        ctx.rotate(W.windmillAngle || 0);
+        blit(ctx, W.sprites.windmillSails);
+        ctx.restore();
+      }
     }
   }
 

@@ -158,9 +158,10 @@ function start(ctx) {
     }
   });
 
-  // Start in the house, with the brother and sister both in view.
+  // Start in the house with the brother, sister, doorway and outside porch in view.
   W.on('ready', () => {
     if (W.cam.viewW < 1400) W.cam.x = Math.max(-40, 1200 - W.cam.viewW / 2);
+    else W.cam.x = Math.max(-40, 1980 - W.cam.viewW);
   });
 
   W.start();

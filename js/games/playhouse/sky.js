@@ -11,6 +11,7 @@
 
 import { WORLD, PLACES, TIMING, clampToFloor, depthAt } from './layout.js';
 import { ROOSTER } from './assets.js';
+import { quietMotion } from '../../engine/calm.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const ease = t => t * t * (3 - 2 * t);
@@ -26,6 +27,7 @@ export function createSky(W) {
     gloom: 0,                // 0..1 how grey the sky is while it rains
     veil: 0,                 // 0..1 how far the sun is behind a cloud (rain, snow)
     dayTarget: 0,
+    porchOn: true,
   };
   W.sky = sky;
 
@@ -722,30 +724,143 @@ export function createSky(W) {
     }
   });
 
-  /* ---------------- glow, rain and snow over the world ---------------- */
+  /* ---------------- windmill, porch lantern and fireflies ---------------- */
+
+  W.windmillAngle = 0;
+  const windmill = {
+    layer: 'sky', spinV: 0.45,
+    hit(x, y) {
+      const p = W.windmillPos ? W.windmillPos() : null;
+      return !!p && x > 1680 && clearOfTree(p.x) && Math.hypot(x - p.x, y - (p.y + 10)) < 68;
+    },
+    tap() {
+      const p = W.windmillPos ? W.windmillPos() : null;
+      this.spinV = quietMotion() ? 1.4 : 4.2;
+      audio.whoosh();
+      if (p && !quietMotion()) fx.sparkle(p.x, p.y, 6, 80, ['#fffaf2', '#ffe066', '#ffffff']);
+    },
+    update(dt) {
+      const base = quietMotion() ? 0 : (sky.weather === 'clear' ? 0.45 : 0.95);
+      this.spinV += (base - this.spinV) * Math.min(1, dt * 2);
+      W.windmillAngle = (W.windmillAngle || 0) + this.spinV * dt;
+    },
+  };
+
+  const porch = {
+    layer: 'decal', x: PLACES.porchLight.x, y: PLACES.porchLight.y, wob: 0,
+    draw(g) {
+      g.save();
+      if (sky.porchOn) {
+        g.save();
+        g.globalCompositeOperation = 'lighter';
+        const halo = g.createRadialGradient(this.x, this.y, 6, this.x, this.y, 96);
+        halo.addColorStop(0, 'rgba(255,224,140,0.34)');
+        halo.addColorStop(1, 'rgba(255,224,140,0)');
+        g.fillStyle = halo;
+        g.beginPath(); g.arc(this.x, this.y, 96, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+      g.translate(this.x + 4, this.y - 2);
+      const sq = Math.sin(this.wob * 18) * 0.08 * this.wob;
+      g.scale(1 + sq, 1 - sq);
+      g.fillStyle = sky.porchOn ? '#fff6cc' : '#8590a6';
+      g.beginPath();
+      g.roundRect ? g.roundRect(-9, -16, 18, 32, 3) : g.rect(-9, -16, 18, 32);
+      g.fill();
+      if (sky.porchOn) {
+        g.fillStyle = '#ffffff';
+        g.beginPath(); g.arc(0, -2, 4.5, 0, Math.PI * 2); g.fill();
+      }
+      g.restore();
+    },
+    hit(x, y) { return Math.abs(x - this.x) < 52 && Math.abs(y - this.y) < 58; },
+    tap() {
+      sky.porchOn = !sky.porchOn;
+      this.wob = 1;
+      audio.click();
+      setTimeout(() => { if (W.isAlive()) audio.bell(sky.porchOn ? 6 : 2); }, 70);
+      if (sky.porchOn && !quietMotion()) fx.sparkle(this.x, this.y, 8, 95, ['#fff2b0', '#ffe07a', '#ffffff']);
+    },
+    update(dt) { this.wob = Math.max(0, this.wob - dt * 1.8); },
+    hint() { this.wob = 0.8; },
+  };
 
   const fireflies = Array.from({ length: 20 }, () => ({
-    x: 1750 + Math.random() * (WORLD.W - 1850), y: 430 + Math.random() * 260, ph: Math.random() * 6, sp: 0.4 + Math.random() * 0.6,
+    x: 1750 + Math.random() * (WORLD.W - 1850), y: 430 + Math.random() * 260,
+    ph: Math.random() * 6, sp: 0.4 + Math.random() * 0.6,
+    dx: 0, dy: 0, vx: 0, vy: 0, flash: 0,
   }));
 
+  function fireflyPos(f) {
+    if (quietMotion()) return { x: f.x + f.dx, y: f.y + f.dy };
+    return {
+      x: f.x + f.dx + Math.sin(W.t * f.sp + f.ph) * 40,
+      y: f.y + f.dy + Math.cos(W.t * f.sp * 1.3 + f.ph) * 26,
+    };
+  }
+
+  const fireflyField = {
+    layer: 'sky', picked: null,
+    hit(x, y) {
+      if (W.dayT <= 0.5 || sky.weather !== 'clear') return false;
+      let best = null, bestD = 58;
+      for (const f of fireflies) {
+        const p = fireflyPos(f);
+        const d = Math.hypot(x - p.x, y - p.y);
+        if (d < bestD) { best = f; bestD = d; }
+      }
+      this.picked = best;
+      return !!best;
+    },
+    tap() {
+      const f = this.picked;
+      if (!f) return;
+      const p = fireflyPos(f);
+      f.flash = 1;
+      if (!quietMotion()) {
+        const a = Math.random() * Math.PI * 2;
+        f.vx = Math.cos(a) * 230;
+        f.vy = Math.sin(a) * 150 - 30;
+        fx.sparkle(p.x, p.y, 7, 85, ['#f0ff96', '#fff6b8', '#ffffff']);
+      }
+      audio.shimmer(1046.5 + (fireflies.indexOf(f) % 5) * 130);
+    },
+    update(dt) {
+      for (const f of fireflies) {
+        f.flash = Math.max(0, f.flash - dt * 1.4);
+        f.dx += f.vx * dt;
+        f.dy += f.vy * dt;
+        f.vx *= Math.exp(-3.2 * dt);
+        f.vy *= Math.exp(-3.2 * dt);
+        f.dx *= Math.exp(-0.6 * dt);
+        f.dy *= Math.exp(-0.6 * dt);
+      }
+    },
+  };
+
   W.on('glow', ({ g, n }) => {
-    // The porch lantern and the fireflies only come out after dark.
-    const lp = PLACES.porchLight;
-    const glow = g.createRadialGradient(lp.x, lp.y, 10, lp.x, lp.y, 230);
-    glow.addColorStop(0, `rgba(255,214,140,${0.55 * n})`);
-    glow.addColorStop(1, 'rgba(255,214,140,0)');
-    g.fillStyle = glow;
-    g.beginPath(); g.arc(lp.x, lp.y, 230, 0, Math.PI * 2); g.fill();
+    // The porch lantern and the fireflies come out after dark.
+    if (sky.porchOn) {
+      const lp = PLACES.porchLight;
+      const glow = g.createRadialGradient(lp.x, lp.y, 10, lp.x, lp.y, 230);
+      glow.addColorStop(0, `rgba(255,214,140,${0.55 * n})`);
+      glow.addColorStop(1, 'rgba(255,214,140,0)');
+      g.fillStyle = glow;
+      g.beginPath(); g.arc(lp.x, lp.y, 230, 0, Math.PI * 2); g.fill();
+    }
     if (n > 0.5 && sky.weather === 'clear') {
       for (const f of fireflies) {
-        const x = f.x + Math.sin(W.t * f.sp + f.ph) * 40;
-        const y = f.y + Math.cos(W.t * f.sp * 1.3 + f.ph) * 26;
-        const a = (n - 0.5) * 2 * (0.5 + 0.5 * Math.sin(W.t * 3 + f.ph));
-        const fg = g.createRadialGradient(x, y, 1, x, y, 22);
+        const { x, y } = fireflyPos(f);
+        const pulse = quietMotion() ? 0.75 : 0.5 + 0.5 * Math.sin(W.t * 3 + f.ph);
+        const a = Math.min(1, (n - 0.5) * 2 * (pulse + f.flash * 0.7));
+        const r = 22 + f.flash * 14;
+        const fg = g.createRadialGradient(x, y, 1, x, y, r);
         fg.addColorStop(0, `rgba(240,255,150,${a})`);
         fg.addColorStop(1, 'rgba(240,255,150,0)');
         g.fillStyle = fg;
-        g.beginPath(); g.arc(x, y, 22, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        g.fillStyle = `rgba(250,255,200,${Math.min(1, a * 1.25)})`;
+        g.beginPath(); g.arc(x, y, 3.2 + f.flash * 2, 0, Math.PI * 2); g.fill();
       }
     }
   });
@@ -772,7 +887,7 @@ export function createSky(W) {
 
   W.on('update', dt => { placeBodies(dt); updateDay(dt); updateWeather(dt); followView(); });
 
-  for (const e of [backdrop, sun, moon, cloud, groundDecal, roofSnow, windowWeather, snowman]) W.add(e);
+  for (const e of [backdrop, windmill, fireflyField, sun, moon, cloud, porch, groundDecal, roofSnow, windowWeather, snowman]) W.add(e);
   W.on('destroy', () => audio.stopWeatherBed());
   return sky;
 }

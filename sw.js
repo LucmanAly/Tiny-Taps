@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.27';
+const VERSION = 'tiny-taps-v5.28';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -301,7 +301,7 @@ self.addEventListener('fetch', e => {
   if (isCode(e.request.url)) {
     // Network-first: fresh code when online, cached code offline.
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'no-store' })
         .then(res => putIfOk(e.request, res))
         .catch(() => caches.match(e.request, { ignoreSearch: true }))
     );

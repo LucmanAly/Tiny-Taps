@@ -320,6 +320,22 @@ export function homeBackdrop() {
   <rect x="0" y="28" width="44" height="774" fill="#f2e0c8" ${ink(3)}/>
   <rect x="32" y="64" width="12" height="726" fill="#7a5638" opacity="0.10"/>
   <rect x="1600" y="28" width="60" height="306" fill="#f2e0c8" ${ink(3)}/>
+  <rect x="1606" y="72" width="48" height="28" rx="4" fill="#e6cfb2" ${ink(2, 0.45)}/>
+  <rect x="1614" y="108" width="40" height="26" rx="4" fill="#ead7be" ${ink(2, 0.45)}/>
+  <rect x="1606" y="142" width="48" height="28" rx="4" fill="#dfc4a4" ${ink(2, 0.45)}/>
+  <rect x="1616" y="178" width="38" height="26" rx="4" fill="#e8d2b5" ${ink(2, 0.45)}/>
+  <rect x="1606" y="212" width="48" height="28" rx="4" fill="#e2c9aa" ${ink(2, 0.45)}/>
+  <rect x="1614" y="248" width="40" height="26" rx="4" fill="#ead7be" ${ink(2, 0.45)}/>
+  <rect x="1606" y="282" width="48" height="28" rx="4" fill="#dfc4a4" ${ink(2, 0.45)}/>
+  <path d="M1658,248 Q1714,248 1732,298 L1718,304 Q1702,264 1658,264 Z" fill="${C.woodDark}" ${ink(2.5)}/>
+  <path d="M1656,174 L1766,226 L1760,244 L1656,204 Z" fill="${C.roof}" ${ink(2.8)}/>
+  <path d="M1658,188 L1762,235" stroke="${C.roofDark}" stroke-width="5" stroke-linecap="round"/>
+  <path d="M1660,204 Q1676,218 1692,212 Q1708,226 1724,220 Q1740,234 1758,228 L1758,242 L1660,214 Z" fill="${C.cream}" ${ink(2, 0.6)}/>
+  <path d="M1648,140 C1668,175 1652,215 1674,250 C1688,272 1712,248 1736,242" fill="none" stroke="#4f8a42" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="1654" cy="158" r="8" fill="#68ab54"/><circle cx="1666" cy="176" r="7" fill="#82c26b"/>
+  <circle cx="1658" cy="198" r="8" fill="#5b9c49"/><circle cx="1684" cy="224" r="7" fill="#79ba62"/>
+  <circle cx="1710" cy="236" r="7" fill="#68ab54"/><circle cx="1672" cy="186" r="5" fill="#f48b9a"/>
+  <circle cx="1700" cy="228" r="5.5" fill="#f7a3b0"/>
   <rect x="1588" y="318" width="84" height="18" rx="5" fill="${C.woodDark}" ${ink(2.5)}/>
   <rect x="1586" y="786" width="88" height="16" rx="4" fill="#bfae98" ${ink(2.5, 0.6)}/>`;
   return { vb: [-110, -440, 1880, 1244], body: painted(body) };
@@ -341,9 +357,17 @@ export function gardenBackdrop() {
   const R = WORLD.W + 20;             // the right-hand end of the world
   const span = R - 1640;
   let pickets = '';
-  for (let x = 1666; x < R; x += 62) {
-    pickets += `<path d="M${x},508 V412 L${x + 14},394 L${x + 28},412 V508 Z" fill="#fff7ea" ${ink(2.5, 0.6)}/>`;
-    pickets += `<path d="M${x + 20},410 V506" stroke="#e7d6bf" stroke-width="7"/>`;
+  let idx = 0;
+  for (let x = 1666; x < R; x += 62, idx++) {
+    if (idx % 5 === 1) {
+      // Sturdy capped fence post with round finial ball.
+      pickets += `<rect x="${x - 3}" y="396" width="34" height="114" rx="4" fill="#f7ead5" ${ink(2.5, 0.65)}/>`;
+      pickets += `<rect x="${x - 7}" y="390" width="42" height="10" rx="3" fill="#e5d0b1" ${ink(2, 0.6)}/>`;
+      pickets += `<circle cx="${x + 14}" cy="381" r="10" fill="#fff7ea" ${ink(2.2, 0.65)}/>`;
+    } else {
+      pickets += `<path d="M${x},508 V412 L${x + 14},394 L${x + 28},412 V508 Z" fill="#fff7ea" ${ink(2.5, 0.6)}/>`;
+      pickets += `<path d="M${x + 20},410 V506" stroke="#e7d6bf" stroke-width="7"/>`;
+    }
   }
   let flowers = '';
   for (let x = 1690; x < R - 20; x += 20 + r() * 28) {
@@ -367,29 +391,56 @@ export function gardenBackdrop() {
   // A worn earth path along the vegetable patch, where the gardening happens.
   const bed = 3990;
   const path = `<path d="M${bed - 560},700 C${bed - 300},690 ${bed + 300},690 ${bed + 520},702 C${bed + 540},740 ${bed + 300},760 ${bed},758 C${bed - 300},758 ${bed - 560},744 ${bed - 560},700 Z" fill="#d9bf8f" opacity="0.55"/>`;
+  // Winding sandstone flagstones from the house doorway into the garden.
+  const stones = [
+    [1812, 774, 38, 13, '#dfd0b8'], [1888, 762, 34, 12, '#d5c2a5'],
+    [1958, 748, 36, 12, '#e4d6bf'], [2032, 738, 32, 11, '#d8c5a8'],
+    [2102, 730, 30, 10, '#e1d2ba'],
+  ].map(([sx, sy, rx, ry, col]) =>
+    `<ellipse cx="${sx}" cy="${sy + 3}" rx="${rx + 2}" ry="${ry + 2}" fill="#5a7d3e" opacity="0.28"/>` +
+    `<ellipse cx="${sx}" cy="${sy}" rx="${rx}" ry="${ry}" fill="${col}" ${ink(2, 0.5)}/>` +
+    `<ellipse cx="${sx - rx * 0.2}" cy="${sy - ry * 0.2}" rx="${rx * 0.5}" ry="${ry * 0.4}" fill="#fff" opacity="0.22"/>`
+  ).join('');
+  // Coopered oak flower barrel at the corner of the house.
+  const barrel = `
+  <g transform="translate(1706,548)">
+    <ellipse cx="0" cy="24" rx="38" ry="9" fill="#4b6e32" opacity="0.28"/>
+    <path d="M-30,-16 C-22,-34 22,-34 30,-16" fill="#5fa049" ${ink(2, 0.5)}/>
+    ${flowerHead(-16, -24, 6, '#ffb732')}${flowerHead(2, -28, 6.5, '#d487f2')}${flowerHead(18, -22, 6, '#ff8566')}
+    <path d="M-32,-12 H32 L26,22 Q0,27 -26,22 Z" fill="#c78852" ${ink(2.4, 0.65)}/>
+    <path d="M-14,-12 L-11,23 M0,-12 V24 M14,-12 L11,23" stroke="#9e6434" stroke-width="2.2" opacity="0.65"/>
+    <path d="M-31,-3 Q0,2 31,-3 M-28,11 Q0,16 28,11" stroke="#534b5c" stroke-width="4" fill="none"/>
+  </g>`;
 
   const body = `
-  <linearGradient id="lawnG" x1="0" y1="480" x2="0" y2="800" gradientUnits="userSpaceOnUse">
+  <linearGradient id="lawnG" x1="0" y1="498" x2="0" y2="800" gradientUnits="userSpaceOnUse">
     <stop offset="0" stop-color="#c2e49c"/><stop offset="1" stop-color="#8cc56a"/>
   </linearGradient>
-  <rect x="1640" y="420" width="${span}" height="382" fill="url(#lawnG)"/>
+  <rect x="1640" y="498" width="${span}" height="304" fill="url(#lawnG)"/>
   <clipPath id="lawnClip"><rect x="1640" y="500" width="${span}" height="302"/></clipPath>
   <g clip-path="url(#lawnClip)">${stripes}</g>
   <rect x="1660" y="420" width="${span - 20}" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
   <rect x="1660" y="468" width="${span - 20}" height="13" fill="#f2e4cf" ${ink(2, 0.5)}/>
   ${pickets}
-  <rect x="1640" y="506" width="${span}" height="22" fill="#4f7a34" opacity="0.12"/>
+  <rect x="1640" y="504" width="${span}" height="22" fill="#4f7a34" opacity="0.14"/>
   ${flowers}
+  ${ barrel }
   ${path}
+  ${stones}
   <path d="${tufts}" stroke="#72ad57" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.75"/>
   ${daisies}
-  <rect x="1662" y="770" width="112" height="22" rx="5" fill="#c99a63" ${ink(2.5, 0.6)}/>
-  <path d="M1676,775 V788 M1692,775 V788 M1708,775 V788 M1724,775 V788 M1740,775 V788 M1756,775 V788" stroke="#a97a45" stroke-width="3"/>
-  <rect x="1660" y="292" width="20" height="10" fill="#3f3a52"/>
-  <path d="M1674,276 L1702,276 L1696,264 L1680,264 Z" fill="#3f3a52"/>
-  <rect x="1674" y="276" width="28" height="44" rx="5" fill="#3f3a52" ${ink(2)}/>
-  <rect x="1679" y="282" width="18" height="32" rx="3" fill="#fff1bf"/>`;
-  return { vb: [1600, 250, R - 1600, 554], body: painted(body) };
+  <rect x="1654" y="762" width="132" height="14" rx="4" fill="#d8c5ac" ${ink(2.2, 0.55)}/>
+  <rect x="1662" y="770" width="114" height="22" rx="6" fill="#c99a63" ${ink(2.5, 0.6)}/>
+  <rect x="1668" y="774" width="102" height="14" rx="4" fill="#deb27c"/>
+  <path d="M1678,775 V787 M1694,775 V787 M1710,775 V787 M1726,775 V787 M1742,775 V787 M1758,775 V787" stroke="#a97a45" stroke-width="2.6"/>
+  <path d="M1660,294 H1682 Q1690,294 1688,284" fill="none" stroke="#3f3a52" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="1688" cy="256" r="5" fill="#3f3a52"/>
+  <path d="M1670,274 L1706,274 L1696,260 L1680,260 Z" fill="#3f3a52" ${ink(2)}/>
+  <path d="M1672,274 L1704,274 L1700,320 L1676,320 Z" fill="#3f3a52" ${ink(2.2)}/>
+  <path d="M1677,279 L1699,279 L1696,314 L1680,314 Z" fill="#fff1bf"/>
+  <path d="M1688,279 V314 M1678,296 H1698" stroke="#3f3a52" stroke-width="2" opacity="0.65"/>
+  <path d="M1680,320 L1696,320 L1688,330 Z" fill="#3f3a52"/>`;
+  return { vb: [1600, 240, R - 1600, 564], body: painted(body) };
 }
 
 function hills({ seed, width, top, amp, color, shade, trees, treeColor, extra = '' }) {
@@ -423,10 +474,7 @@ export function hillsFar(width) {
   const windmill = `
     <g transform="translate(${Math.round(width * 0.36)},338)">
       <path d="M-12,0 L-7,-64 L7,-64 L12,0 Z" fill="#f4ede2" ${ink(2, 0.4)}/>
-      <g transform="translate(0,-64)">
-        <path d="M0,0 L-6,-44 L6,-44 Z M0,0 L44,-6 L44,6 Z M0,0 L6,44 L-6,44 Z M0,0 L-44,6 L-44,-6 Z" fill="#fffaf2" ${ink(1.5, 0.4)}/>
-        <circle r="5" fill="#c96b54"/>
-      </g>
+      <rect x="-4" y="-38" width="8" height="12" rx="3" fill="#d9c3a8"/>
     </g>
     <g transform="translate(${Math.round(width * 0.62)},352)">
       <rect x="-26" y="-30" width="52" height="30" fill="#d76a58" ${ink(2, 0.4)}/>
@@ -435,6 +483,13 @@ export function hillsFar(width) {
     </g>`;
   const body = hills({ seed: 3, width, top: 336, amp: 26, color: '#d3eac8', shade: '#c4e1b6', trees: Math.round(width / 120), treeColor: '#b6d9a3', extra: windmill });
   return { vb: [0, 240, width, 360], body: painted(body, { grain: false }) };
+}
+
+export function windmillSails() {
+  const body = `
+    <path d="M0,0 L-6,-44 L6,-44 Z M0,0 L44,-6 L44,6 Z M0,0 L6,44 L-6,44 Z M0,0 L-44,6 L-44,-6 Z" fill="#fffaf2" ${ink(1.5, 0.4)}/>
+    <circle r="5" fill="#c96b54" ${ink(1.5, 0.4)}/>`;
+  return { vb: [-50, -50, 100, 100], body: painted(body, { grain: false }) };
 }
 
 export function hillsNear(width) {
@@ -918,7 +973,7 @@ export function basketFront() {
 export const SPRITES = {
   nightstand, lampOff: () => lamp(false), lampOn: () => lamp(true),
   bedBack, bedQuilt, cotBack, cotFront, wardrobeBody, wardrobeInside, wardrobeDoor, curtain, door,
-  strollerBack, strollerFront, treeTrunk, treeCanopy,
+  strollerBack, strollerFront, treeTrunk, treeCanopy, windmillSails,
   cloud: () => cloud('clear'), cloudRain: () => cloud('rain'), cloudSnow: () => cloud('snow'),
   sun: sunFace, moon, bottle, apple, wand,
   carrot, tomato, strawberry, pumpkin, sunflower, tulip,
