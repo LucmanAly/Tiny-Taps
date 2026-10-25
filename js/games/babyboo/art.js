@@ -1,5 +1,6 @@
 // Original jungle scenery drawn with Canvas at up to 2x backing resolution.
 // The four characters and house retain the owner's approved reference drawings.
+import { LOG_COLORS } from './grove.js';
 export const PALETTE = {
   sky: '#170F31', horizon: '#4C2A72', green: '#1E6B5B', light: '#FFF3AF',
   lavender: '#A18AC9', pink: '#DF80C2', moon: '#FFAD36', water: '#255E76',
@@ -108,13 +109,54 @@ export function pumpkin(g,x,y,size) {
   g.beginPath();g.moveTo(-23,7);g.quadraticCurveTo(0,39,23,7);g.quadraticCurveTo(0,20,-23,7);g.fillStyle='#FFE99A';g.fill();g.restore();
 }
 
+export function firefly(g,x,y,size=6,light=0) {
+  ellipse(g,x,y,size*2.8,size*2.8,`rgba(255,239,158,${.035+light*.06})`);
+  ellipse(g,x-size*.65,y-size*.6,size*.9,size*.5,'#E7E8C96B');
+  ellipse(g,x+size*.65,y-size*.6,size*.9,size*.5,'#E7E8C96B');
+  ellipse(g,x,y,size*.6,size,'#FFF0AC');
+  ellipse(g,x,y-size*.7,size*.45,size*.4,'#7B8F62');
+}
+
+export function musicalLog(g,p,scale,index,light,quiet,t) {
+  g.save();g.translate(p.x,p.y);g.scale(scale,scale);
+  const dip=quiet?0:light*Math.sin(t*9)*1.5;
+  g.translate(0,dip);
+  ellipse(g,0,40,91,12,'#173D3B55');
+  g.fillStyle='#82604F';g.beginPath();g.roundRect(-88,-26,176,64,24);g.fill();
+  ellipse(g,0,-21,88,19,'#BA9876');
+  g.strokeStyle='#AF8968';g.lineWidth=4;g.lineCap='round';
+  for(let i=0;i<3;i++){g.beginPath();g.moveTo(-54+i*32,7);g.quadraticCurveTo(-26+i*32,1,-7+i*32,13);g.stroke();}
+  ellipse(g,72,6,19,32,'#D7B58B');
+  g.strokeStyle='#A07B58';g.lineWidth=2;
+  g.beginPath();g.ellipse(72,6,11,23,0,0,TAU);g.stroke();
+  ellipse(g,-15,-21,29,13,LOG_COLORS[index]);
+  if(light>.005){
+    g.globalAlpha=light*.32;ellipse(g,-15,-21,47,28,LOG_COLORS[index]);g.globalAlpha=1;
+    g.globalAlpha=light;g.strokeStyle=LOG_COLORS[index];g.lineWidth=3;
+    g.beginPath();g.ellipse(-15,-21,quiet?44:36+light*12,quiet?24:20+light*6,0,0,TAU);g.stroke();g.globalAlpha=1;
+  }
+  // A small note pictogram, never lettering baked into a character sprite.
+  g.strokeStyle='#735678';g.lineWidth=3;g.beginPath();g.moveTo(-11,-22);g.lineTo(-11,-35);g.lineTo(-3,-32);g.stroke();
+  ellipse(g,-16,-21,6,4,'#735678');g.restore();
+}
+
+export function groveFireflies(g,L,music,t,quiet,glow=0) {
+  for(const [group,p] of L.logs.entries())for(let i=0;i<5;i++){
+    const a=-Math.PI+(i+.5)*Math.PI/5;
+    const light=Math.max(music.lights[group],glow*.7);
+    const x=p.x+Math.cos(a)*86*L.scale+(quiet?0:Math.sin(t*.65+i+group)*5);
+    const y=p.y-100*L.scale+Math.sin(a)*55*L.scale+(quiet?0:Math.sin(t*.85+i*2)*4);
+    firefly(g,x,y,(quiet?5:4+light*2)*L.scale,light);
+  }
+}
+
 export function geometry(W,H,scene) {
   const floor=H*.8;
   const common={W,H,floor,scale:W<850?.76:.82,
     basket:{x:W*.48,y:H*.87},
     dock:{x:W*.28,y:H*.71},water:{x:W*.52,y:H*.64},
     previous:{x:Math.max(65,W*.065),y:H-125},next:{x:W-Math.max(65,W*.065),y:H-125},
-    patch:{x:W*.55,y:H*.51},peekaboo:{x:W*.49,y:H*.87},
+    patch:{x:W*.44,y:H*.48},grove:{x:W*.68,y:H*.48},peekaboo:{x:W*.49,y:H*.87},
     leaf:{x:W*.53,y:H*.86},flower:{x:W*.25,y:H*.87},
     bush:{x:W*.22,y:H*.65},mushroom:{x:W*.82,y:H*.87},puddle:{x:W*.68,y:H*.88},
     daddy:{x:W*.34,y:H*.73},mommy:{x:W*.57,y:H*.73},
@@ -131,6 +173,10 @@ export function geometry(W,H,scene) {
   if(scene==='patch'){
     common.boo={x:W*.27,y:H*.83};common.monster={x:W*.85,y:H*.88};
     common.pumpkins=[.22,.50,.78].map(x=>({x:W*x,y:H*.53}));
+  }
+  if(scene==='grove'){
+    common.boo={x:W*.25,y:H*.87};common.monster={x:W*.80,y:H*.89};
+    common.logs=[.23,.50,.77].map(x=>({x:W*x,y:H*.56}));
   }
   return common;
 }
@@ -178,6 +224,15 @@ export function drawScenery(g,L,scene,art,t,quiet,props={}) {
     bush(g,L.bush.x,L.bush.y,85+props.rustle*5);bush(g,W*.87,H*.66,80);
     mushroom(g,L.mushroom.x,L.mushroom.y,42,props.mushroom||0);
     ellipse(g,L.puddle.x,L.puddle.y,53,13,'#639A9A');ellipse(g,L.puddle.x-7,L.puddle.y-3,30,3,'#98C7B9');
+  }else if(scene==='grove'){
+    // Familiar jungle shapes surround a clear, mossy little music clearing.
+    ellipse(g,W*.5,H*.59,W*.45,H*.13,'#396C58');
+    ellipse(g,W*.5,H*.65,W*.41,H*.08,'#46795E');
+    palm(g,W*.02,H*.70,H*.55,1);palm(g,W*.99,H*.70,H*.53,5);
+    bush(g,W*.03,H*.67,85);bush(g,W*.96,H*.66,82);
+    for(let i=0;i<4;i++)ellipse(g,W*(.17+i*.12),H*(.76+i*.035),25,8,'#A18AC9');
+    mushroom(g,W*.10,H*.61,24);mushroom(g,W*.92,H*.71,28);
+    for(let i=0;i<3;i++)flower(g,W*(.36+i*.13),H*.70,12);
   }else if(scene==='patch'){
     // Three clear hiding places, familiar palms and lavender stepping stones.
     ellipse(g,W*.5,H*.57,W*.49,H*.18,'#386452');
@@ -217,7 +272,7 @@ export function drawScenery(g,L,scene,art,t,quiet,props={}) {
   }
 }
 
-export function character(g,art,name,x,y,scale,t,{moving=0,wave=0,happy=0,glow=0,quiet=false,phase=0}={}) {
+export function character(g,art,name,x,y,scale,t,{moving=0,wave=0,happy=0,glow=0,sway=0,quiet=false,phase=0}={}) {
   const m=art.manifest.characters[name];const img=art.images;
   const ghost=name!=='monster';
   const stride=quiet?0:Math.sin(t*9+phase)*moving;
@@ -231,7 +286,7 @@ export function character(g,art,name,x,y,scale,t,{moving=0,wave=0,happy=0,glow=0
     ellipse(g,x,y-m.height*scale*.45,radius,radius,halo);
   }
   g.save();g.translate(x,y-bob-(quiet?0:happy*Math.sin(t*7)*3));
-  g.rotate(quiet?0:stride*.018);g.scale(scale,scale);g.translate(-m.pivot[0],-m.pivot[1]);
+  g.rotate(quiet?0:stride*.018+Math.sin(t*3.5)*sway*.035);g.scale(scale,scale);g.translate(-m.pivot[0],-m.pivot[1]);
   function part(key){
     const p=m.parts[key];if(!p)return;
     const left=key.startsWith('left');const foot=key.endsWith('foot');
@@ -261,6 +316,7 @@ export function sign(g,x,y,direction,label,kind) {
   g.strokeStyle='#A7868C';g.lineWidth=8;g.beginPath();g.moveTo(0,10);g.lineTo(0,36);g.stroke();
   g.fillStyle='#E1CBAA';g.beginPath();g.roundRect(-46,-30,92,55,15);g.fill();g.strokeStyle='#AE8C88';g.lineWidth=2;g.stroke();
   if(kind==='pumpkin')pumpkin(g,0,-2,25);
+  else if(kind==='firefly')firefly(g,0,-2,14,1);
   else{g.strokeStyle='#65465F';g.lineWidth=5;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(-direction*9,-15);g.lineTo(direction*9,-3);g.lineTo(-direction*9,9);g.stroke();}
   g.fillStyle='#FFF1D7';g.font='600 17px ui-rounded, sans-serif';g.textAlign='center';g.fillText(label,0,57);g.restore();
 }

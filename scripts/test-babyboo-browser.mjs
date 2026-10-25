@@ -29,6 +29,17 @@ const browser=await chromium.launch({
 });
 const errors=[];
 const context=await browser.newContext({viewport:{width:1180,height:820},ignoreHTTPSErrors:true,hasTouch:true,deviceScaleFactor:1});
+await context.addInitScript(()=>{
+ window.__bbToneFrequencies=[];
+ const AC=window.AudioContext||window.webkitAudioContext;
+ const create=AC.prototype.createOscillator;
+ AC.prototype.createOscillator=function(){
+  const oscillator=create.call(this),set=oscillator.frequency.setValueAtTime.bind(oscillator.frequency),start=oscillator.start.bind(oscillator);
+  oscillator.frequency.setValueAtTime=(value,time)=>{oscillator.__frequency=value;return set(value,time);};
+  oscillator.start=(...args)=>{window.__bbToneFrequencies.push(oscillator.__frequency);return start(...args);};
+  return oscillator;
+ };
+});
 const page=await context.newPage();page.setDefaultTimeout(15000);
 page.on('pageerror',e=>errors.push(e.message));
 const game=page.locator('.bb-world');
@@ -112,6 +123,43 @@ try{
  await press('mommy');await data('held','');
  console.log('PASS: optional Pumpkin Patch, curl clue, gentle misses, four hiding layouts, reveal/replay, candy sharing, interruption and cross-location prop saves.');
 
+ // A second optional branch: freely ordered notes, visual response while
+ // carrying/muted, Monster's turn and compatible dropped-item/music saves.
+ await press('basket');await data('held','candy');await scene('next','path');await scene('grove','grove');
+ await data('held','candy');await data('boat','ready');await data('music','false');
+ const toneStart=await page.evaluate(()=>window.__bbToneFrequencies.length);
+ for(let i=0;i<3;i++){await press(`log-${i}`);await data('log',String(i));await page.waitForTimeout(180);}
+ await data('notes','3');await data('music','true');await data('held','candy');
+ const pitches=await page.evaluate(start=>window.__bbToneFrequencies.slice(start),toneStart);
+ assert.deepEqual(pitches.filter((_,i)=>i%2===0),[523.25,659.25,783.99],'Each log starts its distinct shared soft-bell note');
+ await press('held');await data('held','');await page.reload();await openGame();
+ await data('scene','grove');await data('music','true');await data('notes','0');
+ await press('candy');await data('held','candy');await press('monster');await data('held','');await data('notes','0');
+ await press('monster');await data('notes','1');await data('log','0');await page.waitForTimeout(180);
+ await page.evaluate(()=>localStorage.setItem('tinytaps-tap-place','0'));
+ await press('log-2');await data('notes','2');await data('log','2');
+ await page.evaluate(()=>localStorage.setItem('tinytaps-tap-place','1'));
+ await page.locator('.mute-btn').tap();await page.waitForTimeout(180);
+ await page.locator('[data-target="log-1"]').press('Enter');await data('notes','3');
+ assert.equal(await page.evaluate(async()=> (await import('./js/engine/audio.js')).isMuted()),true);
+ await press('boo');await page.locator('.mute-btn').tap();
+ for(const viewport of [{width:1180,height:820},{width:820,height:1180},{width:390,height:844},{width:844,height:390}]){
+  await page.setViewportSize(viewport);await page.waitForTimeout(150);
+  const rects=await game.locator('.bb-hit:visible').evaluateAll(buttons=>buttons.map(b=>({id:b.dataset.target,r:b.getBoundingClientRect().toJSON()})));
+  assert.deepEqual(rects.filter(({r})=>r.width<47||r.height<47||r.x<-.5||r.y<-.5||r.right>viewport.width+.5||r.bottom>viewport.height+.5),[],`Clipped grove targets at ${viewport.width}x${viewport.height}`);
+  const logs=rects.filter(({id})=>id.startsWith('log-')).sort((a,b)=>a.r.x-b.r.x);
+  assert.equal(logs.length,3);assert.ok(logs[0].r.right<logs[1].r.x&&logs[1].r.right<logs[2].r.x,'Three separate touch targets');
+  await press('log-1');
+  if(process.env.BABYBOO_SCREENSHOTS){fs.mkdirSync(process.env.BABYBOO_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.BABYBOO_SCREENSHOTS,`grove-${viewport.width}x${viewport.height}.png`)});}
+ }
+ await page.setViewportSize({width:1180,height:820});await page.waitForTimeout(150);
+ await page.emulateMedia({reducedMotion:'reduce'});await press('log-0');await press('monster');
+ await scene('previous','path');await scene('previous','home');
+ const afterGrove=await page.evaluate(()=>window.__bbToneFrequencies.length);await page.waitForTimeout(1200);
+ assert.equal(await page.evaluate(()=>window.__bbToneFrequencies.length),afterGrove,'Leaving music does not start delayed notes');
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ console.log('PASS: Firefly Grove, three actual note frequencies, Monster joining/sharing, compatible saves, four layouts, keyboard/mute, tap-to-place off and clean musical exit.');
+
  for(const viewport of [{width:1180,height:820},{width:820,height:1180},{width:390,height:844},{width:844,height:390}]){
   await page.setViewportSize(viewport);await page.waitForTimeout(100);
   const bad=await game.locator('.bb-hit:visible').evaluateAll(buttons=>buttons.map(b=>({label:b.getAttribute('aria-label'),r:b.getBoundingClientRect().toJSON()})).filter(({r})=>r.width<47||r.height<47||r.x<-.5||r.y<-.5||r.right>innerWidth+.5||r.bottom>innerHeight+.5));
@@ -133,6 +181,7 @@ try{
  await page.getByRole('button',{name:'Two',exact:true}).tap();await page.waitForTimeout(650);
  await page.locator('.menu-card').filter({hasText:'Baby Boo'}).tap({force:true});await game.waitFor();await game.locator('.bb-loading').waitFor({state:'hidden'});
  await data('scene','home');await data('completed','false');
+ await data('music','false');
  await page.evaluate(()=>localStorage.setItem('tinytaps-tap-place','0'));
  await press('basket');await page.waitForTimeout(200);assert.equal(await game.getAttribute('data-held'),'');
  // Drag still works with tap-to-place disabled.
@@ -154,7 +203,8 @@ try{
  await press('dock');await data('boat','ready');
  await scene('previous','path');await scene('patch','patch');
  await press('peekaboo');await data('peekaboo','hidden');await press('hidden-boo');await data('peekaboo','found');
- console.log('PASS: fresh offline app launch, all Baby Boo art, travel, leaf placement and peekaboo under /Tiny-Taps/.');
+ await scene('previous','path');await scene('grove','grove');await press('log-2');await data('music','true');await data('log','2');
+ console.log('PASS: fresh offline app launch, all Baby Boo art, travel, leaf placement, peekaboo and musical grove under /Tiny-Taps/.');
  assert.deepEqual(errors,[],`Browser errors: ${errors.join('; ')}`);
  console.log('Baby Boo browser regression passed.');
 }catch(error){

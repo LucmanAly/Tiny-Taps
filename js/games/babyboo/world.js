@@ -3,11 +3,12 @@ import { quietMotion } from '../../engine/calm.js';
 import { tapPlaceEnabled } from '../../engine/drag.js';
 import * as rules from './model.js';
 import { createPeekaboo, beginPeekaboo, choosePumpkin, stepPeekaboo, playingPeekaboo } from './peekaboo.js';
+import { createGrove, tapLog, stepGrove, LOG_STEPS } from './grove.js';
 import { loadArt, geometry, drawScenery, character, candy, leaf, flower, basket,
-  pumpkin, heart, thought, sign, ellipse, mix, ease } from './art.js';
+  pumpkin, musicalLog, groveFireflies, heart, thought, sign, ellipse, mix, ease } from './art.js';
 
 const KEY = 'tinytaps-babyboo-v1';
-const TITLES = { home: 'Lavender House', path: 'The Jungle Path', pond: 'Moonlit Pond', patch: 'Pumpkin Patch' };
+const TITLES = { home: 'Lavender House', path: 'The Jungle Path', pond: 'Moonlit Pond', patch: 'Pumpkin Patch', grove: 'Firefly Grove' };
 const CUES = {
   basket: 'A little treat to share.', monster: 'Take it to your friend.',
   leaf: 'A big leaf. What could it be?', next: 'Let’s go exploring.',
@@ -15,6 +16,7 @@ const CUES = {
   boat: 'Put your treat on the leaf.', water: 'Tap the water. Here it comes!',
   mommy: 'A flower for someone you love.',
   peekaboo: 'Play peekaboo with Boo. Look for his little curl!',
+  'log-1': 'Tap a log. Make a little tune.',
 };
 const ITEM_DRAW = { candy, leaf, flower };
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
@@ -33,6 +35,7 @@ export function startAdventure(ctx) {
   let tripGift = state.memories.boat && !state.memories.home;
   let monsterHappy = 0, waveUntil = 2.5;
   let peek = createPeekaboo();
+  let grove = createGrove();
   const actors = { boo:{x:0,y:0,v:0},monster:{x:0,y:0,v:0} };
   const targets = new Map();
   const aborter = new AbortController();
@@ -46,6 +49,8 @@ export function startAdventure(ctx) {
       Carry a leaf to the pond, place it on the water, add a candy and tap the water.
       The pumpkin sign on the jungle path leads to peekaboo. Tap the picture of Boo
       to start, then look for his curl and tap a pumpkin. There is no time limit.
+      The firefly sign leads to three musical logs. Tap any log, or tap Monster
+      with empty hands to let him play a note. The fireflies respond without sound too.
       Tap Boo to glow. Use the path signs to explore, or the app’s Home button to leave.</p>
     <div class="bb-loading"><span>One little moment…</span></div>`;
   stage.appendChild(root);
@@ -64,6 +69,8 @@ export function startAdventure(ctx) {
     root.dataset.boat = state.boat.phase; root.dataset.cargo = state.boat.cargo || '';
     root.dataset.delivered = String(state.memories.boat); root.dataset.shared = String(state.memories.shared); root.dataset.completed = String(state.memories.home);
     root.dataset.peekaboo = peek.phase; root.dataset.foundBoo = String(state.memories.peekaboo);
+    root.dataset.music = String(state.memories.music);root.dataset.notes = String(grove.notes);
+    root.dataset.log = String(grove.lastNote);
     placeLabel.textContent = TITLES[state.scene];
     if(t>=captionUntil)captionEl.textContent = cue();
   }
@@ -130,7 +137,11 @@ export function startAdventure(ctx) {
     const sx=p.x*view.scale,sy=p.y*view.scale;
     const width=Math.max(48,w*view.scale),height=Math.max(48,h*view.scale);
     entry.seen=true;entry.p=p;entry.w=width/view.scale;entry.h=height/view.scale;entry.action=action;
+    // A prop left at Boo's feet stays tappable after reload, regardless of
+    // which DOM target was created first. Drag hit-testing uses the same order.
+    entry.priority=action==='water'?0:['boo','monster','mommy','daddy'].includes(action)?1:2;
     const b=entry.button;b.hidden=false;
+    b.style.zIndex=String(entry.priority);
     if(b.dataset.action!==action)b.dataset.action=action;
     if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label);
     b.style.left=`${sx}px`;b.style.top=`${sy}px`;b.style.width=`${width}px`;b.style.height=`${height}px`;
@@ -140,7 +151,7 @@ export function startAdventure(ctx) {
   function hit(p,ignoreHeld=false) {
     // The small prop/boat targets win over large character or water targets.
     const entries=[...targets.values()].filter(e=>e.seen&&!e.button.hidden&&(!ignoreHeld||e.action!=='held'));
-    return entries.reverse().find(e=>Math.abs(p.x-e.p.x)<=e.w/2&&Math.abs(p.y-e.p.y)<=e.h/2)?.action;
+    return entries.sort((a,b)=>a.priority-b.priority).reverse().find(e=>Math.abs(p.x-e.p.x)<=e.w/2&&Math.abs(p.y-e.p.y)<=e.h/2)?.action;
   }
   function input(){ lastInput=t;hint=null;hug=0; }
   function stopPeekaboo() {
@@ -168,12 +179,22 @@ export function startAdventure(ctx) {
   }
   function giveToFriend(parent=false) {
     if(!state.held){monsterHappy=t+1.5;sound('giggle');waveUntil=t+1.5;return;}
-    if(state.held==='leaf') {sound('rustle');say('Let’s take our leaf to the pond.');hint=state.scene==='patch'?'previous':'next';return;}
+    if(state.held==='leaf') {sound('rustle');say('Let’s take our leaf to the pond.');hint=['patch','grove'].includes(state.scene)?'previous':'next';return;}
     const p=parent?L.mommy:actors.monster;
     walkTask(parent?'give-parent':'give',{x:p.x-95*L.scale,y:parent?L.floor:p.y});
   }
   function act(action) {
     if(!alive||!art||transition)return;
+    if(action?.startsWith('log:')){
+      if(state.scene!=='grove')return;
+      const index=Number(action.slice(4));
+      if(tapLog(grove,index,t)){
+        sound('bell',LOG_STEPS[index]);
+        say(['Dum… little fireflies.','Ding… hello, little lights.','Dong… a tune together.'][index],2.5);
+        if(!state.memories.music){state.memories.music=true;recordOutcome(true,'play:grove');save();}
+      }
+      publish();return;
+    }
     if(action==='peekaboo'){
       if(state.scene!=='patch')return;
       if(beginPeekaboo(peek,{x:actors.boo.x/L.W,y:actors.boo.y/L.H})){
@@ -207,7 +228,9 @@ export function startAdventure(ctx) {
         pickup='basket';walkTask('take:candy',{x:L.basket.x+60,y:L.floor},{keepPickup:false});sound('rustle');break;
       }
       case 'boo':case 'glow': glowUntil=t+5;sound('shimmer',440);sparkle(actors.boo.x,actors.boo.y-70);say('Glow, glow, little Boo!');break;
-      case 'monster': giveToFriend();break;
+      case 'monster':
+        if(state.scene==='grove'&&!state.held){act(`log:${(grove.lastNote+1)%3}`);waveUntil=t+1.5;}
+        else giveToFriend();break;
       case 'mommy':case 'daddy':
         if(state.held==='flower'||state.held==='candy')giveToFriend(true);
         else{waveUntil=t+2;hug=t+2;sound('gentleGift');say('Hello, little Boo!');}break;
@@ -222,9 +245,10 @@ export function startAdventure(ctx) {
         if(state.held==='leaf'){act('dock');break;}
         if(state.held&&state.boat.phase==='ready'&&!state.boat.cargo){act('boat');break;}
         rules.ripple(state);rippleAt(L.water.x+(Math.random()-.5)*80,L.water.y+30);save();publish();break;
-      case 'previous':go(['pond','patch'].includes(state.scene)?'path':'home');break;
+      case 'previous':go(['pond','patch','grove'].includes(state.scene)?'path':'home');break;
       case 'next':go(state.scene==='home'?'path':'pond');break;
       case 'patch':go('patch');break;
+      case 'grove':go('grove');break;
       case 'bush':scenery.rustle=1;sound('rustle');sparkle(L.bush.x,L.bush.y-40,'#E5EFAB',9);say('Hello, little fireflies.');break;
       case 'mushroom':scenery.mushroom=13;sound('bell',Math.floor(t)%5);monsterHappy=t+1;break;
       case 'puddle':walkTask('splash',{x:L.puddle.x-90,y:L.floor});break;
@@ -292,7 +316,7 @@ export function startAdventure(ctx) {
     if(root.hasPointerCapture(e.pointerId))root.releasePointerCapture(e.pointerId);
     if(drag){
       const action=hit(p,true);drag=null;
-      if(['monster','mommy','daddy','dock','boat','water','previous','next','patch'].includes(action))act(action);
+      if(['monster','mommy','daddy','dock','boat','water','previous','next','patch','grove'].includes(action))act(action);
       else{rules.dropHeld(state,p.x/L.W);save();publish();}
     }else if(Math.hypot(p.x-press.start.x,p.y-press.start.y)*view.scale<16){
       if(press.action)act(press.action);
@@ -322,7 +346,7 @@ export function startAdventure(ctx) {
       if(transition.time>=.22&&!transition.changed){
         const next=transition.scene,old=state.scene;
         const firstHome=next==='home'&&!state.memories.home&&state.memories.boat;
-        rules.visit(state,next);L=geometry(view.W,view.H,next);tasks=[];pickup=null;peek=createPeekaboo();
+        rules.visit(state,next);L=geometry(view.W,view.H,next);tasks=[];pickup=null;peek=createPeekaboo();grove=createGrove();
         Object.assign(actors.boo,L.boo);Object.assign(actors.monster,L.monster);
         // Enter a place from a consistent side, then float to its clear foreground.
         const forward=next==='path'?old==='home':next!=='home';
@@ -381,6 +405,7 @@ export function startAdventure(ctx) {
       if(!hadBoat)outcome('boat:gift');else if(!hadShare&&event==='candy')outcome('share:candy');
     }
     if(event||prior!==state.boat.phase){save();publish();}
+    if(state.scene==='grove')stepGrove(grove,dt);
     glow=mix(glow,t<glowUntil?1:0,Math.min(1,dt*1.8));
     scenery.rustle=Math.max(0,scenery.rustle-dt*2);scenery.mushroom=Math.max(0,scenery.mushroom-dt*19);
     for(const r of ripples)r.age+=dt;
@@ -401,6 +426,10 @@ export function startAdventure(ctx) {
     for(const e of targets.values())e.seen=false;
     drawScenery(g,L,state.scene,art,t,quiet,scenery);
     const {W,H}=L;
+    if(state.scene==='grove'){
+      groveFireflies(g,L,grove,t,quiet,glow);
+      for(const [i,p] of L.logs.entries())musicalLog(g,p,L.scale,i,grove.lights[i],quiet,t);
+    }
     if(['home','pond'].includes(state.scene)){
       basket(g,L.basket.x,L.basket.y,pickup==='basket'&&!quiet?Math.sin(t*5)*3:0);
       target('basket','Pick up a candy',L.basket,96,90);
@@ -446,9 +475,9 @@ export function startAdventure(ctx) {
     const b=actors.boo,m=actors.monster;
     const options={quiet,moving:b.v,phase:0,glow,wave:state.held?.3:0};
     character(g,art,'boo',b.x,b.y,L.scale,t,options);
-    character(g,art,'monster',m.x,m.y,L.scale,t,{quiet,moving:m.v,phase:3,wave:t<waveUntil?.8:0,happy:t<monsterHappy?1:0});
+    character(g,art,'monster',m.x,m.y,L.scale,t,{quiet,moving:m.v,phase:3,wave:t<waveUntil?.8:0,happy:t<monsterHappy?1:0,sway:state.scene==='grove'?grove.sway:0});
     if(!playingPeekaboo(peek))target('boo','Baby Boo: glow',{x:b.x,y:b.y-70*L.scale},110,155);
-    target('monster',state.held?'Give your friend what Boo is carrying':'Play with Purple Monster',{x:m.x,y:m.y-107*L.scale},150,220);
+    target('monster',state.held?'Give your friend what Boo is carrying':state.scene==='grove'?'Purple Monster: play a note together':'Play with Purple Monster',{x:m.x,y:m.y-107*L.scale},150,220);
     // Pumpkins occlude the same anchored Boo drawing; his curl is the clue.
     // Carry art is also behind the pumpkin, so a candy cannot give him away.
     const drawCarry=()=>{if(state.held&&!drag){const p=carryPoint();drawItem(state.held,p,state.held==='leaf'?35:state.held==='candy'?21:19);}};
@@ -483,7 +512,7 @@ export function startAdventure(ctx) {
     if(gift){const p=ease(clamp((t-gift.start)/.7,0,1));drawItem(gift.item,{x:mix(gift.from.x,gift.to.x,p),y:mix(gift.from.y,gift.to.y,p)-Math.sin(p*Math.PI)*35},21);}
     if(t<monsterHappy)heart(g,m.x,m.y-235*L.scale,20);
     else if(playingPeekaboo(peek))thought(g,m.x,m.y-255*L.scale,'boo',t,quiet,art);
-    else if(state.held==='candy'||(!state.memories.shared&&state.scene==='home')||(state.scene==='patch'&&peek.phase==='found'))thought(g,m.x,m.y-255*L.scale,'candy',t,quiet);
+    else if(state.held==='candy'||(!state.memories.shared&&state.scene==='home')||(state.scene==='patch'&&peek.phase==='found')||(state.scene==='grove'&&t-lastInput>6))thought(g,m.x,m.y-255*L.scale,'candy',t,quiet);
     else if(state.scene==='path'&&state.items.leaf==='path'&&!state.held)thought(g,m.x,m.y-255*L.scale,'leaf',t,quiet);
     else if(state.scene==='pond'&&state.boat.phase==='ready'&&!state.boat.cargo&&!state.held)thought(g,m.x,m.y-255*L.scale,'boat',t,quiet);
     if(t<hug&&state.scene==='home'){
@@ -501,6 +530,11 @@ export function startAdventure(ctx) {
     if(state.scene==='path'){
       sign(g,L.patch.x,L.patch.y,1,'Pumpkins','pumpkin');
       target('patch','Visit the pumpkin patch',L.patch,112,96);
+      sign(g,L.grove.x,L.grove.y,1,'Fireflies','firefly');
+      target('grove','Visit the firefly grove',L.grove,112,96);
+    }
+    if(state.scene==='grove')for(const [i,p] of L.logs.entries()){
+      target(`log-${i}`,`Play the ${['low','middle','high'][i]} musical log`,p,190*L.scale,104*L.scale,`log:${i}`);
     }
     if(state.scene==='home'&&state.memories.home){
       g.fillStyle='#F2DCB7';g.beginPath();g.roundRect(W*.66-52,H*.86-24,104,48,20);g.fill();

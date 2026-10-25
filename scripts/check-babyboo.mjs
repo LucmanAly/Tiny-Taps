@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createState,take,dropHeld,share,placeLeaf,loadBoat,ripple,stepBoat,visit } from '../js/games/babyboo/model.js';
 import { createPeekaboo,beginPeekaboo,choosePumpkin,stepPeekaboo } from '../js/games/babyboo/peekaboo.js';
+import { createGrove,tapLog,stepGrove } from '../js/games/babyboo/grove.js';
 
 const s=createState();
 assert.equal(take(s,'candy'),true);
@@ -62,6 +63,30 @@ for(let round=0;round<4;round++){
 assert.equal(seen.size,3,'Replays use all three hiding places');
 patchSave.memories.peekaboo=true;
 assert.equal(createState(JSON.parse(JSON.stringify(patchSave))).memories.peekaboo,true);
+
+// Musical play cannot steal a prop or advance a boat. Old saves and dropped
+// items migrate into/out of the new region without resetting either adventure.
+const groveSave=createState(JSON.parse(JSON.stringify(patchSave)));
+visit(groveSave,'grove');assert.equal(groveSave.memories.music,false);
+const boatBefore=JSON.stringify(groveSave.boat);stepBoat(groveSave,60);
+assert.equal(JSON.stringify(groveSave.boat),boatBefore);
+assert.equal(take(groveSave,'candy'),false,'The grove does not invent a candy basket');
+visit(groveSave,'path');groveSave.items.flower='path';take(groveSave,'flower');visit(groveSave,'grove');dropHeld(groveSave,.5);
+const resumedGrove=createState(JSON.parse(JSON.stringify(groveSave)));
+assert.equal(resumedGrove.scene,'grove');assert.equal(resumedGrove.items.flower,'grove');
+assert.equal(take(resumedGrove,'flower'),true);assert.equal(share(resumedGrove),'flower');
+resumedGrove.memories.music=true;
+assert.equal(createState(JSON.parse(JSON.stringify(resumedGrove))).memories.music,true);
+const music=createGrove();
+assert.equal(tapLog(music,8,0),false);assert.equal(tapLog(music,0,NaN),false);
+assert.equal(tapLog(music,2,0),true,'Any log can be the first note');
+for(let i=0;i<100;i++)assert.equal(tapLog(music,1,.01),false,'Fast repeats coalesce without scheduling more voices');
+assert.equal(music.notes,1);assert.equal(music.strikes[1],1,'Coalesced taps still show feedback');
+stepGrove(music,.05);assert.ok(music.lights[1]>0&&music.lights[1]<1,'Light rises gradually');
+assert.equal(tapLog(music,1,.2),true);assert.equal(tapLog(music,0,.4),true);
+for(let i=0;i<400;i++)stepGrove(music,.05);
+assert.equal(music.notes,3,'No timer generates notes or requires a sequence');
+assert.ok(music.sway<.001&&Math.max(...music.lights)<.001,'The clearing settles after play');
 
 // All declared sprite layers must retain the same canvas and anchor and be cached.
 const manifest=JSON.parse(fs.readFileSync('assets/babyboo/manifest.json','utf8'));

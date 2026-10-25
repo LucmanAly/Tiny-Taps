@@ -586,7 +586,8 @@ House never sets a reprompt.
 mounts a responsive 2x Canvas world plus real, labelled, minimum-48px DOM
 buttons over its interactive objects. The shared app retains Home/mute.
 The house, jungle path and pond are connected by path signs; an optional
-pumpkin picture sign branches from the path to Pumpkin Patch. A short fade
+pumpkin picture sign branches from the path to Pumpkin Patch, and a firefly
+picture sign leads to Firefly Grove. A short fade
 changes the scenery. The child guides Boo; Monster follows with smooth
 movement and alternating feet. The four models retain their approved front
 views, anchored layers, relative scale, colors and accessories.
@@ -628,6 +629,20 @@ activation. Round progress is intentionally not saved: leaving/reloading ends
 it safely. Only `memories.peekaboo` persists with the existing version-one save;
 old saves default that field to false. Carry/drop/share rules are unchanged,
 the patch accepts carried/dropped props, and boats stay paused outside the pond.
+
+`grove.js` owns transient log strikes, smoothed light levels, Monster's sway,
+and a short input cooldown. Each accepted tap immediately calls one shared
+`audio.bell` note (C/E/G); no background tune or delayed note is scheduled.
+Tapping Monster with empty hands plays a note; carrying a prop retains the
+ordinary gift behavior. All three logs remain usable with tap-to-place off,
+keyboard input and mute. Fireflies respond to notes and Boo's existing glow.
+Quiet mode suppresses movement while preserving soft light/color feedback.
+Only the first musical interaction memory (`memories.music`) is saved, using
+the existing per-child version-one schema; older saves default it false.
+Grove props are ordinary owned items, and the pond boat stays paused here.
+Small props/controls explicitly outrank character hit areas for both DOM
+pointers and drag hit-testing, so an item dropped at Boo's feet remains
+pickable after reload regardless of target creation order.
 
 ### My First Words
 
