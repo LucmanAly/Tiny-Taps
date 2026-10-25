@@ -40,6 +40,13 @@ curl remains visible beside the stem. No cast/reference bitmap, anchor,
 manifest scale or approved silhouette was changed. The tiny Boo picture in
 Monster's thought bubble and the start button reuses `boo-front.png`.
 
+Phase-two slice v5.31 adds a code-drawn mossy Firefly Grove, three bark-textured
+musical logs with colored note pictograms, and soft winged firefly lights.
+The firefly picture sign links from the jungle path. Logs and light responses
+are drawn in `art.js` at the same up-to-2x backing resolution; no bitmap,
+manifest, pivot or stock-cast proportion changes. Monster's gentle musical
+sway rotates the existing anchored front layers; no new camera view is made.
+
 ## Reproduce
 
 With Python, Pillow, NumPy and SciPy installed:

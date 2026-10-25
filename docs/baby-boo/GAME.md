@@ -45,6 +45,25 @@ the temporary hiding round safely, while preserving items, boat progress and
 each child's first peekaboo memory. This is a game development slice for owner
 review, not a new completed video episode.
 
+## Phase two, second playable slice · v5.31
+
+The firefly picture sign on the jungle path leads to **Firefly Grove**. Three
+chunky logs play gentle low, middle and high notes. Tap in any order; nearby
+fireflies brighten gradually and Monster sways along. With empty hands, tap
+Monster to let him play a note too. Boo's existing glow warms the clearing.
+Sound stays optional: colored log responses and fireflies also work muted.
+
+Candy sharing and carrying/drop/reload use the same rules as the other places.
+A carried candy is a gift when Monster is tapped; playing music never spends
+or generates treats. Leave through the Path sign at any time. There is no
+required tune, score, time limit, automatic song or delayed playback. A busy
+finger gets visual feedback while sound starts are coalesced to avoid a loud
+stack of notes. Calm/reduced motion keeps the light response and suppresses
+sway, bobbing, moving fireflies and log wobble.
+
+This slice is based on the peekaboo branch while PR #34 is still open; its own
+PR is stacked on that branch. The preview contains both phase-two slices.
+
 ## Continuity and art
 
 `PROJECT_BIBLE.md` is the combined current project text. The candy-loving trait
@@ -84,7 +103,10 @@ offline launch. It requires Node and OpenSSL; it changes no runtime dependency.
 `PLAYWRIGHT_MODULE` and `BROWSER_EXECUTABLE` may select existing installations.
 It also checks the optional patch branch, visible curl target, gentle misses,
 repeat hiding places, candy sharing after peekaboo, interrupted/reloaded rounds,
-cross-location prop persistence, patch layouts and offline peekaboo.
+cross-location prop persistence, patch layouts and offline peekaboo. Grove
+checks cover the three oscillator frequencies, free note order, Monster
+playing/sharing, mute and keyboard response, dropped-candy reload, four
+layouts, no delayed notes on exit and fresh offline musical play.
 
 Browser automation is not a physical iPad/iPhone Safari playtest or a child
 usability study. Those remain valuable before expanding to the next phase.
@@ -101,6 +123,6 @@ unverified.
 
 ## Later phases
 
-Firefly Grove, music logs, building a crossing, family picnics and more object
-combinations remain planned proposals. Review Pumpkin Patch and peekaboo on
-the child's actual device before selecting another small expansion.
+Stepping-stone building, family picnics and more object combinations remain
+planned proposals. Review the current grove and peekaboo on the child's actual
+device before selecting another small expansion.
