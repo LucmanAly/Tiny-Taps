@@ -10,10 +10,12 @@ Production was inspected at **v5.29**, with house, path and pond working.
 Peekaboo is in [PR #34](https://github.com/LucmanAly/Tiny-Taps/pull/34), still
 open when this slice started. This branch, `baby-boo-firefly-grove`, adds
 **v5.31**, the second small phase-two slice, on top of peekaboo commit
-`97d0fad67d7983db92dfedfabf243a33808c5470`. Its PR is stacked on
-`baby-boo-pumpkin-peekaboo`, so only the grove increment is reviewed while its
-preview includes both slices. Check actual PR bases, merge/deploy state and
-current main before resuming; do not assume either slice is in production.
+`97d0fad67d7983db92dfedfabf243a33808c5470`. [PR #35](https://github.com/LucmanAly/Tiny-Taps/pull/35)
+targets main to produce a combined Netlify preview; it includes peekaboo until
+#34 is merged. Review #34 first. The grove-only comparison is the difference
+between `baby-boo-pumpkin-peekaboo` and `baby-boo-firefly-grove`. Check actual
+PR bases, merge/deploy state and current main before resuming; do not assume
+either slice is in production.
 
 - Production: https://mytinytaps.netlify.app/ — choose **Baby Boo**.
 - Latest branch runtime: **5.31**, including matching HTML query keys and SW cache.

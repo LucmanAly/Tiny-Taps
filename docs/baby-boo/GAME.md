@@ -61,8 +61,10 @@ finger gets visual feedback while sound starts are coalesced to avoid a loud
 stack of notes. Calm/reduced motion keeps the light response and suppresses
 sway, bobbing, moving fireflies and log wobble.
 
-This slice is based on the peekaboo branch while PR #34 is still open; its own
-PR is stacked on that branch. The preview contains both phase-two slices.
+This slice builds on the peekaboo branch while PR #34 is still open. PR #35
+targets main to produce a combined Netlify preview, so its diff includes
+peekaboo until #34 is merged. Review #34 first; the preview contains both
+phase-two slices.
 
 ## Continuity and art
 
