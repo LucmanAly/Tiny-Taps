@@ -35,15 +35,15 @@ const LS_MORE_GAMES = 'tinytaps-more-games';
 const PROFILES = {
   little: {
     label: 'Little Explorer', age: '18–30 months',
-    games: ['playhouse', 'peekaboo', 'animals', 'vehicles', 'faces', 'bubbles', 'music', 'wash', 'coloring', 'counting', 'stickers'],
+    games: ['babyboo', 'playhouse', 'peekaboo', 'animals', 'vehicles', 'faces', 'bubbles', 'music', 'wash', 'coloring', 'counting', 'stickers'],
   },
   early: {
     label: 'Early Learner', age: '2½–3½ years',
-    games: ['playhouse', 'sounds', 'animals', 'vehicles', 'faces', 'paintpots', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory', 'stickers'],
+    games: ['babyboo', 'playhouse', 'sounds', 'animals', 'vehicles', 'faces', 'paintpots', 'colors', 'shapes', 'feedme', 'puzzle', 'bigsmall', 'memory', 'stickers'],
   },
   growing: {
     label: 'Growing Thinker', age: '3½–4½ years',
-    games: ['pattern', 'shadow', 'sort', 'trace', 'paintpots', 'counting', 'numberbook', 'memory', 'stickers'],
+    games: ['babyboo', 'pattern', 'shadow', 'sort', 'trace', 'paintpots', 'counting', 'numberbook', 'memory', 'stickers'],
   },
   custom: { label: 'Custom', age: 'your choices', games: [] },
 };
@@ -94,7 +94,7 @@ function reconcileGameGroups() {
 
 // Per-game accent tints so a pre-reader can navigate by color.
 const ACCENTS = {
-  peekaboo: '#f1e6ff', sounds: '#dff5f3', colors: '#ffe7e1', shapes: '#e4efff',
+  babyboo: '#e6daf2', peekaboo: '#f1e6ff', sounds: '#dff5f3', colors: '#ffe7e1', shapes: '#e4efff',
   counting: '#fff1d6', numberbook: '#eee8ff', puzzle: '#e5f6df', feedme: '#f7eedd', coloring: '#ffe3f0',
   memory: '#fdf0d0', music: '#fff9d9', bubbles: '#e0f2ff', stickers: '#ffeede',
   shadow: '#ece4fb', bigsmall: '#ffe0ec', pattern: '#e2f7e9', sort: '#d9f2e0',

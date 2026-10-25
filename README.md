@@ -2,7 +2,7 @@
 
 A game for my kids.
 
-Twenty-four toddler-friendly mini-games in one small web app — no ads, no links,
+Twenty-five toddler-friendly mini-games in one small web app — no ads, no links,
 nothing to buy, works offline once loaded:
 
 1. **Peekaboo** — tap tiles to reveal animals and hear their real sounds; every tap is a win
@@ -25,10 +25,11 @@ nothing to buy, works offline once loaded:
 18. **Wash the Animal** — rub the mud off with a finger until it shines
 19. **Trace It** — choose Alphabet, Shapes, Numbers, or Animals and follow each dotted stroke
 20. **Play House** — a storybook dollhouse and garden to swipe between. Everything answers a touch and almost everything can be picked up and carried: toys, the pram, the big brother, even his baby sister. She asks for things with a picture in a thought bubble (her teddy, her bottle, her brother…); helping her, giving her a ride or playing peekaboo snaps one of ten "Play Together" photos that fill the frames on the wall. Put him to bed to bring the night, drag the sun down or tap the moon for morning, tap the cloud for rain (puddles to jump in), snow (build a snowman) and a rainbow, dress him for the weather, find animals hiding in the bushes (and feed them from the garden), bounce higher with every tap on the trampoline, lay the baby in her cot for a lullaby, and grow carrots, tomatoes, strawberries, pumpkins and flowers in the vegetable patch, then pick them with the brother for his sister
-21. **My First Words** — a flashcard deck with storybook animal illustrations, everyday object photos, and Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
-22. **Things That Go** — open garage doors to send vehicles on their way, or listen to a vehicle sound and find its picture
-23. **Paint Pots** — add two paints, stir to mix, and keep the colors made; Make it asks for a picture's color
-24. **Silly Faces** — dress up a kid, monster, potato, or robot with playful face parts, hats, and extras
+21. **Baby Boo** — explore the lavender house, jungle path and moonlit pond with Boo and Purple Monster; carry objects, glow, share candies, send a candy or flower on a leaf boat, and return to Mommy and Daddy. Tap or drag, with per-child saved adventures and optional sound.
+22. **My First Words** — a flashcard deck with storybook animal illustrations, everyday object photos, and Animals, Shark Family, and Objects filters; tap the pictured object to hear its name in one consistent bundled voice, or swipe anywhere on the game screen to move through the selected deck
+23. **Things That Go** — open garage doors to send vehicles on their way, or listen to a vehicle sound and find its picture
+24. **Paint Pots** — add two paints, stir to mix, and keep the colors made; Make it asks for a picture's color
+25. **Silly Faces** — dress up a kid, monster, potato, or robot with playful face parts, hats, and extras
 
 The animal library spans 23 friends — from cat and cow to dinosaur, shark,
 giraffe and zebra. Seventeen of them come with authentic recorded sounds; when a
@@ -90,6 +91,8 @@ artwork includes original SVG scenery and supplied character illustrations.
 UI sounds are synthesized in-app with WebAudio.
 
 ## Changelog
+
+- **v5.29** — Baby Boo phase one: a connected three-place jungle adventure using the approved family and Purple Monster drawings. Includes touch movement, carrying and dropping props, Boo’s warm glow, candy sharing, a repeatable leaf-boat gift, a family homecoming, per-child saves, quiet-motion support and offline art.
 
 The current version is shown in Parent Settings.
 

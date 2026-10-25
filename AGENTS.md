@@ -10,6 +10,7 @@ usable without reading.
 - `index.html` — app shell and PWA metadata links.
 - `js/app.js` — boot, menus, game shell, settings, navigation, and shared context.
 - `js/games/` — one module per mini-game plus the registry in `js/games/index.js`.
+- `js/games/babyboo/` — `model.js` owns serializable item/boat/adventure rules; `world.js` owns lifecycle, gestures, movement, scene transitions and accessible hit targets; `art.js` draws scenery and animates anchored approved cutouts. `assets/babyboo/manifest.json` records layers, pivots, joints and provenance; `docs/baby-boo/` contains the game brief, combined project bible and asset catalog.
 - `js/games/playhouse/` — Play House's world modules (camera/input, scenery art,
   sky and weather, house, garden, vegetable patch, toys, characters, photo
   wall, pet bird and cage (`petbird.js`), outside-fence visitors (`visitors.js`),
@@ -40,7 +41,7 @@ usable without reading.
 
 ## Shipped mini-games
 
-The current registry contains 24 games:
+The current registry contains 25 games:
 
 1. Peekaboo — reveal covered animals and hear authentic sounds; `js/games/peekaboo.js` `start`.
 2. Animal Sounds — match a recording to its animal; `js/games/sounds.js` `start`.
@@ -62,10 +63,11 @@ The current registry contains 24 games:
 18. Wash the Animal — rub a Canvas mud layer away; `js/games/wash.js` `start`.
 19. Trace It — trace letters, shapes, numbers, animal-specific paths, and the playing child's own name (from Settings → Children); a glowing dot demonstrates each stroke first and again after a quiet spell; parents choose the path width; `js/games/trace.js` `start`.
 20. Play House — a pannable dollhouse and garden: carry toys and both children, the baby's picture-bubble wishes, a brother's lullaby that puts her to sleep on demand, the baby's cot with a music-box mobile (she goes to it at bedtime), a pull-cord lamp, a weather cloud (rain over the whole garden, snow, rainbow) that follows the view, a sun and moon that stay on screen for day-night anywhere outside, bushes with animals that come out to be fed produce, an eight-apple tree that regrows while away, colourful perching birds, trampoline, pram, a persistent ten-photo sibling wall, real children's giggles, coos, babble and yawns for both siblings, and a per-child vegetable patch (plant seed packets, water with rain or the watering can, plants grow in daylight and shoot up at sunrise, bees and butterflies visit the flowers, the brother comes from anywhere to help and carries the harvest to his sister, a harvest basket); `js/games/playhouse.js` `start`, world in `js/games/playhouse/`, patch in `patch.js`.
-21. My First Words — a flashcard deck with storybook animal illustrations and everyday object photos with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three pictures to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
-22. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
-23. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
-24. Silly Faces — dress up a face (kid, monster, potato, robot) with eyes, noses, mouths, hats and extras; tap to pop a part in place or drag it anywhere, tap parts to make them react, dice for a surprise face; `js/games/faces.js` `start`.
+21. Baby Boo — connected house/path/pond adventure, carrying, glow, candy sharing, leaf-boat gifts and homecoming; `js/games/babyboo.js`, modules in `js/games/babyboo/`, approved layered art in `assets/babyboo/`; per-child saves under `childKey('tinytaps-babyboo-v1')`.
+22. My First Words — a flashcard deck with storybook animal illustrations and everyday object photos with persistent Animals, Shark Family, and Objects filters; tap the pictured object to hear its name or swipe anywhere on the game screen to change cards, no scoring. An optional Find it mode (same corner panel) plays one bundled word and shows two or three pictures to choose from, bringing missed words back more often; `js/games/animals.js` `start`.
+23. Things That Go — Garage: tap a door and a vehicle drives, flies or sails away with its own sound effect; Listen: hear a vehicle sound and tap the vehicle that makes it; `js/games/vehicles.js` `start`.
+24. Paint Pots — drop two paints (drag or tap) into the pot, stir with a finger or the spoon, and watch them mix; Mix keeps a shelf of colors made, Make it asks for the color of a picture; `js/games/paintpots.js` `start`.
+25. Silly Faces — dress up a face (kid, monster, potato, robot) with eyes, noses, mouths, hats and extras; tap to pop a part in place or drag it anywhere, tap parts to make them react, dice for a surprise face; `js/games/faces.js` `start`.
 
 Play House also has a pet budgie beside the trampoline: tap its cage to open
 or recall it, tap the seed bowl to have the baby crawl over and feed it from
@@ -94,6 +96,8 @@ Calm or reduced motion). These are Play House features, not extra games.
 - Celebrations and motion follow `js/engine/calm.js`: confetti scales with the
   Celebrations setting and the device's reduce-motion preference; Play House
   skips its camera flash and hint sparkles under `quietMotion()`.
+- For Baby Boo continuation, start with `docs/baby-boo/NEXT_SESSION.md` and its linked current sources.
+- Baby Boo keeps the approved front-view cast and lavender house. Follow `docs/baby-boo/PROJECT_BIBLE.md`; no image generation or Sora. The original renderer/atlases were not supplied: preserve the extracted stock art and its shared anchors. Do not treat game adventures as Episode 1 history.
 - Computer voice and saved parent voice are separate systems.
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
 - Computer voice uses `speech.speakWord` only in four gameplay modules:
@@ -133,6 +137,7 @@ Avoid transformed ancestors around fixed controls because they change containing
 | Shared round behavior | `docs/ARCHITECTURE.md` Game architecture | `js/engine/roundgame.js` `makeRoundGame` |
 | Trace detection or catalogs | `docs/ARCHITECTURE.md` Trace It | `js/games/trace.js` `advanceSample`, `advanceTo`; `js/data/trace-items.js` |
 | Puzzle Fit modes | `docs/ARCHITECTURE.md` Puzzle Fit | `js/games/puzzle.js` `buildAnimals`, `buildShapes`, `layout`; `js/data/builds.js` |
+| Baby Boo adventure | `docs/baby-boo/GAME.md` and `ASSET_CATALOG.md` | `js/games/babyboo/model.js`, `world.js`, `art.js`; `scripts/check-babyboo.mjs`, `test-babyboo-browser.mjs` |
 | Play House world | `docs/ARCHITECTURE.md` Play House | `js/games/playhouse/world.js` `createWorld`; `kids.js`, `sky.js`, `home.js`, `garden.js`, `patch.js` `createPatch` |
 | Settings or local data | `docs/ARCHITECTURE.md` Settings | `js/app.js` `showSettings`, `showProgress`; `js/engine/progress.js` |
 | Children (profiles) | `docs/ARCHITECTURE.md` Children | `js/engine/children.js` `childKey`, `children`, `setActive`; `js/app.js` `showWhoIsPlaying`, `setupChildren` |

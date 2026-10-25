@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "kind": "layered-front-view-cutouts",
+  "provenance": "Approved Cast_Reference.png and Home_Reference.png supplied by owner.",
+  "note": "Base drawings preserved. Layer motion/blinks are production variants; no profile/back views or original atlases claimed.",
+  "characters": {
+    "daddy": {
+      "width": 258,
+      "height": 285,
+      "pivot": [
+        129,
+        279
+      ],
+      "body": "assets/babyboo/daddy-body.png",
+      "blink": "assets/babyboo/daddy-blink.png",
+      "parts": {
+        "left-arm": {
+          "src": "assets/babyboo/daddy-left-arm.png",
+          "joint": [
+            37,
+            136
+          ]
+        },
+        "right-arm": {
+          "src": "assets/babyboo/daddy-right-arm.png",
+          "joint": [
+            220,
+            136
+          ]
+        }
+      },
+      "animations": {
+        "blinkMs": 160,
+        "idleMs": 3200,
+        "walkMs": 720,
+        "waveMs": 1800
+      }
+    },
+    "mommy": {
+      "width": 224,
+      "height": 257,
+      "pivot": [
+        112,
+        251
+      ],
+      "body": "assets/babyboo/mommy-body.png",
+      "blink": "assets/babyboo/mommy-blink.png",
+      "parts": {
+        "left-arm": {
+          "src": "assets/babyboo/mommy-left-arm.png",
+          "joint": [
+            35,
+            124
+          ]
+        },
+        "right-arm": {
+          "src": "assets/babyboo/mommy-right-arm.png",
+          "joint": [
+            190,
+            124
+          ]
+        }
+      },
+      "animations": {
+        "blinkMs": 160,
+        "idleMs": 3200,
+        "walkMs": 720,
+        "waveMs": 1800
+      }
+    },
+    "boo": {
+      "width": 138,
+      "height": 169,
+      "pivot": [
+        69,
+        164
+      ],
+      "body": "assets/babyboo/boo-body.png",
+      "blink": "assets/babyboo/boo-blink.png",
+      "parts": {
+        "left-arm": {
+          "src": "assets/babyboo/boo-left-arm.png",
+          "joint": [
+            23,
+            92
+          ]
+        },
+        "right-arm": {
+          "src": "assets/babyboo/boo-right-arm.png",
+          "joint": [
+            116,
+            92
+          ]
+        }
+      },
+      "animations": {
+        "blinkMs": 160,
+        "idleMs": 3200,
+        "walkMs": 720,
+        "waveMs": 1800
+      }
+    },
+    "monster": {
+      "width": 207,
+      "height": 264,
+      "pivot": [
+        104,
+        257
+      ],
+      "body": "assets/babyboo/monster-body.png",
+      "blink": "assets/babyboo/monster-blink.png",
+      "parts": {
+        "left-arm": {
+          "src": "assets/babyboo/monster-left-arm.png",
+          "joint": [
+            26,
+            147
+          ]
+        },
+        "right-arm": {
+          "src": "assets/babyboo/monster-right-arm.png",
+          "joint": [
+            181,
+            147
+          ]
+        },
+        "left-foot": {
+          "src": "assets/babyboo/monster-left-foot.png",
+          "joint": [
+            62,
+            244
+          ]
+        },
+        "right-foot": {
+          "src": "assets/babyboo/monster-right-foot.png",
+          "joint": [
+            146,
+            244
+          ]
+        }
+      },
+      "animations": {
+        "blinkMs": 160,
+        "idleMs": 3200,
+        "walkMs": 720,
+        "waveMs": 1800
+      }
+    }
+  },
+  "files": [
+    "assets/babyboo/boo-blink.png",
+    "assets/babyboo/boo-body.png",
+    "assets/babyboo/boo-front.png",
+    "assets/babyboo/boo-left-arm.png",
+    "assets/babyboo/boo-right-arm.png",
+    "assets/babyboo/daddy-blink.png",
+    "assets/babyboo/daddy-body.png",
+    "assets/babyboo/daddy-front.png",
+    "assets/babyboo/daddy-left-arm.png",
+    "assets/babyboo/daddy-right-arm.png",
+    "assets/babyboo/house.png",
+    "assets/babyboo/mommy-blink.png",
+    "assets/babyboo/mommy-body.png",
+    "assets/babyboo/mommy-front.png",
+    "assets/babyboo/mommy-left-arm.png",
+    "assets/babyboo/mommy-right-arm.png",
+    "assets/babyboo/monster-blink.png",
+    "assets/babyboo/monster-body.png",
+    "assets/babyboo/monster-front.png",
+    "assets/babyboo/monster-left-arm.png",
+    "assets/babyboo/monster-left-foot.png",
+    "assets/babyboo/monster-right-arm.png",
+    "assets/babyboo/monster-right-foot.png"
+  ],
+  "house": "assets/babyboo/house.png"
+}
