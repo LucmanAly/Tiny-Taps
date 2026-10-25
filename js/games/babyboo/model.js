@@ -1,6 +1,6 @@
 // Serializable adventure rules. Rendering and travel never own an item: this
 // one model keeps tap, drag, scene changes, reloads and boat delivery consistent.
-export const SCENES = ['home', 'path', 'pond'];
+export const SCENES = ['home', 'path', 'pond', 'patch'];
 export const ITEMS = ['leaf', 'candy', 'flower'];
 const LOCATIONS = [...SCENES, 'held', 'boat', 'basket', 'shared'];
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -10,7 +10,7 @@ export function createState(saved) {
     version: 1, scene: 'home', held: null,
     items: { leaf: 'path', candy: 'basket', flower: 'path' },
     dropped: {}, boat: { phase: 'none', cargo: null, progress: 0 },
-    memories: { shared: false, boat: false, home: false, flower: false },
+    memories: { shared: false, boat: false, home: false, flower: false, peekaboo: false },
   };
   if (!saved || saved.version !== 1) return s;
   if (SCENES.includes(saved.scene)) s.scene = saved.scene;
@@ -56,7 +56,7 @@ export function dropHeld(s, x = .5) {
 export function take(s, item, x = .5) {
   if (!ITEMS.includes(item)) return false;
   const location = s.items[item];
-  if (location !== s.scene && !(item === 'candy' && location === 'basket' && s.scene !== 'path')) return false;
+  if (location !== s.scene && !(item === 'candy' && location === 'basket' && ['home', 'pond'].includes(s.scene))) return false;
   if (s.held) dropHeld(s, x);
   s.items[item] = 'held';
   s.held = item;
@@ -136,6 +136,7 @@ export function visit(s, scene) {
 }
 
 export function nextHint(s) {
+  if (s.scene === 'patch') return s.held === 'candy' || s.held === 'flower' ? 'monster' : s.held === 'leaf' ? 'previous' : 'peekaboo';
   if (s.held === 'candy') return s.scene === 'pond' && s.boat.phase === 'ready' && !s.boat.cargo ? 'boat' : 'monster';
   if (s.held === 'flower') return s.scene === 'pond' && s.boat.phase === 'ready' && !s.boat.cargo ? 'boat' : 'mommy';
   if (s.held === 'leaf') return s.scene === 'pond' ? 'dock' : 'next';

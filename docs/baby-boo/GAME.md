@@ -1,4 +1,4 @@
-# Baby Boo: Little Jungle Adventures — phase one
+# Baby Boo: Little Jungle Adventures
 
 Owner-approved scope, 2026-10-24. A playable addition to Tiny Taps using the
 existing browser/tablet, touch and offline PWA setup. No framework/build step,
@@ -23,6 +23,27 @@ A flower can ride the boat too. An empty boat is still a toy. The bush,
 mushroom and puddle invite small discoveries. Trips and candy sharing can be
 repeated. **Again?** starts another leaf adventure after a homecoming, while
 preserving the child's memories. Exploration is always available.
+
+## Phase two, first playable slice · v5.30
+
+On the jungle path, tap the **pumpkin picture sign** to visit Pumpkin Patch.
+The existing Pond sign still goes straight to the leaf-boat adventure.
+
+Tap the Boo-and-pumpkin picture, or any big pumpkin, to start peekaboo. Boo
+floats behind one of three smiling pumpkins; his curl peeks out beside its
+stem. Tap that pumpkin or the curl to find him. Another pumpkin gives a soft
+rustle and fireflies, with no failure or time limit. Boo emerges, Monster
+celebrates, and the picture button invites another round in a different spot.
+After a quiet spell, a gentle outline helps with the hiding place.
+
+Bring candy for Monster or carry the existing leaf/flower through this region.
+Props can be put down, picked up and restored after reload here too. Peekaboo
+does not create, consume or reward candies. Monster still hopes for a treat;
+sharing remains a separate, freely chosen action. Leave via the Path sign at
+any time. Friends and props can interrupt a round. Leaving or reloading ends
+the temporary hiding round safely, while preserving items, boat progress and
+each child's first peekaboo memory. This is a game development slice for owner
+review, not a new completed video episode.
 
 ## Continuity and art
 
@@ -61,6 +82,9 @@ four phone/tablet viewport layouts, replay, reduced motion, keyboard input,
 shared mute, drag with tap-to-place off, independent child saves, and a new
 offline launch. It requires Node and OpenSSL; it changes no runtime dependency.
 `PLAYWRIGHT_MODULE` and `BROWSER_EXECUTABLE` may select existing installations.
+It also checks the optional patch branch, visible curl target, gentle misses,
+repeat hiding places, candy sharing after peekaboo, interrupted/reloaded rounds,
+cross-location prop persistence, patch layouts and offline peekaboo.
 
 Browser automation is not a physical iPad/iPhone Safari playtest or a child
 usability study. Those remain valuable before expanding to the next phase.
@@ -77,6 +101,6 @@ unverified.
 
 ## Later phases
 
-Pumpkin Patch, Firefly Grove, hide-and-seek, music logs, building a crossing,
-family picnics and more object combinations remain planned proposals. They are
-not presented as implemented phase-one content.
+Firefly Grove, music logs, building a crossing, family picnics and more object
+combinations remain planned proposals. Review Pumpkin Patch and peekaboo on
+the child's actual device before selecting another small expansion.

@@ -100,7 +100,7 @@ export function mushroom(g,x,y,size=40,bob=0) {
   g.beginPath();g.ellipse(0,-6,35,31,0,Math.PI,TAU);g.quadraticCurveTo(0,7,-35,-6);g.fillStyle='#DF80C2';g.fill();
   ellipse(g,-16,-18,5,6,'#FFE8F8');ellipse(g,7,-29,6,6,'#FFE8F8');ellipse(g,22,-15,4,5,'#FFE8F8');g.restore();
 }
-function pumpkin(g,x,y,size) {
+export function pumpkin(g,x,y,size) {
   g.save();g.translate(x,y);g.scale(size/50,size/50);
   g.strokeStyle='#79A575';g.lineWidth=9;g.beginPath();g.moveTo(0,-26);g.lineTo(5,-43);g.stroke();
   ellipse(g,-15,0,25,32,'#F29A2F');ellipse(g,15,0,25,32,'#F6A32E');ellipse(g,0,0,24,34,'#FFB13C');
@@ -114,6 +114,7 @@ export function geometry(W,H,scene) {
     basket:{x:W*.48,y:H*.87},
     dock:{x:W*.28,y:H*.71},water:{x:W*.52,y:H*.64},
     previous:{x:Math.max(65,W*.065),y:H-125},next:{x:W-Math.max(65,W*.065),y:H-125},
+    patch:{x:W*.55,y:H*.51},peekaboo:{x:W*.49,y:H*.87},
     leaf:{x:W*.53,y:H*.86},flower:{x:W*.25,y:H*.87},
     bush:{x:W*.22,y:H*.65},mushroom:{x:W*.82,y:H*.87},puddle:{x:W*.68,y:H*.88},
     daddy:{x:W*.34,y:H*.73},mommy:{x:W*.57,y:H*.73},
@@ -126,6 +127,10 @@ export function geometry(W,H,scene) {
   if(scene==='pond'){
     common.boo={x:W*.20,y:H*.81};common.monster={x:W*.83,y:H*.81};
     common.leaf={x:W*.23,y:H*.87};common.flower={x:W*.66,y:H*.88};
+  }
+  if(scene==='patch'){
+    common.boo={x:W*.27,y:H*.83};common.monster={x:W*.85,y:H*.88};
+    common.pumpkins=[.22,.50,.78].map(x=>({x:W*x,y:H*.53}));
   }
   return common;
 }
@@ -173,6 +178,19 @@ export function drawScenery(g,L,scene,art,t,quiet,props={}) {
     bush(g,L.bush.x,L.bush.y,85+props.rustle*5);bush(g,W*.87,H*.66,80);
     mushroom(g,L.mushroom.x,L.mushroom.y,42,props.mushroom||0);
     ellipse(g,L.puddle.x,L.puddle.y,53,13,'#639A9A');ellipse(g,L.puddle.x-7,L.puddle.y-3,30,3,'#98C7B9');
+  }else if(scene==='patch'){
+    // Three clear hiding places, familiar palms and lavender stepping stones.
+    ellipse(g,W*.5,H*.57,W*.49,H*.18,'#386452');
+    g.strokeStyle='#76A878';g.lineWidth=5;g.lineCap='round';
+    g.beginPath();g.moveTo(W*.10,H*.57);g.bezierCurveTo(W*.35,H*.67,W*.64,H*.47,W*.90,H*.58);g.stroke();
+    for(let i=0;i<6;i++){
+      const x=W*(.13+i*.145),y=H*(.58+Math.sin(i*1.7)*.035);
+      leaf(g,x,y,19,i%2?.5:-.5);
+    }
+    for(let i=0;i<4;i++)ellipse(g,W*(.15+i*.11),H*(.79+i*.032),24,7,'#A18AC9');
+    palm(g,W*.03,H*.68,H*.50,1);bush(g,W*.95,H*.64,65);
+    pumpkin(g,W*.09,H*.65,25);pumpkin(g,W*.93,H*.52,23);
+    mushroom(g,W*.94,H*.90,26);
   }else{
     // A sheltered pond with a continuous dry bank around it.
     ellipse(g,W*.55,H*.64,W*.36,H*.17,'#5C8D7A');
@@ -217,7 +235,7 @@ export function character(g,art,name,x,y,scale,t,{moving=0,wave=0,happy=0,glow=0
   function part(key){
     const p=m.parts[key];if(!p)return;
     const left=key.startsWith('left');const foot=key.endsWith('foot');
-    const angle=foot?(left?stride:-stride)*.075:(left?1:-1)*wave*(.35+Math.sin(t*5)*.18)+(left?stride:-stride)*.06;
+    const angle=foot?(left?stride:-stride)*.075:(left?1:-1)*wave*(.35+(quiet?0:Math.sin(t*5)*.18))+(left?stride:-stride)*.06;
     g.save();g.translate(...p.joint);g.rotate(angle);g.translate(-p.joint[0],-p.joint[1]);
     if(foot)g.translate(0,quiet?0:Math.min(0,(left?stride:-stride)*5));
     g.drawImage(img[p.src],0,0);g.restore();
@@ -226,7 +244,7 @@ export function character(g,art,name,x,y,scale,t,{moving=0,wave=0,happy=0,glow=0
   g.drawImage(img[blink?m.blink:m.body],0,0);part('left-arm');part('right-arm');g.restore();
 }
 
-export function thought(g,x,y,kind,t,quiet) {
+export function thought(g,x,y,kind,t,quiet,art) {
   const bob=quiet?0:Math.sin(t*2)*2;
   g.save();g.translate(x,y+bob);
   ellipse(g,-16,43,5,5,'#FFF5E7');ellipse(g,-10,32,8,7,'#FFF5E7');
@@ -235,12 +253,14 @@ export function thought(g,x,y,kind,t,quiet) {
   else if(kind==='leaf')leaf(g,0,4,32);
   else if(kind==='heart')heart(g,0,6,27);
   else if(kind==='boat'){leaf(g,0,14,33);candy(g,1,0,14);}
+  else if(kind==='boo'&&art){const image=art.images['assets/babyboo/boo-front.png'];g.drawImage(image,-22,-24,44,54);}
   g.restore();
 }
 export function sign(g,x,y,direction,label,kind) {
   g.save();g.translate(x,y);
   g.strokeStyle='#A7868C';g.lineWidth=8;g.beginPath();g.moveTo(0,10);g.lineTo(0,36);g.stroke();
   g.fillStyle='#E1CBAA';g.beginPath();g.roundRect(-46,-30,92,55,15);g.fill();g.strokeStyle='#AE8C88';g.lineWidth=2;g.stroke();
-  g.strokeStyle='#65465F';g.lineWidth=5;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(-direction*9,-15);g.lineTo(direction*9,-3);g.lineTo(-direction*9,9);g.stroke();
+  if(kind==='pumpkin')pumpkin(g,0,-2,25);
+  else{g.strokeStyle='#65465F';g.lineWidth=5;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(-direction*9,-15);g.lineTo(direction*9,-3);g.lineTo(-direction*9,9);g.stroke();}
   g.fillStyle='#FFF1D7';g.font='600 17px ui-rounded, sans-serif';g.textAlign='center';g.fillText(label,0,57);g.restore();
 }

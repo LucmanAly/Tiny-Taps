@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createState,take,dropHeld,share,placeLeaf,loadBoat,ripple,stepBoat,visit } from '../js/games/babyboo/model.js';
+import { createPeekaboo,beginPeekaboo,choosePumpkin,stepPeekaboo } from '../js/games/babyboo/peekaboo.js';
 
 const s=createState();
 assert.equal(take(s,'candy'),true);
@@ -34,6 +35,33 @@ assert.equal(invalid.scene,'home');assert.equal(invalid.items.leaf,'held');asser
 assert.equal(invalid.boat.phase,'none');assert.equal(invalid.boat.progress,0);
 const missingLeaf=createState({version:1,items:{leaf:'shared',flower:'basket',candy:'shared'}});
 assert.equal(missingLeaf.items.leaf,'path');assert.equal(missingLeaf.items.flower,'path');assert.equal(missingLeaf.items.candy,'basket');
+
+// Old saves migrate without resetting phase one. Props have exactly one owner
+// in the new branch, and an unfinished boat cannot sail while playing there.
+const patch=createState(JSON.parse(JSON.stringify(restored)));
+visit(patch,'patch');assert.equal(patch.boat.cargo,'candy');
+const paused=JSON.stringify(patch.boat);stepBoat(patch,60);assert.equal(JSON.stringify(patch.boat),paused);
+assert.equal(take(patch,'candy'),false,'No imaginary candy basket in the patch');
+visit(patch,'path');assert.equal(take(patch,'flower'),true);visit(patch,'patch');
+dropHeld(patch,.6);const patchSave=createState(JSON.parse(JSON.stringify(patch)));
+assert.equal(patchSave.scene,'patch');assert.equal(patchSave.items.flower,'patch');
+assert.equal(take(patchSave,'flower'),true);assert.equal(share(patchSave),'flower');
+assert.equal(createState({version:1,memories:{home:true,boat:true}}).memories.peekaboo,false);
+const peek=createPeekaboo(),seen=new Set();
+for(let round=0;round<4;round++){
+ assert.equal(beginPeekaboo(peek,{x:.3,y:.8}),true);seen.add(peek.spot);
+ assert.equal(beginPeekaboo(peek,{x:.9,y:.8}),false,'Repeated starts do not move a hiding Boo');
+ assert.equal(choosePumpkin(peek,peek.spot),null,'Let the hiding motion finish');
+ assert.equal(stepPeekaboo(peek,1.6),'hidden');
+ assert.equal(choosePumpkin(peek,(peek.spot+1)%3),'rustle');assert.equal(peek.phase,'hidden');
+ stepPeekaboo(peek,100);assert.equal(peek.phase,'hidden','No timeout or failure');
+ assert.equal(choosePumpkin(peek,peek.spot),'found');
+ assert.equal(choosePumpkin(peek,peek.spot),null,'Rapid reveal taps cannot repeat a completion');
+ assert.equal(stepPeekaboo(peek,1.1),'complete');assert.equal(stepPeekaboo(peek,1.1),null);
+}
+assert.equal(seen.size,3,'Replays use all three hiding places');
+patchSave.memories.peekaboo=true;
+assert.equal(createState(JSON.parse(JSON.stringify(patchSave))).memories.peekaboo,true);
 
 // All declared sprite layers must retain the same canvas and anchor and be cached.
 const manifest=JSON.parse(fs.readFileSync('assets/babyboo/manifest.json','utf8'));

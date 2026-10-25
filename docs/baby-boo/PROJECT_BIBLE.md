@@ -1,5 +1,5 @@
 # BABY BOO — PROJECT BIBLE
-Version 1.2 · prepared for Luqman Ali · updated 2026-10-24
+Version 1.3 · prepared for Luqman Ali · updated 2026-10-25
 
 Use this single file as the project’s main text source. It consolidates the franchise, visual rules, continuity, production workflow and exact Episode 2 story. The kit’s separate text documents are editing copies; do not upload contradictory versions. The latest accepted owner instruction takes precedence. New setting concepts and story ideas remain proposals.
 
@@ -135,7 +135,7 @@ Transparent sprites contain no labels or baked scene background. Their fixed foo
 ---
 
 # Baby Boo — continuity log
-Version 1.2 · 2026-10-24
+Version 1.3 · 2026-10-25
 
 ## Established base
 The four stock designs and lavender house were approved in the originating conversation. The owner then approved continuing with the same characters and granted freedom to expand atmosphere and scenery in the same spirit. The completed Episode 2 is the current finished-video reference.
@@ -157,6 +157,7 @@ Episode 1's complete script and events were not supplied for this kit. The origi
 Firefly Grove; Moonlit Pond; Cozy Room interior; the future story/game ideas in STORY_IDEAS.md. Their art is exploratory. These places and stories are not claimed to have appeared in a finished episode.
 
 ## Accepted changes
+- 2026-10-25 · Bible v1.3: Owner authorized continuing phase two in small playable steps from latest Tiny Taps main, preserving the approved cast, candy-loving Monster and phase-one game. First development slice for review: an optional Pumpkin Patch branch from the jungle path and repeatable peekaboo. Boo hides behind one of three smiling pumpkins with his curl visible; a tap reveals him, other pumpkins rustle gently, and Monster celebrates. Existing props travel through the patch; candy sharing remains optional and is not a prize for finding Boo. The phase-one leaf-boat loop remains intact. This records game implementation scope, not an accepted finished-video episode or a new power; further regions and activities remain proposals.
 - 2026-10-24 · Bible v1.2: Owner approved implementing phase one of Little Jungle Adventures in Tiny Taps: lavender house, a short jungle path and Moonlit Pond; Boo movement/carrying/glow; Purple Monster following and candy sharing; a candy-on-a-leaf-boat adventure and return to Mommy and Daddy. These are game development decisions, not retroactive Episode 1 or finished-video history. The three-place game geography is adopted for this implementation; later regions and activities remain future proposals.
 - 2026-10-24 · Bible v1.1: Owner confirmed Purple Monster's recurring love of candies: he always wants candies, and Baby Boo gives him candies. Added to the stock-cast record and recurring-trait guidance. Specific candy activities and adventures remain proposals until accepted; Episode 1 remains undocumented.
 - 2026-10-24: Kit v1 exports the existing front-facing stock models into transparent game assets and records the known franchise base. This does not replace the approved identities.
