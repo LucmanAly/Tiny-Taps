@@ -87,3 +87,13 @@ vector created with Recraft. Original path geometry is retained; runtime
 metadata, the page-sized white background, and nonuniform scaling were removed.
 White paths are grouped into six tap-to-fill regions, while ink and eye details
 remain fixed.
+
+
+## Baby Boo
+
+The Baby Boo, Daddy Ghost, Mommy Ghost and Purple Monster drawings and
+lavender house are the owner's supplied approved project references. Sources
+are retained in `assets/babyboo/source/`. `scripts/prepare-babyboo-art.py`
+extracts their transparent, anchored front-view layers without redesigning the
+cast. New scenery, props, effects and motion use original code; no image
+generation or Sora was used. See `docs/baby-boo/ASSET_CATALOG.md`.

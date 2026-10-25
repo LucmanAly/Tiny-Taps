@@ -44,7 +44,7 @@ The shared context contains `stage`, `audio`, `speech`, `celebrate`, `setRepromp
 `exitToMenu`, adaptive `difficulty`, and `recordOutcome`. Game modules should use
 these services rather than reaching into the app shell.
 
-`js/games/index.js` is the authoritative registry. It currently exports 24 games.
+`js/games/index.js` is the authoritative registry. It currently exports 25 games.
 
 ## Voice and audio
 
@@ -133,7 +133,7 @@ children the menu shows the playing child's avatar chip (top-left; avatar only
 on phones), which returns to that chooser.
 `showMenu()` filters the registry by the selected learning profile and hidden
 games, builds the card grid, and anchors Settings, Mix, and Info controls.
-Every preset profile includes the Sticker Book; My First Words, Things That Go
+Every preset profile includes Baby Boo and the Sticker Book; My First Words, Things That Go
 and Silly Faces are on the younger home screens, Paint Pots and Number Book on
 the older ones. While the bedtime timer is winding down, the menu shows only
 `calm.CALM_GAMES` (title "Wind-down time"), and `mixPool()` applies the same
@@ -580,6 +580,44 @@ under `calm.quietMotion()`, which also suppresses the photo camera flash in
 `fx.flash()`). During bedtime wind-down Play House starts at night. Play
 House never sets a reprompt.
 
+### Baby Boo
+
+`js/games/babyboo.js` registers the game in the normal menu. `world.js`
+mounts a responsive 2x Canvas world plus real, labelled, minimum-48px DOM
+buttons over its interactive objects. The shared app retains Home/mute.
+Three places (house, jungle path, pond) are connected by path signs; a short
+fade changes the scenery. The child guides Boo; Monster follows with smooth
+movement and alternating feet. The four models retain their approved front
+views, anchored layers, relative scale, colors and accessories.
+
+`model.js` owns the serializable item locations, single carried item, boat
+phase/cargo and memories. Tap-to-carry and forgiving drag/drop use the same
+rules. Pending pickups can queue a destination; new movement replaces stale
+intentions. A leaf becomes the boat, candy/flower becomes cargo, water taps
+start or assist its gentle journey, Monster receives the gift, and the empty
+boat returns. Empty voyages are replayable too. Boat progress pauses outside
+the pond. Rapid taps cannot duplicate consumption or delivery outcomes.
+
+The per-child `tinytaps-babyboo-v1` save captures the world on meaningful
+actions, lifecycle exit and pagehide. Restoring validates data and reconciles
+item ownership. First candy sharing, first boat gift and first homecoming
+record outcomes and may play the parent's praise. All other sound uses shared
+Web Audio effects; Baby Boo adds no synthesized narration. Muting, reduced
+motion and Calm are respected; Baby Boo appears in all presets and wind-down.
+
+`art.js` draws new scenery in the franchise palette. Approved character and
+house drawings were extracted from supplied references by
+`scripts/prepare-babyboo-art.py`; the original renderer and atlases were not
+available. `assets/babyboo/manifest.json` records consistent canvases, pivots,
+layer joints, animation durations and provenance. Source references are kept
+for reproduction and are not precached. All runtime layers and the manifest
+are cached. See `docs/baby-boo/ASSET_CATALOG.md` and `GAME.md`.
+
+Cleanup cancels the animation loop, aborts loading, disconnects observation,
+removes lifecycle/pointer listeners, and preserves that child's save. A load
+failure has a retry control. Pointer cancellation/rotation keeps item ownership
+intact. Responsive layout keeps both orientations playable.
+
 ### My First Words
 
 `js/games/animals.js` partitions all 73 cards into three exclusive decks:
@@ -723,6 +761,10 @@ and CRLF line endings, so it runs the same on every OS). It verifies relative JS
 worker assets, animal media references, manifest icons, the four-game
 computer-speech boundary, the exact My First Words category partition, and that
 every Play House voice clip exists and is precached. Also
-run JavaScript syntax checks and `git diff --check`.
+run JavaScript syntax checks and `git diff --check`. `npm run check` also runs
+Baby Boo item ownership, replay, save recovery, layer-anchor and offline-asset
+checks. Optional `node scripts/test-babyboo-browser.mjs` uses Playwright and a
+local HTTPS server to exercise the complete adventure, four viewport layouts,
+rotation, drag, per-child saves, shared mute, replay and a fresh offline launch.
 For tracing/catalog work, verify all 23 animal IDs have non-empty, unique path
 sets and that pointerdown alone cannot advance or finish a stroke.

@@ -5,8 +5,9 @@
   "type": "module",
   "description": "Toddler learning mini-games PWA",
   "scripts": {
-    "check": "node scripts/check.mjs",
+    "check": "node scripts/check.mjs && node scripts/check-babyboo.mjs",
     "generate:animal-audio": "node scripts/generate-animal-audio.mjs",
-    "generate:number-audio": "node scripts/generate-number-audio.mjs"
+    "generate:number-audio": "node scripts/generate-number-audio.mjs",
+    "test:babyboo:browser": "node scripts/test-babyboo-browser.mjs"
   }
 }

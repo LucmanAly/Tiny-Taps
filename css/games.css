@@ -2430,3 +2430,32 @@
   .fc-tray { flex: none; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: max(20vw, 84px); overflow-x: auto; overflow-y: hidden; touch-action: pan-x; }
   .fc-item { touch-action: pan-x; }
 }
+
+/* Baby Boo: one small, quiet world. App Home/mute keep their existing corners. */
+.bb-world { position:absolute; inset:0; overflow:hidden; background:#170f31;
+  touch-action:none; user-select:none; -webkit-user-select:none; }
+.bb-canvas { display:block; width:100%; height:100%; }
+.bb-heading { position:absolute; top:max(16px,env(safe-area-inset-top)); left:22%; right:22%;
+  display:flex; flex-direction:column; align-items:center; gap:3px; pointer-events:none;
+  text-align:center; color:#fff1cc; text-shadow:0 2px 8px #170f31; }
+.bb-brand { font:800 clamp(13px,1.6vw,19px) var(--font); letter-spacing:.17em; color:#ffdfa4; }
+.bb-place { font:600 clamp(15px,2.3vw,25px) var(--font); }
+.bb-caption { position:absolute; bottom:max(8px,env(safe-area-inset-bottom)); left:19%; right:19%;
+  margin:0; text-align:center; pointer-events:none; color:#f7ead5;
+  font:600 clamp(12px,1.7vw,18px) var(--font); line-height:1.3; text-shadow:0 2px 6px #183a36; }
+.bb-hit { position:absolute; padding:0; margin:0; border:0; border-radius:24px;
+  transform:translate(-50%,-50%); background:transparent; cursor:pointer;
+  -webkit-tap-highlight-color:transparent; touch-action:none; }
+.bb-hit:focus-visible { outline:3px solid #fff1b5; outline-offset:3px; background:#fff1b514; }
+.bb-hit[hidden],.bb-loading[hidden] { display:none; }
+.bb-loading { position:absolute; inset:0; display:flex; flex-direction:column;
+  justify-content:center; align-items:center; gap:22px; background:#170f31; color:#fff1cc;
+  font:600 22px var(--font); z-index:3; }
+.bb-loading button { min-height:52px; padding:8px 25px; border:0; border-radius:22px;
+  background:#ffe0a4; color:#4d365f; font:700 18px var(--font); }
+.bb-access-help { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media (max-width:600px) {
+  .bb-heading { top:max(20px,env(safe-area-inset-top)); left:24%; right:24%; }
+  .bb-caption { left:20%; right:20%; bottom:max(10px,env(safe-area-inset-bottom)); font-size:12px; }
+}

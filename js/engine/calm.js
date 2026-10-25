@@ -20,7 +20,7 @@ const GOODNIGHT_HOURS = 8;   // a goodnight screen outlasts a reload, not a nigh
 export const CELEBRATION_LEVELS = ['full', 'gentle', 'calm'];
 export const BEDTIME_CHOICES = [0, 10, 15, 20, 30, 45, 60];
 // Games that suit winding down: slow, open-ended, no rounds to race through.
-export const CALM_GAMES = ['playhouse', 'coloring', 'music', 'stickers', 'animals', 'numberbook'];
+export const CALM_GAMES = ['babyboo', 'playhouse', 'coloring', 'music', 'stickers', 'animals', 'numberbook'];
 
 function get(key) {
   try { return localStorage.getItem(key); } catch (e) { return null; }

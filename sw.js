@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.28';
+const VERSION = 'tiny-taps-v5.29';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -122,6 +122,34 @@ const ASSETS = [
   'js/games/wash.js',
   'js/games/trace.js',
   'js/games/playhouse.js',
+  'js/games/babyboo.js',
+  'js/games/babyboo/world.js',
+  'js/games/babyboo/art.js',
+  'js/games/babyboo/model.js',
+  'assets/babyboo/manifest.json',
+  'assets/babyboo/boo-blink.png',
+  'assets/babyboo/boo-body.png',
+  'assets/babyboo/boo-front.png',
+  'assets/babyboo/boo-left-arm.png',
+  'assets/babyboo/boo-right-arm.png',
+  'assets/babyboo/daddy-blink.png',
+  'assets/babyboo/daddy-body.png',
+  'assets/babyboo/daddy-front.png',
+  'assets/babyboo/daddy-left-arm.png',
+  'assets/babyboo/daddy-right-arm.png',
+  'assets/babyboo/house.png',
+  'assets/babyboo/mommy-blink.png',
+  'assets/babyboo/mommy-body.png',
+  'assets/babyboo/mommy-front.png',
+  'assets/babyboo/mommy-left-arm.png',
+  'assets/babyboo/mommy-right-arm.png',
+  'assets/babyboo/monster-blink.png',
+  'assets/babyboo/monster-body.png',
+  'assets/babyboo/monster-front.png',
+  'assets/babyboo/monster-left-arm.png',
+  'assets/babyboo/monster-left-foot.png',
+  'assets/babyboo/monster-right-arm.png',
+  'assets/babyboo/monster-right-foot.png',
   'js/games/playhouse/layout.js', 'js/games/playhouse/world.js', 'js/games/playhouse/art.js', 'js/games/playhouse/assets.js',
   'js/games/playhouse/fx.js', 'js/games/playhouse/sky.js', 'js/games/playhouse/props.js', 'js/games/playhouse/kids.js',
   'js/games/playhouse/home.js', 'js/games/playhouse/garden.js', 'js/games/playhouse/patch.js', 'js/games/playhouse/moments.js',
