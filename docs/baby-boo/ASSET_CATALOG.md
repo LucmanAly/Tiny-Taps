@@ -1,4 +1,4 @@
-# Baby Boo phase-one asset catalog
+# Baby Boo asset catalog
 
 ## Approved sources
 
@@ -32,6 +32,13 @@ New sky, jungle/pond scenery, candy, leaf, flower, basket, signs, water ripples
 and glow are original Canvas shapes in `js/games/babyboo/art.js`. Rendering
 uses a backing canvas up to 2x CSS resolution. The approved orange moon and
 lavender house cues remain recognizable.
+
+Phase-two slice v5.30 adds code-drawn pumpkin vines, a pumpkin picture sign,
+three larger versions of the existing smiling pumpkin, and a peekaboo picture
+button. Boo hides through scenery occlusion of the same layered model; the
+curl remains visible beside the stem. No cast/reference bitmap, anchor,
+manifest scale or approved silhouette was changed. The tiny Boo picture in
+Monster's thought bubble and the start button reuses `boo-front.png`.
 
 ## Reproduce
 

@@ -585,8 +585,9 @@ House never sets a reprompt.
 `js/games/babyboo.js` registers the game in the normal menu. `world.js`
 mounts a responsive 2x Canvas world plus real, labelled, minimum-48px DOM
 buttons over its interactive objects. The shared app retains Home/mute.
-Three places (house, jungle path, pond) are connected by path signs; a short
-fade changes the scenery. The child guides Boo; Monster follows with smooth
+The house, jungle path and pond are connected by path signs; an optional
+pumpkin picture sign branches from the path to Pumpkin Patch. A short fade
+changes the scenery. The child guides Boo; Monster follows with smooth
 movement and alternating feet. The four models retain their approved front
 views, anchored layers, relative scale, colors and accessories.
 
@@ -617,6 +618,16 @@ Cleanup cancels the animation loop, aborts loading, disconnects observation,
 removes lifecycle/pointer listeners, and preserves that child's save. A load
 failure has a retry control. Pointer cancellation/rotation keeps item ownership
 intact. Responsive layout keeps both orientations playable.
+
+`peekaboo.js` owns the patch's temporary hiding/reveal round and gentle wrong
+choices. Boo floats behind a pumpkin, leaving his curl visible beside the stem;
+the correct pumpkin or curl target reveals him. Replays rotate through three
+spots. There is no timeout or failure. The current button action is refreshed
+when a reusable hit target changes hiding spots, for both pointer and keyboard
+activation. Round progress is intentionally not saved: leaving/reloading ends
+it safely. Only `memories.peekaboo` persists with the existing version-one save;
+old saves default that field to false. Carry/drop/share rules are unchanged,
+the patch accepts carried/dropped props, and boats stay paused outside the pond.
 
 ### My First Words
 

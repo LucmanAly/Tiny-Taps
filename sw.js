@@ -5,7 +5,7 @@
 // so a deploy reaches the child's tablet on the very next launch while still
 // working fully offline. Heavy immutable assets (art, audio, icons) are
 // cache-first. Bump VERSION on any deploy to clear stale precaches.
-const VERSION = 'tiny-taps-v5.29';
+const VERSION = 'tiny-taps-v5.30';
 
 const NUMBER_AUDIO_VALUES = [
   ...Array.from({ length: 101 }, (_, index) => index),
@@ -126,6 +126,7 @@ const ASSETS = [
   'js/games/babyboo/world.js',
   'js/games/babyboo/art.js',
   'js/games/babyboo/model.js',
+  'js/games/babyboo/peekaboo.js',
   'assets/babyboo/manifest.json',
   'assets/babyboo/boo-blink.png',
   'assets/babyboo/boo-body.png',
