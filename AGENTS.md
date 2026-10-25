@@ -96,6 +96,7 @@ Calm or reduced motion). These are Play House features, not extra games.
 - Celebrations and motion follow `js/engine/calm.js`: confetti scales with the
   Celebrations setting and the device's reduce-motion preference; Play House
   skips its camera flash and hint sparkles under `quietMotion()`.
+- For Baby Boo continuation, start with `docs/baby-boo/NEXT_SESSION.md` and its linked current sources.
 - Baby Boo keeps the approved front-view cast and lavender house. Follow `docs/baby-boo/PROJECT_BIBLE.md`; no image generation or Sora. The original renderer/atlases were not supplied: preserve the extracted stock art and its shared anchors. Do not treat game adventures as Episode 1 history.
 - Computer voice and saved parent voice are separate systems.
 - `speech.speak` is intentionally silent legacy compatibility; do not re-enable it.
