@@ -4,22 +4,22 @@ Updated 2026-10-25 for Luqman Ali. Repository: **LucmanAly/Tiny-Taps**.
 
 ## Start here
 
-Phase one was merged in [PR #33](https://github.com/LucmanAly/Tiny-Taps/pull/33).
-This continuation starts from main `b7cc978b2619d535389ac0a1d39cd7d60f20fc83`.
-Production was inspected at **v5.29**, with house, path and pond working.
-Peekaboo is in [PR #34](https://github.com/LucmanAly/Tiny-Taps/pull/34), still
-open when this slice started. This branch, `baby-boo-firefly-grove`, adds
-**v5.31**, the second small phase-two slice, on top of peekaboo commit
-`97d0fad67d7983db92dfedfabf243a33808c5470`. [PR #35](https://github.com/LucmanAly/Tiny-Taps/pull/35)
-targets main to produce a combined Netlify preview; it includes peekaboo until
-#34 is merged. Review #34 first. The grove-only comparison is the difference
-between `baby-boo-pumpkin-peekaboo` and `baby-boo-firefly-grove`. Check actual
-PR bases, merge/deploy state and current main before resuming; do not assume
-either slice is in production.
+Phase one ([PR #33](https://github.com/LucmanAly/Tiny-Taps/pull/33)),
+Pumpkin Patch/peekaboo ([PR #34](https://github.com/LucmanAly/Tiny-Taps/pull/34))
+and Firefly Grove/musical logs ([PR #35](https://github.com/LucmanAly/Tiny-Taps/pull/35))
+are merged into **main**. The owner explicitly authorized “Push all to main”
+on 2026-10-25. Both phase-two PRs were merged in order, retaining their ancestry.
+The combined merge commit is `388702131ec029be5d3b53cac8aa2f4dd7f31587`;
+this closing handoff update is an additional documentation-only commit.
 
 - Production: https://mytinytaps.netlify.app/ — choose **Baby Boo**.
-- Latest branch runtime: **5.31**, including matching HTML query keys and SW cache.
-- No authorization to merge this or other future PRs follows from PR #33's merge.
+- Runtime release: **5.31**, with matching HTML query keys and SW cache.
+- Tested gameplay commit: `4fc444cf3ced314724f71382c09d37b64ef646cb`.
+  Later changes only clarify the brief/handoff and merge the tested work.
+- The merged game tree matched the tested combined feature tree exactly.
+- Start future work from freshly fetched main. Check current deployment and
+  user feedback rather than using an old preview/feature branch as newest.
+- This merge authorization does not automatically authorize future PR merges.
 
 Read `AGENTS.md`, this handoff, `docs/baby-boo/PROJECT_BIBLE.md`,
 `docs/baby-boo/GAME.md`, `docs/baby-boo/ASSET_CATALOG.md` and the Baby Boo

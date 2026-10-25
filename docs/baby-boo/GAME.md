@@ -61,10 +61,9 @@ finger gets visual feedback while sound starts are coalesced to avoid a loud
 stack of notes. Calm/reduced motion keeps the light response and suppresses
 sway, bobbing, moving fireflies and log wobble.
 
-This slice builds on the peekaboo branch while PR #34 is still open. PR #35
-targets main to produce a combined Netlify preview, so its diff includes
-peekaboo until #34 is merged. Review #34 first; the preview contains both
-phase-two slices.
+Phase one and both phase-two slices are merged into main as runtime v5.31.
+The owner authorized merging PR #34 and PR #35 on 2026-10-25. The original
+leaf-boat adventure, peekaboo and free musical play are available together.
 
 ## Continuity and art
 
