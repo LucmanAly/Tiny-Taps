@@ -177,6 +177,12 @@ const PAGES = [
     category: 'characters',
   },
   {
+    id: 'man-portrait', name: 'Man Portrait',
+    src: 'assets/art/man-portrait-coloring.svg',
+    portrait: true,
+    category: 'characters',
+  },
+  {
     id: 'family-man', name: 'Dad',
     src: 'assets/art/family-man-coloring.svg',
     portrait: true,
